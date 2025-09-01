@@ -21,11 +21,12 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
-import MapView, { PROVIDER_GOOGLE, Polygon, Marker, Circle } from 'react-native-maps';
+import Svg, { Path, Circle as SvgCircle, Text as SvgText } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FloodPredictionModel from './services/FloodPredictionModel';
 import LocationService from './services/LocationService';
+import GeoJSONService from './services/GeoJSONService';
 
 // Import FloodHotspotsScreen for Epic 3
 import FloodHotspotsScreen from './screens/FloodHotspotsScreen';
@@ -38,33 +39,7 @@ const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.googleMapsApiKey ||
                             Constants.manifest?.extra?.googleMapsApiKey ||
                             'AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM';
 
-// Debug Google Maps API Key loading
-console.log('🗺️ Google Maps API Key Debug:', {
-  fromExpoConfig: Constants.expoConfig?.extra?.googleMapsApiKey ? 'Yes' : 'No',
-  fromManifest: Constants.manifest?.extra?.googleMapsApiKey ? 'Yes' : 'No',
-  finalKey: GOOGLE_MAPS_API_KEY ? 'Present' : 'Missing',
-  keyLength: GOOGLE_MAPS_API_KEY ? GOOGLE_MAPS_API_KEY.length : 0,
-  keyPreview: GOOGLE_MAPS_API_KEY ? GOOGLE_MAPS_API_KEY.substring(0, 20) + '...' : 'None',
-  platform: Platform.OS,
-  isDevice: Constants.isDevice
-});
 
-// Additional debug info
-console.log('📱 Platform Info:', {
-  platform: Platform.OS,
-  version: Platform.Version,
-  isDevice: Constants.isDevice,
-  deviceName: Constants.deviceName
-});
-
-// MapView diagnostics
-console.log('🗺️ MapView Diagnostics:', {
-  mapViewImported: typeof MapView !== 'undefined',
-  providerGoogleImported: typeof PROVIDER_GOOGLE !== 'undefined',
-  reactNativeMapsVersion: '1.7.1', // From package.json
-  expoVersion: '49.0.0',
-  knownIssue: 'react-native-maps 1.7.1 has compatibility issues with Expo 49'
-});
 
 // Color theme based on risk levels
 const RISK_COLORS = {
@@ -96,14 +71,9 @@ const getRiskLevel = (probability) => {
 
 // Generate dynamic risk descriptions based on prediction data
 const getRiskDescription = (prediction, locationInfo) => {
-  console.log('🔍 getRiskDescription called with:', {
-    prediction: prediction ? JSON.stringify(prediction, null, 2) : 'null',
-    locationInfo: locationInfo ? JSON.stringify(locationInfo, null, 2) : 'null'
-  });
   
   // Safety check for null prediction
   if (!prediction || prediction.flood_probability === undefined) {
-    console.log('⚠️ getRiskDescription: prediction is null or missing flood_probability');
     return 'Prediction data unavailable. Please try again.';
   }
   
@@ -118,9 +88,6 @@ const getRiskDescription = (prediction, locationInfo) => {
       
   const location = locationInfo?.display_name || 'your area';
   
-  console.log('🔍 getRiskDescription parsed values:', {
-    riskLevel, probability, confidence, location
-  });
   
   const baseDescriptions = {
     'Low': [
@@ -147,25 +114,20 @@ const getRiskDescription = (prediction, locationInfo) => {
   const confidenceText = confidence > 0 ? ` (${confidence}% confidence)` : '';
   const finalDescription = randomDescription + confidenceText;
   
-  console.log('✅ getRiskDescription returning:', finalDescription);
   return finalDescription;
 };
 
 // API Service
 class FloodPredictionService {
   static async getPrediction(lat, lon) {
-    console.log('🔄 FloodPredictionService: Starting getPrediction for:', lat, lon);
-    console.log('🌐 API_BASE_URL:', API_BASE_URL);
     
     try {
       // Create AbortController for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
-        console.log('⏰ Request timeout - aborting API call');
         controller.abort();
       }, 5000); // 5 second timeout
 
-      console.log('🚀 Making API request to:', `${API_BASE_URL}/predict/${lat}/${lon}`);
       
       const response = await fetch(`${API_BASE_URL}/predict/${lat}/${lon}`, {
         signal: controller.signal,
@@ -181,12 +143,10 @@ class FloodPredictionService {
       }
       
       const data = await response.json();
-      console.log('✅ API request successful:', data);
       return data;
       
     } catch (error) {
       console.error('❌ Error fetching prediction:', error);
-      console.log('🔄 Returning mock data for development...');
       
       // Return mock data for development
       return {
@@ -205,7 +165,6 @@ class FloodPredictionService {
   }
 
   static async getMultipleLocationPredictions(locations) {
-    console.log('🔄 FloodPredictionService: Getting multiple predictions for:', locations);
     
     try {
       const controller = new AbortController();
@@ -223,12 +182,10 @@ class FloodPredictionService {
       if (!response.ok) throw new Error(`API request failed: ${response.status}`);
       
       const data = await response.json();
-      console.log('✅ Multiple predictions successful:', data);
       return data;
       
     } catch (error) {
       console.error('❌ Error fetching multiple predictions:', error);
-      console.log('🔄 Returning mock data...');
       
       // Return mock data
       return {
@@ -282,7 +239,6 @@ function FloodDetailsModal({ prediction, locationInfo, onClose }) {
             <Text style={styles.statLabel}>Risk Level</Text>
             <Text style={[styles.statValue, { color: getRiskColor(prediction.flood_probability) }]}>
               {(() => {
-                console.log('🔍 Risk Level display - prediction.risk_level:', prediction.risk_level);
                 return prediction.risk_level;
               })()}
             </Text>
@@ -538,8 +494,6 @@ function HomeScreen() {
   const [skipGPS, setSkipGPS] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
-  const [mapError, setMapError] = useState(false);
-  const [mapRetryCount, setMapRetryCount] = useState(0);
 
 
   useEffect(() => {
@@ -552,7 +506,6 @@ function HomeScreen() {
     const debugId = Date.now();
     const currentRetry = isManualRetry ? retryCount + 1 : retryAttempt;
     
-    console.log(`🏠 HomeScreen [${debugId}]: Starting Epic 1 ML-based flood prediction (attempt ${currentRetry + 1}/${3})...`);
     
     try {
       if (isManualRetry) {
@@ -560,14 +513,11 @@ function HomeScreen() {
         setRetryCount(currentRetry);
       }
       
-      console.log(`🔄 [${debugId}]: Setting loading state to true`);
       setLoading(true);
       setError(null);
-      console.log(`⏳ [${debugId}]: Starting ML prediction with real GPS and weather data...`);
       
       // Increase timeout based on retry count (30s, 45s, 60s)
       const timeoutDuration = 30000 + (currentRetry * 15000);
-      console.log(`⏰ [${debugId}]: Using timeout of ${timeoutDuration/1000}s for attempt ${currentRetry + 1}`);
       
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
@@ -578,34 +528,21 @@ function HomeScreen() {
       // Development bypass: Use mock data if enabled
       let mlPrediction;
       if (useMockData) {
-        console.log(`🧪 [${debugId}]: Using mock data for testing`);
         mlPrediction = getMockMLPrediction();
-        console.log(`🧪 [${debugId}]: Mock data generated`);
       } else {
         // Epic 1: Use real GPS location, Google reverse geocoding, Open Meteo weather, and ML model
-        console.log(`🤖 [${debugId}]: Calling FloodPredictionModel.getPredictionWithML() with 30s timeout (skipGPS: ${skipGPS})`);
         mlPrediction = await Promise.race([
           FloodPredictionModel.getPredictionWithML(null, null, skipGPS),
           timeoutPromise
         ]);
-        console.log(`✅ [${debugId}]: FloodPredictionModel.getPredictionWithML() completed`);
       }
       
       if (!mlPrediction) {
         throw new Error('ML prediction returned null/undefined');
       }
       
-      console.log(`🤖 [${debugId}] ML Prediction Results:`, {
-        location: mlPrediction.location?.display_name || 'undefined',
-        state: mlPrediction.location?.state || 'undefined',
-        probability: `${Math.round((mlPrediction.flood_probability || 0) * 100)}%`,
-        risk_level: mlPrediction.risk_level || 'undefined',
-        confidence: `${Math.round((mlPrediction.confidence || 0) * 100)}%`,
-        hours_until_peak: Math.round(mlPrediction.timeframe_hours || 0)
-      });
       
       // Store location info for UI
-      console.log(`📍 [${debugId}]: Setting location info for UI`);
       setLocationInfo(mlPrediction.location);
       
       // Convert ML prediction to format expected by UI
@@ -625,10 +562,7 @@ function HomeScreen() {
         data_sources: mlPrediction.data_sources
       };
       
-      console.log(`📊 [${debugId}]: Setting prediction state`);
-      console.log(`🔍 [${debugId}]: UI Prediction data structure:`, JSON.stringify(uiPrediction, null, 2));
       setPrediction(uiPrediction);
-      console.log(`✅ [${debugId}]: Epic 1 ML prediction loaded successfully`);
       
     } catch (error) {
       console.error(`❌ [${debugId}]: Epic 1 ML prediction failed (attempt ${currentRetry + 1}):`, error);
@@ -636,7 +570,6 @@ function HomeScreen() {
       
       // Auto-retry logic for first 2 failures, then fall back to mock data or show error
       if (currentRetry < 2 && !isManualRetry) {
-        console.log(`🔄 [${debugId}]: Auto-retrying in ${(currentRetry + 1) * 2}s... (attempt ${currentRetry + 2}/3)`);
         setTimeout(() => {
           loadPredictionWithRetry(false, currentRetry + 1);
         }, (currentRetry + 1) * 2000); // 2s, 4s delay
@@ -645,7 +578,6 @@ function HomeScreen() {
       
       // After 3 attempts or manual retry fails, fall back to mock data if available
       if (currentRetry >= 2) {
-        console.log(`🧪 [${debugId}]: All retry attempts failed, falling back to mock data...`);
         try {
           const mockPrediction = getMockMLPrediction();
           setPrediction(mockPrediction);
@@ -656,7 +588,6 @@ function HomeScreen() {
             isDev: true,
             isMock: true
           });
-          console.log(`✅ [${debugId}]: Using mock data as final fallback`);
           return;
         } catch (mockError) {
           console.error(`❌ [${debugId}]: Even mock data failed:`, mockError);
@@ -671,7 +602,6 @@ function HomeScreen() {
       });
       
     } finally {
-      console.log(`🏁 [${debugId}]: Finally block - setting loading to false...`);
       setLoading(false);
       setRefreshing(false);
       setIsRetrying(false);
@@ -696,31 +626,11 @@ function HomeScreen() {
     loadPrediction();
   };
 
-  const handleMapError = (error, mapType = 'main') => {
-    console.error(`❌ ${mapType} map error:`, error);
-    setMapError(true);
-    
-    // Auto-retry up to 2 times
-    if (mapRetryCount < 2) {
-      setTimeout(() => {
-        console.log(`🔄 Retrying ${mapType} map load (attempt ${mapRetryCount + 1})`);
-        setMapRetryCount(mapRetryCount + 1);
-        setMapError(false);
-      }, 2000);
-    }
-  };
-
-  const handleMapReady = (mapType = 'main') => {
-    console.log(`🗺️ ${mapType} map loaded successfully`);
-    setMapError(false);
-    setMapRetryCount(0);
-  };
 
 
   const handleDevLocationSelect = (location) => {
     try {
       // Cancel all active GPS requests to prevent persistent progress messages
-      console.log('🚫 Cancelling active GPS requests before selecting dev location...');
       LocationService.cancelAllRequests();
       
       setDevLocation(location);
@@ -741,7 +651,6 @@ function HomeScreen() {
   };
 
   const loadPredictionWithLocation = async (lat, lon) => {
-    console.log(`🏠 HomeScreen: Loading prediction for custom location: ${lat}, ${lon}`);
     
     try {
       setLoading(true);
@@ -750,14 +659,6 @@ function HomeScreen() {
       // Use FloodPredictionModel with custom coordinates
       const mlPrediction = await FloodPredictionModel.getPredictionWithML(lat, lon);
       
-      console.log('🤖 ML Prediction Results:', {
-        location: mlPrediction.location.display_name,
-        state: mlPrediction.location.state,
-        probability: `${Math.round(mlPrediction.flood_probability * 100)}%`,
-        risk_level: mlPrediction.risk_level,
-        confidence: `${Math.round(mlPrediction.confidence * 100)}%`,
-        hours_until_peak: Math.round(mlPrediction.timeframe_hours)
-      });
       
       // Convert ML prediction to UI format
       const uiPrediction = {
@@ -777,7 +678,6 @@ function HomeScreen() {
       };
       
       setPrediction(uiPrediction);
-      console.log('✅ Custom location ML prediction loaded successfully');
       
     } catch (error) {
       console.error('❌ Custom location ML prediction failed:', error);
@@ -858,21 +758,6 @@ function HomeScreen() {
     );
   }
 
-  // Debug: Log current prediction state in render
-  console.log('🏠 HomeScreen render - Current state:', {
-    prediction: prediction ? 'Present' : 'null',
-    locationInfo: locationInfo ? 'Present' : 'null',
-    loading,
-    error: error ? 'Present' : 'null'
-  });
-  
-  if (prediction) {
-    console.log('🔍 HomeScreen render - Prediction details:', {
-      flood_probability: prediction.flood_probability,
-      risk_level: prediction.risk_level,
-      confidence: prediction.confidence
-    });
-  }
 
   return (
     <ScrollView 
@@ -904,198 +789,45 @@ function HomeScreen() {
         </View>
       </View>
 
-      {/* DEBUG: Simple MapView Tests */}
-      <View style={styles.debugSection}>
-        <Text style={styles.debugTitle}>🔧 DEBUG: Map API Test</Text>
-        
-        {/* Test 1: Default MapView */}
-        <Text style={styles.debugLabel}>Test 1: Default (no provider)</Text>
-        <MapView
-          style={styles.debugMap}
-          initialRegion={{
-            latitude: 3.1390, // Kuala Lumpur
-            longitude: 101.6869,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
-          }}
-          onMapReady={() => console.log('🟢 DEBUG: Default map loaded')}
-          onError={(error) => console.error('🔴 DEBUG: Default map error:', error)}
-        />
-        
-        {/* Test 2: Google Provider */}
-        <Text style={styles.debugLabel}>Test 2: Google Provider</Text>
-        <MapView
-          provider={PROVIDER_GOOGLE}
-          style={styles.debugMap}
-          initialRegion={{
-            latitude: 3.1390,
-            longitude: 101.6869,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
-          }}
-          onMapReady={() => console.log('🟢 DEBUG: Google map loaded')}
-          onError={(error) => console.error('🔴 DEBUG: Google map error:', error)}
-        />
-        
-        {/* Test 3: Absolute minimal MapView */}
-        <Text style={styles.debugLabel}>Test 3: Absolute Minimal</Text>
-        <View style={styles.debugMap}>
-          <MapView style={{ flex: 1 }} />
-        </View>
-        
-        <Text style={styles.debugText}>
-          ⚠️ DIAGNOSIS: Both maps blank = react-native-maps issue{'\n'}
-          📦 You have: react-native-maps 1.7.1 + Expo 49{'\n'}
-          🐛 Known Issue: This version combo has compatibility problems{'\n'}
-          {'\n'}
-          💡 SOLUTIONS:{'\n'}
-          1. Update: npm uninstall react-native-maps && npx expo install react-native-maps@1.8.0{'\n'}
-          2. Or use: npx expo install expo-maps{'\n'}
-          3. Rebuild after changes{'\n'}
-          {'\n'}
-          Running on: {Constants.appOwnership || 'Unknown'} | Device: {Constants.isDevice ? 'Real' : 'Simulator'}
-        </Text>
-      </View>
 
-      <Text style={styles.sectionTitle}>Current Risk - Epic 1: AI Prediction</Text>
 
-      {/* Risk Card with Google Map */}
+      {/* Main Risk Card */}
       <View style={styles.riskCard}>
-        {/* Google Map */}
-        {/* Temporary fallback until react-native-maps is fixed */}
-        <View style={styles.mapFallbackContainer}>
-          <Ionicons name="location" size={48} color="#2196F3" />
-          <Text style={styles.mapFallbackTitle}>
-            📍 {locationInfo ? locationInfo.display_name : 'Loading location...'}
-          </Text>
-          <Text style={styles.mapFallbackText}>
-            Map temporarily unavailable{'\n'}
-            (react-native-maps compatibility issue)
-          </Text>
-          <Text style={styles.mapFallbackCoords}>
-            {locationInfo ? `${locationInfo.lat.toFixed(4)}, ${locationInfo.lon.toFixed(4)}` : 'Getting coordinates...'}
-          </Text>
-        </View>
-
-        {false && mapError && mapRetryCount >= 2 ? (
-          <View style={styles.mapErrorContainer}>
-            <Ionicons name="map-outline" size={48} color="#999" />
-            <Text style={styles.mapErrorText}>Map temporarily unavailable</Text>
-            <TouchableOpacity 
-              style={styles.mapRetryButton}
-              onPress={() => {
-                setMapError(false);
-                setMapRetryCount(0);
-              }}
-            >
-              <Text style={styles.mapRetryButtonText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : false && locationInfo ? (
-          <MapView
-            provider={PROVIDER_GOOGLE}
-            style={styles.riskMap}
-            initialRegion={{
-              latitude: locationInfo.lat,
-              longitude: locationInfo.lon,
-              latitudeDelta: 0.02,
-              longitudeDelta: 0.02,
-            }}
-            region={{
-              latitude: locationInfo.lat,
-              longitude: locationInfo.lon,
-              latitudeDelta: 0.02,
-              longitudeDelta: 0.02,
-            }}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            rotateEnabled={false}
-            pitchEnabled={false}
-            loadingEnabled={true}
-            loadingIndicatorColor="#2196F3"
-            loadingBackgroundColor="#f5f5f5"
-            onMapReady={() => handleMapReady('risk')}
-            onError={(error) => handleMapError(error, 'risk')}
-          >
-            {/* Current Location Marker */}
-            <Marker
-              coordinate={{
-                latitude: locationInfo.lat,
-                longitude: locationInfo.lon,
-              }}
-              title={locationInfo.display_name || "Current Location"}
-              description={`${getRiskLevel(prediction.flood_probability)} flood risk - ${Math.round(prediction.flood_probability * 100)}%`}
-            >
-              <View style={styles.customMarker}>
-                <Ionicons 
-                  name="location" 
-                  size={30} 
-                  color={getRiskColor(prediction.flood_probability)} 
-                />
-              </View>
-            </Marker>
-
-            {/* Risk Zone Circle */}
-            <Circle
-              center={{
-                latitude: locationInfo.lat,
-                longitude: locationInfo.lon,
-              }}
-              radius={1000} // 1km radius
-              fillColor={`${getRiskColor(prediction.flood_probability)}20`} // 20% opacity
-              strokeColor={getRiskColor(prediction.flood_probability)}
-              strokeWidth={2}
-            />
-          </MapView>
-        ) : null}
-        
-        {/* Location and Risk Information Below Map */}
-        <View style={styles.riskInfoBelow}>
-          <View style={[styles.riskBadge, { backgroundColor: getRiskColor(prediction.flood_probability) }]}>
-            <Text style={styles.riskBadgeText}>
-              {(() => {
-                const calculatedRisk = getRiskLevel(prediction.flood_probability);
-                const mlRisk = prediction.risk_level;
-                console.log('🔍 Risk Badge display:', {
-                  calculatedRisk,
-                  mlRisk,
-                  flood_probability: prediction.flood_probability,
-                  usingMlRisk: mlRisk || calculatedRisk
-                });
-                return (mlRisk || calculatedRisk) + ' Risk';
-              })()}
+        <View style={styles.riskHeader}>
+          <View style={[styles.riskLevelIndicator, { backgroundColor: getRiskColor(prediction.flood_probability) }]}>
+            <Text style={styles.riskLevelText}>
+              {getRiskLevel(prediction.flood_probability)} Risk
             </Text>
           </View>
-          <Text style={styles.riskTitle}>
-            {locationInfo ? locationInfo.display_name : 'Loading location...'}
-          </Text>
-          <Text style={styles.riskDescription}>
-            {getRiskDescription(prediction, locationInfo)}
-          </Text>
         </View>
+        
+        <View style={styles.riskMetrics}>
+          <View style={styles.metricItem}>
+            <Text style={styles.metricValue}>{Math.round(prediction.flood_probability * 100)}%</Text>
+            <Text style={styles.metricLabel}>Flood Risk</Text>
+          </View>
+          <View style={styles.metricDivider} />
+          <View style={styles.metricItem}>
+            <Text style={styles.metricValue}>{Math.round(prediction.confidence * 100)}%</Text>
+            <Text style={styles.metricLabel}>Confidence</Text>
+          </View>
+        </View>
+        
+        <Text style={styles.riskDescription}>
+          {getRiskDescription(prediction, locationInfo)}
+        </Text>
+        
+        {/* Show countdown timer only for High risk */}
+        {getRiskLevel(prediction.flood_probability) === 'High' && (
+          <View style={styles.countdownSection}>
+            <Text style={styles.countdownLabel}>Time Until Risk Peak:</Text>
+            <Text style={styles.countdownValue}>
+              {timeRemaining.hours}h {timeRemaining.minutes}m {timeRemaining.seconds}s
+            </Text>
+          </View>
+        )}
       </View>
 
-      {/* Risk Percentage */}
-      <View style={styles.riskPercentageCard}>
-        <View style={styles.circularProgress}>
-          <Text style={styles.riskPercentage}>{Math.round(prediction.flood_probability * 100)}%</Text>
-          <Text style={styles.riskLabel}>Flood Risk</Text>
-        </View>
-        <View style={styles.riskDetails}>
-          <Text style={styles.confidenceText}>
-            Confidence: {Math.round(prediction.confidence * 100)}%
-          </Text>
-          {/* Only show countdown timer for High risk */}
-          {getRiskLevel(prediction.flood_probability) === 'High' && (
-            <View style={styles.timeRemaining}>
-              <Text style={styles.timeLabel}>Time Until Risk Peak:</Text>
-              <Text style={styles.timeValue}>
-                {timeRemaining.hours}h {timeRemaining.minutes}m {timeRemaining.seconds}s
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
 
       {/* Contributing Factors */}
       <View style={styles.factorsCard}>
@@ -1108,7 +840,7 @@ function HomeScreen() {
         ))}
       </View>
 
-      {/* Weather Summary */}
+      {/* Weather Card */}
       <View style={styles.weatherCard}>
         <Text style={styles.cardTitle}>Current Weather</Text>
         <View style={styles.weatherGrid}>
@@ -1116,6 +848,11 @@ function HomeScreen() {
             <Ionicons name="thermometer-outline" size={24} color="#2196F3" />
             <Text style={styles.weatherValue}>{prediction.weather_summary.current_temp}°C</Text>
             <Text style={styles.weatherLabel}>Temperature</Text>
+          </View>
+          <View style={styles.weatherItem}>
+            <Ionicons name="water-outline" size={24} color="#2196F3" />
+            <Text style={styles.weatherValue}>{prediction.weather_summary.humidity}%</Text>
+            <Text style={styles.weatherLabel}>Humidity</Text>
           </View>
           <View style={styles.weatherItem}>
             <Ionicons name="rainy-outline" size={24} color="#2196F3" />
@@ -1223,19 +960,28 @@ function HomeScreen() {
 // Live Data Screen
 function LiveDataScreen() {
   const [selectedDistrict, setSelectedDistrict] = useState(null);
-  const [mapRegion, setMapRegion] = useState({
-    latitude: 3.1390,
-    longitude: 101.6869,
-    latitudeDelta: 2,
-    longitudeDelta: 2,
-  });
+  const [districts, setDistricts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock district data with risk levels
-  const districts = [
-    { name: 'Puchong', coords: [[3.0, 101.6], [3.05, 101.6], [3.05, 101.65], [3.0, 101.65]], risk: 0.75 },
-    { name: 'Subang Jaya', coords: [[3.05, 101.55], [3.1, 101.55], [3.1, 101.6], [3.05, 101.6]], risk: 0.45 },
-    { name: 'Petaling Jaya', coords: [[3.1, 101.6], [3.15, 101.6], [3.15, 101.65], [3.1, 101.65]], risk: 0.30 },
-  ];
+  useEffect(() => {
+    loadDistrictData();
+  }, []);
+
+  const loadDistrictData = async () => {
+    try {
+      setLoading(true);
+      
+      const malaysianDistricts = await GeoJSONService.loadMalaysianDistricts();
+      const districtsWithRisk = GeoJSONService.generateDistrictRisks(malaysianDistricts);
+      
+      setDistricts(districtsWithRisk);
+    } catch (error) {
+      console.error('❌ Error loading district data:', error);
+      setDistricts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -1280,39 +1026,51 @@ function LiveDataScreen() {
         </View>
       </View>
 
-      {/* Regional Flood Risk Map */}
+      {/* Regional Flood Risk Districts */}
       <View style={styles.mapCard}>
         <Text style={styles.cardTitle}>Regional Flood Risk</Text>
-        <MapView
-          provider={PROVIDER_GOOGLE}
-          style={styles.map}
-          region={mapRegion}
-          onRegionChangeComplete={setMapRegion}
-          onMapReady={() => handleMapReady('regional')}
-          onError={(error) => handleMapError(error, 'regional')}
-          loadingEnabled={true}
-          loadingIndicatorColor="#2196F3"
-        >
-          {districts.map((district, index) => (
-            <Polygon
-              key={index}
-              coordinates={district.coords.map(coord => ({ 
-                latitude: coord[0], 
-                longitude: coord[1] 
-              }))}
-              fillColor={`${getRiskColor(district.risk)}88`}
-              strokeColor={getRiskColor(district.risk)}
-              strokeWidth={2}
-              tappable
-              onPress={() => {
-                Alert.alert(
-                  district.name,
-                  `Risk Level: ${getRiskLevel(district.risk)}\nProbability: ${Math.round(district.risk * 100)}%`
-                );
-              }}
-            />
-          ))}
-        </MapView>
+        
+        {/* District Risk List */}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#2196F3" />
+            <Text style={styles.loadingText}>Loading district data...</Text>
+          </View>
+        ) : (
+          <View style={styles.districtList}>
+            {districts.map((district, index) => (
+              <TouchableOpacity
+                key={district.id || index}
+                style={styles.districtItem}
+                onPress={() => {
+                  Alert.alert(
+                    `${district.name} District`,
+                    `State: ${district.state}\nRisk Level: ${GeoJSONService.getRiskLevel(district.risk)}\nFlood Probability: ${Math.round(district.risk * 100)}%\nLocation: ${district.center.lat.toFixed(4)}, ${district.center.lon.toFixed(4)}`
+                  );
+                }}
+              >
+                <View style={styles.districtInfo}>
+                  <Text style={styles.districtName}>{district.name}</Text>
+                  <Text style={styles.districtState}>{district.state} State</Text>
+                  <Text style={styles.districtRisk}>{GeoJSONService.getRiskLevel(district.risk)} Risk</Text>
+                </View>
+                <View style={[
+                  styles.riskIndicator,
+                  { backgroundColor: GeoJSONService.getRiskColor(district.risk) }
+                ]}>
+                  <Text style={styles.riskPercentage}>{Math.round(district.risk * 100)}%</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            
+            {districts.length === 0 && (
+              <View style={styles.noDataContainer}>
+                <Text style={styles.noDataText}>No district data available</Text>
+              </View>
+            )}
+          </View>
+        )}
+        
         <View style={styles.mapLegend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendColor, { backgroundColor: RISK_COLORS.Low }]} />
@@ -1522,8 +1280,8 @@ function EmergencyScreen() {
       'Emergency Call',
       'Choose emergency service to call:',
       [
-        { text: '999 - Emergency', onPress: () => console.log('Calling 999') },
-        { text: '994 - Fire & Rescue', onPress: () => console.log('Calling 994') },
+        { text: '999 - Emergency', onPress: () => {} },
+        { text: '994 - Fire & Rescue', onPress: () => {} },
         { text: 'Cancel', style: 'cancel' }
       ]
     );
@@ -1556,24 +1314,12 @@ function EmergencyScreen() {
         </TouchableOpacity>
       ))}
 
-      {/* Emergency Navigation Placeholder */}
+      {/* Emergency Navigation */}
       <View style={styles.navigationCard}>
-        <MapView
-          provider={PROVIDER_GOOGLE}
-          style={styles.miniMap}
-          region={{
-            latitude: 3.1390,
-            longitude: 101.6869,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          }}
-          scrollEnabled={false}
-          onMapReady={() => handleMapReady('mini')}
-          onError={(error) => handleMapError(error, 'mini')}
-          loadingEnabled={true}
-        />
-        <View style={styles.navigationOverlay}>
+        <View style={styles.navigationContent}>
+          <Ionicons name="map" size={48} color="#2196F3" style={styles.navigationIcon} />
           <Text style={styles.navigationTitle}>Emergency Navigation</Text>
+          <Text style={styles.navigationDescription}>Get directions to safe zones and evacuation routes</Text>
           <TouchableOpacity style={styles.navigationButton}>
             <Ionicons name="navigate" size={20} color="#fff" />
             <Text style={styles.navigationButtonText}>Find Nearest Shelter</Text>
@@ -1797,19 +1543,62 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    backgroundColor: '#fff',
+    padding: 20,
+  },
+  riskHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  riskLevelIndicator: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  riskMetrics: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  metricItem: {
+    alignItems: 'center',
+  },
+  metricValue: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  metricLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  metricDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#e0e0e0',
+  },
+  countdownSection: {
+    marginTop: 15,
+    padding: 12,
+    backgroundColor: '#fff3cd',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  countdownLabel: {
+    fontSize: 12,
+    color: '#856404',
+    marginBottom: 5,
+  },
+  countdownValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#856404',
   },
   riskImage: {
     width: '100%',
     height: 200,
-  },
-  riskMap: {
-    width: '100%',
-    height: 200,
-    backgroundColor: '#f0f0f0', // Fallback background
-  },
-  customMarker: {
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   riskInfoBelow: {
     padding: 20,
@@ -1838,21 +1627,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 14,
     color: '#666',
-  },
-  mapErrorContainer: {
-    height: 200,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f8f8f8',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderStyle: 'dashed',
-  },
-  mapErrorText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
   },
   mapRetryButton: {
     marginTop: 12,
@@ -1925,12 +1699,25 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 10,
     backgroundColor: '#f0f0f0',
+    borderWidth: 3,
+    borderColor: '#ff0000', // Red border to see container
+    overflow: 'visible', // Ensure map isn't clipped
   },
   debugText: {
     fontSize: 12,
     color: '#856404',
     textAlign: 'center',
     lineHeight: 16,
+  },
+  debugTestMap: {
+    margin: 10,
+    padding: 10,
+    backgroundColor: '#e8f5e8',
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+    overflow: 'visible',
+    position: 'relative',
   },
   headerButtons: {
     flexDirection: 'row',
@@ -2159,12 +1946,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     backgroundColor: '#f0f0f0', // Fallback background
   },
-  miniMap: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-    backgroundColor: '#f0f0f0', // Fallback background
-  },
   mapLegend: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -2208,6 +1989,109 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: '#999',
+  },
+  
+  // New components styles
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginBottom: 15,
+    padding: 15,
+    borderRadius: 15,
+    elevation: 3,
+  },
+  locationIcon: {
+    marginRight: 15,
+  },
+  locationDetails: {
+    flex: 1,
+  },
+  locationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  locationCoords: {
+    fontSize: 14,
+    color: '#666',
+  },
+  
+  districtList: {
+    marginTop: 10,
+  },
+  districtItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    backgroundColor: '#f8f9fa',
+    marginBottom: 8,
+    borderRadius: 10,
+  },
+  districtInfo: {
+    flex: 1,
+  },
+  districtName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  districtRisk: {
+    fontSize: 14,
+    color: '#666',
+  },
+  districtState: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 2,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 10,
+  },
+  noDataContainer: {
+    alignItems: 'center',
+    padding: 30,
+  },
+  noDataText: {
+    fontSize: 14,
+    color: '#999',
+  },
+  riskIndicator: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  riskPercentage: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  
+  navigationContent: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  navigationIcon: {
+    marginBottom: 10,
+  },
+  navigationDescription: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 15,
   },
   
   // Locations Screen
