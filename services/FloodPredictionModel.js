@@ -12,13 +12,13 @@ class FloodPredictionModel {
    * Main prediction function - Epic 1 implementation
    * Uses GPS location, Google Maps geocoding, Open Meteo weather data, and ML model
    */
-  static async getPredictionWithML(lat = null, lon = null) {
+  static async getPredictionWithML(lat = null, lon = null, skipGPS = false) {
     const debugId = Date.now();
     console.log(`🤖 FloodPredictionModel [${debugId}]: Starting ML-based flood prediction...`);
     
     try {
       // Step 1: Get user location (GPS + reverse geocoding)
-      console.log(`📍 [${debugId}]: Step 1 - Getting user location`);
+      console.log(`📍 [${debugId}]: Step 1 - Getting user location (skipGPS: ${skipGPS})`);
       let location, state, displayName;
       
       if (lat && lon) {
@@ -42,10 +42,10 @@ class FloodPredictionModel {
         console.log(`📍 [${debugId}]: Getting current GPS location with Malaysia validation...`);
         if (LocationService.getCurrentLocationWithMalaysiaCheck) {
           console.log(`📍 [${debugId}]: Using getCurrentLocationWithMalaysiaCheck method`);
-          location = await LocationService.getCurrentLocationWithMalaysiaCheck();
+          location = await LocationService.getCurrentLocationWithMalaysiaCheck(skipGPS);
         } else {
           console.log(`📍 [${debugId}]: Fallback to regular getCurrentLocation method`);
-          location = await LocationService.getCurrentLocation();
+          location = await LocationService.getCurrentLocation(skipGPS);
         }
         console.log(`📍 [${debugId}]: Location obtained:`, { lat: location.lat, lon: location.lon });
       }

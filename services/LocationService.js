@@ -1,17 +1,110 @@
 // services/LocationService.js
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 // Google Maps API Key from app configuration
 const GOOGLE_MAPS_API_KEY = 'AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM';
 
 class LocationService {
+  // Static tracking for active GPS requests
+  static activeRequests = new Map();
+  
+  /**
+   * Detect if running in emulator/simulator
+   */
+  static isEmulator() {
+    // Check for common emulator indicators
+    const isEmulator = 
+      // Android emulator indicators
+      Constants.deviceName?.toLowerCase().includes('emulator') ||
+      Constants.deviceName?.toLowerCase().includes('simulator') ||
+      // iOS simulator indicators  
+      Constants.platform?.ios && Constants.isDevice === false ||
+      // Generic indicators
+      !Constants.isDevice;
+    
+    console.log(`🔍 Emulator detection: ${isEmulator ? 'EMULATOR' : 'REAL DEVICE'}`, {
+      deviceName: Constants.deviceName,
+      isDevice: Constants.isDevice,
+      platform: Constants.platform
+    });
+    
+    return isEmulator;
+  }
+  
+  /**
+   * Cancel all active GPS requests
+   */
+  static cancelAllRequests() {
+    const activeCount = this.activeRequests.size;
+    console.log(`🚫 LocationService: Cancelling ${activeCount} active GPS request(s)...`);
+    
+    if (activeCount === 0) {
+      console.log('✅ No active GPS requests to cancel');
+      return;
+    }
+    
+    for (const [debugId, { progressTimeout }] of this.activeRequests.entries()) {
+      if (progressTimeout) {
+        clearInterval(progressTimeout);
+        console.log(`🚫 Cancelled GPS request [${debugId}] - no more progress messages`);
+      }
+    }
+    
+    this.activeRequests.clear();
+    console.log(`✅ All ${activeCount} GPS request(s) cancelled successfully`);
+  }
+  
   /**
    * Get user's current GPS location with proper permission handling
    */
-  static async getCurrentLocation() {
+  static async getCurrentLocation(skipGPS = false) {
     const debugId = Date.now();
-    console.log(`📍 LocationService [${debugId}]: Requesting location permissions...`);
+    const isEmulatorDevice = this.isEmulator();
+    
+    console.log(`📍 LocationService [${debugId}]: ${skipGPS ? 'SKIPPING GPS' : 'Requesting location'} permissions...`);
+    
+    // Skip GPS if requested - immediately return cached or default location
+    if (skipGPS) {
+      console.log(`⚡ [${debugId}]: Skip GPS enabled - using cached/default location`);
+      
+      // Try cached location first
+      const cachedLocation = await this.getCachedLocation();
+      if (cachedLocation) {
+        console.log(`✅ [${debugId}]: Using cached location:`, cachedLocation);
+        return {
+          ...cachedLocation,
+          isCached: true,
+          isSkippedGPS: true,
+          debugId
+        };
+      }
+      
+      // Fallback to default Puchong location
+      console.log(`🏠 [${debugId}]: No cached location, using default Puchong coordinates`);
+      const defaultLocation = {
+        lat: 3.0738,
+        lon: 101.5183,
+        accuracy: null,
+        timestamp: Date.now(),
+        isDefault: true,
+        isSkippedGPS: true,
+        debugId
+      };
+      
+      await this.cacheLocation(defaultLocation);
+      return defaultLocation;
+    }
+    
+    // GPS configuration with realistic timeouts for better reliability
+    const emulatorConfig = {
+      timeout: isEmulatorDevice ? 10000 : 30000, // 10s for emulator, 30s for device
+      accuracy: isEmulatorDevice ? Location.Accuracy.Balanced : Location.Accuracy.High,
+      progressInterval: 3000 // Show progress every 3s
+    };
+    
+    console.log(`🔧 GPS Configuration: ${isEmulatorDevice ? 'EMULATOR MODE' : 'DEVICE MODE'}`, emulatorConfig);
     
     try {
       // Request location permissions
@@ -26,19 +119,34 @@ class LocationService {
       
       console.log('✅ Location permission granted');
       
-      // Get current position with high accuracy - reduced timeout for faster fallback
-      console.log(`📡 [${debugId}]: Calling getCurrentPositionAsync() with 5s timeout`);
+      // Get current position with emulator-aware configuration
+      console.log(`📡 [${debugId}]: Calling getCurrentPositionAsync() with ${emulatorConfig.timeout}ms timeout`);
       
       // Add progress tracking for GPS request
       const progressTimeout = setInterval(() => {
         console.log(`⏳ [${debugId}]: GPS request still in progress...`);
-      }, 2000); // Log every 2 seconds
+      }, emulatorConfig.progressInterval);
       
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-        timeout: 5000, // Reduced to 5 seconds for faster fallback
+      // Track this request for potential cancellation
+      this.activeRequests.set(debugId, { progressTimeout });
+      
+      // Enhanced timeout using Promise.race to ensure cleanup
+      const gpsPromise = Location.getCurrentPositionAsync({
+        accuracy: emulatorConfig.accuracy,
+        timeout: emulatorConfig.timeout,
       });
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`GPS timeout after ${emulatorConfig.timeout}ms [${debugId}]`));
+        }, emulatorConfig.timeout + 500); // Add 500ms buffer
+      });
+      
+      const location = await Promise.race([gpsPromise, timeoutPromise]);
+      
+      // Clean up tracking
       clearInterval(progressTimeout);
+      this.activeRequests.delete(debugId);
       console.log(`📡 [${debugId}]: getCurrentPositionAsync() completed successfully`);
       console.log(`📡 [${debugId}]: Raw location:`, location.coords);
       
@@ -57,9 +165,17 @@ class LocationService {
       return coordinates;
       
     } catch (error) {
-      // Clear the progress interval to prevent memory leak
-      if (typeof progressTimeout !== 'undefined') {
-        clearInterval(progressTimeout);
+      // Ensure cleanup happens regardless of how timeout fails
+      const requestData = this.activeRequests.get(debugId);
+      if (requestData && requestData.progressTimeout) {
+        clearInterval(requestData.progressTimeout);
+        this.activeRequests.delete(debugId);
+        console.log(`🧹 [${debugId}]: Cleaned up failed GPS request`);
+      }
+      
+      // Log timeout-specific information for debugging
+      if (error.message && error.message.includes('timeout')) {
+        console.log(`⏰ [${debugId}]: GPS timeout occurred (likely emulator/simulator) - falling back to cached/default location`);
       }
       
       console.error(`❌ [${debugId}]: GPS location failed:`, error.message);
@@ -378,12 +494,12 @@ class LocationService {
   /**
    * Get location with Malaysia validation and nearest location fallback
    */
-  static async getCurrentLocationWithMalaysiaCheck() {
+  static async getCurrentLocationWithMalaysiaCheck(skipGPS = false) {
     console.log('📍 LocationService: Getting location with Malaysia validation...');
     
     try {
       // Get current location
-      const location = await this.getCurrentLocation();
+      const location = await this.getCurrentLocation(skipGPS);
       
       // Check if location is in Malaysia
       if (this.isLocationInMalaysia(location.lat, location.lon)) {
