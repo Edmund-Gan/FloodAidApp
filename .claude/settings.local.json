@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir services)",
+      "Bash(dir utils)",
+      "Bash(copy App.js App.js.backup)",
+      "Bash(npm install)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
