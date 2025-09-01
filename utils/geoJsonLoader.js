@@ -225,10 +225,10 @@ const processCoordinates = (geometry) => {
       return null;
     }
     
-    // Performance optimization: simplify complex polygons
-    if (coordinates.length > 200) {
+    // Performance optimization: simplify complex polygons for mobile rendering
+    if (coordinates.length > 50) {
       console.log(`📐 Simplifying polygon with ${coordinates.length} coordinates`);
-      coordinates = simplifyPolygon(coordinates, 200);
+      coordinates = simplifyPolygon(coordinates, 30);
       console.log(`📐 Simplified to ${coordinates.length} coordinates`);
     }
     
@@ -298,10 +298,11 @@ const simplifyPolygon = (coordinates, maxPoints) => {
  * Get processed district polygons with flood data
  * Main function to call from components - uses caching for performance
  * @param {boolean} floodDataOnly - If true, only return districts with flood data (default: true for performance)
+ * @param {number} limit - Maximum number of districts to return (default: 15 for performance)
  */
-export const getDistrictPolygons = (floodDataOnly = true) => {
-  // Create separate cache keys for different data sets
-  const cacheKey = floodDataOnly ? 'floodDataOnly' : 'allDistricts';
+export const getDistrictPolygons = (floodDataOnly = true, limit = 15) => {
+  // Create cache key including limit
+  const cacheKey = `${floodDataOnly ? 'floodDataOnly' : 'allDistricts'}_${limit}`;
   
   // Return cached data if available
   if (cachedPolygons && cachedPolygons[cacheKey]) {
@@ -321,7 +322,20 @@ export const getDistrictPolygons = (floodDataOnly = true) => {
     
     const processedDistricts = processDistrictPolygons(geoJsonData, floodDataOnly);
     
-    if (processedDistricts.length === 0) {
+    // Apply limit for performance - prioritize high-risk districts first
+    const limitedDistricts = processedDistricts
+      .sort((a, b) => {
+        // Sort by risk level first (High > Medium > Low > NoData)
+        const riskOrder = { 'High': 4, 'Medium': 3, 'Low': 2, 'NoData': 1 };
+        const riskDiff = (riskOrder[b.riskLevel] || 0) - (riskOrder[a.riskLevel] || 0);
+        if (riskDiff !== 0) return riskDiff;
+        
+        // Then by event count
+        return (b.totalEvents || 0) - (a.totalEvents || 0);
+      })
+      .slice(0, limit);
+    
+    if (limitedDistricts.length === 0) {
       console.warn('⚠️ No districts were processed successfully');
       return [];
     }
@@ -332,10 +346,10 @@ export const getDistrictPolygons = (floodDataOnly = true) => {
     }
     
     // Cache the results
-    cachedPolygons[cacheKey] = processedDistricts;
-    console.log(`✅ Cached ${processedDistricts.length} polygon districts (${cacheKey}) for future use`);
+    cachedPolygons[cacheKey] = limitedDistricts;
+    console.log(`✅ Cached ${limitedDistricts.length} polygon districts (${cacheKey}) for future use (limited from ${processedDistricts.length} total)`);
     
-    return processedDistricts;
+    return limitedDistricts;
     
   } catch (error) {
     console.error('❌ Error getting district polygons:', error.message);

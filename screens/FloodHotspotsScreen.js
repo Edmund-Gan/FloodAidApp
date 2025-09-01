@@ -536,58 +536,82 @@ export default function FloodHotspotsScreen() {
       </View>
 
       {/* Map */}
-      <MapView
-        provider={PROVIDER_GOOGLE}
-        style={styles.map}
-        region={mapRegion}
-        onRegionChangeComplete={setMapRegion}
-        showsUserLocation={false}
-        showsMyLocationButton={false}
-        showsCompass={true}
-        showsScale={true}
-        mapType="standard"
-        onMapReady={() => console.log('🗺️ Flood hotspot map ready - Google Maps loaded successfully')}
-        onLayout={() => console.log('🗺️ MapView layout complete')}
-      >
-        {/* Test marker to verify map is working */}
+      <View style={styles.mapContainer}>
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          initialRegion={{
+            latitude: 4.2105, // Center of Malaysia
+            longitude: 101.9758,
+            latitudeDelta: 8.0, // Show most of Malaysia
+            longitudeDelta: 8.0,
+          }}
+          region={mapRegion}
+          onRegionChangeComplete={setMapRegion}
+          showsUserLocation={false}
+          showsMyLocationButton={false}
+          showsCompass={true}
+          showsScale={true}
+          mapType="standard"
+          onMapReady={() => {
+            console.log('🗺️ Google Maps loaded successfully');
+            setIsLoading(false);
+          }}
+          onError={(error) => {
+            console.error('❌ MapView error:', error);
+            setIsLoading(false);
+            Alert.alert(
+              'Map Loading Error', 
+              'Unable to load Google Maps. Please check:\n• Internet connection\n• Google Maps API key\n• Try restarting the app',
+              [{ text: 'OK' }]
+            );
+          }}
+          onLayout={() => console.log('🗺️ MapView layout complete')}
+        >
+        {/* Test markers to verify map is working */}
         <Marker
           coordinate={{
             latitude: 3.1390,
             longitude: 101.6869
           }}
-          title="Test Location - Puchong"
-          description="Map is working correctly"
+          title="Kuala Lumpur"
+          description="Test marker - Map working ✅"
+          pinColor="red"
+        />
+        
+        <Marker
+          coordinate={{
+            latitude: 1.4927,
+            longitude: 103.7414
+          }}
+          title="Johor Bahru"
+          description="Southern Malaysia"
           pinColor="blue"
         />
         
-        {/* Render polygons with extensive logging */}
-        {getFilteredPolygons()
-          .filter(polygon => {
-            const isValid = polygon.coordinates && polygon.coordinates.length > 0;
-            if (!isValid) {
-              console.warn(`⚠️ Skipping invalid polygon: ${polygon.name || 'unnamed'}`, polygon);
-            }
-            return isValid;
-          })
-          .map((polygon, index) => {
-            console.log(`🗺️ Rendering polygon ${index + 1}: ${polygon.name} (${polygon.coordinates.length} coords, ${polygon.riskLevel} risk)`);
-            return (
-              <Polygon
-                key={`${polygon.id}-${index}`}
-                coordinates={polygon.coordinates}
-                fillColor={`${polygon.fillColor}40`} // 25% opacity for visibility
-                strokeColor={polygon.strokeColor}
-                strokeWidth={polygon.riskLevel === 'High' ? 3 : polygon.riskLevel === 'Medium' ? 2 : 1}
-                tappable={true}
-                onPress={() => {
-                  console.log(`🔍 Polygon pressed: ${polygon.name}`);
-                  handlePolygonPress(polygon);
-                }}
-                zIndex={polygon.riskLevel === 'High' ? 3 : polygon.riskLevel === 'Medium' ? 2 : 1}
-              />
-            );
-          })}
+        <Marker
+          coordinate={{
+            latitude: 5.9804,
+            longitude: 116.0735
+          }}
+          title="Kota Kinabalu"
+          description="Sabah, East Malaysia"
+          pinColor="green"
+        />
+        
+        {/* TODO: Add polygons back after basic map works */}
+        {/* Temporarily disabled complex polygon rendering for debugging */}
+        {false && getFilteredPolygons()}
+        
+        {/* Loading overlay for map */}
+        {isLoading && (
+          <View style={styles.mapLoadingOverlay}>
+            <ActivityIndicator size="large" color="#2196F3" />
+            <Text style={styles.mapLoadingText}>Loading map...</Text>
+          </View>
+        )}
       </MapView>
+      </View>
 
       {/* Map Legend */}
       <View style={styles.mapLegend}>
@@ -746,11 +770,31 @@ const styles = StyleSheet.create({
   },
   
   // Map Styles
-  map: {
+  mapContainer: {
     flex: 1,
     marginHorizontal: 20,
     borderRadius: 10,
     overflow: 'hidden',
+    position: 'relative',
+  },
+  map: {
+    flex: 1,
+  },
+  mapLoadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  mapLoadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#666',
   },
   
   

@@ -30,7 +30,15 @@
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets\\dev/**)",
       "Bash(python:*)",
-      "Bash(timeout 300 python fix_2025_predictions.py)"
+      "Bash(timeout 300 python fix_2025_predictions.py)",
+      "Bash(npx expo install:*)",
+      "Bash(npm install:*)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Bash(node:*)",
+      "Bash(npx expo start:*)"
     ],
     "deny": [],
     "ask": []

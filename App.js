@@ -28,8 +28,8 @@ import FloodPredictionModel from './services/FloodPredictionModel';
 import LocationService from './services/LocationService';
 import GeoJSONService from './services/GeoJSONService';
 
-// Import FloodHotspotsScreen for Epic 3
-import FloodHotspotsScreen from './screens/FloodHotspotsScreen';
+// Import FloodHotspotsScreen for Epic 3 - Using CSV data version
+import FloodHotspotsScreen from './screens/FloodHotspotsCSV';
 
 const { width, height } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
