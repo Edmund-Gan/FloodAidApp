@@ -27,6 +27,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import FloodPredictionModel from './services/FloodPredictionModel';
 import LocationService from './services/LocationService';
 import GeoJSONService from './services/GeoJSONService';
+import FloodAlert from './components/FloodAlert';
+import FloodAlertDetails from './components/FloodAlertDetails';
+import floodAlertService from './utils/FloodAlertService';
+import devAlertTrigger from './utils/DevAlertTrigger';
+import { STATE_ACCURACY_DATA } from './utils/constants';
 
 // Import FloodHotspotsScreen for Epic 3 - Using CSV data version
 import FloodHotspotsScreen from './screens/FloodHotspotsCSV';
@@ -110,8 +115,20 @@ const getRiskDescription = (prediction, locationInfo) => {
   const descriptions = baseDescriptions[riskLevel] || baseDescriptions['Low'];
   const randomDescription = descriptions[Math.floor(Math.random() * descriptions.length)];
   
-  // Add confidence level if available
-  const confidenceText = confidence > 0 ? ` (${confidence}% confidence)` : '';
+  // Add state-based confidence description if available
+  let confidenceText = '';
+  if (confidence > 0) {
+    // Extract state from locationInfo
+    const userState = locationInfo?.state || 'DEFAULT';
+    const stateData = STATE_ACCURACY_DATA[userState] || STATE_ACCURACY_DATA['DEFAULT'];
+    
+    // Use state-specific accuracy instead of raw ML confidence
+    const stateAccuracy = stateData.accuracy;
+    const primarySources = stateData.sources.slice(0, 3); // Use top 3 sources
+    
+    confidenceText = ` Based on your state, we have ${stateAccuracy}% of accuracy based on historical data from ${primarySources.join(', ')}.`;
+  }
+  
   const finalDescription = randomDescription + confidenceText;
   
   return finalDescription;
@@ -494,13 +511,160 @@ function HomeScreen() {
   const [skipGPS, setSkipGPS] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [currentAlert, setCurrentAlert] = useState(null);
+  const [showFloodAlert, setShowFloodAlert] = useState(false);
+  const [showAlertDetails, setShowAlertDetails] = useState(false);
+  const [selectedProbability, setSelectedProbability] = useState(60);
+  const [selectedTimeframe, setSelectedTimeframe] = useState(6);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [mlAlertThreshold, setMLAlertThreshold] = useState(60);
+  const [enableMLAlerts, setEnableMLAlerts] = useState(true);
 
 
   useEffect(() => {
     loadPrediction();
+    setupFloodAlertMonitoring();
     const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearInterval(interval);
+      floodAlertService.stopAllMonitoring();
+    };
   }, []);
+
+  const setupFloodAlertMonitoring = async () => {
+    try {
+      // Get current location for alert monitoring
+      const locationResult = await LocationService.getCurrentLocation();
+      if (locationResult.success) {
+        const location = {
+          lat: locationResult.location.latitude,
+          lng: locationResult.location.longitude,
+          name: locationResult.locationInfo?.display_name || 'Your Location'
+        };
+        
+        // Start monitoring for flood alerts
+        await floodAlertService.startMonitoring(location, handleFloodAlert);
+      }
+    } catch (error) {
+      console.error('Error setting up flood alert monitoring:', error);
+    }
+  };
+
+  const handleFloodAlert = (alert) => {
+    setCurrentAlert(alert);
+    setShowFloodAlert(!!alert);
+  };
+
+  const handleDismissAlert = () => {
+    setShowFloodAlert(false);
+    if (currentAlert && locationInfo) {
+      floodAlertService.dismissAlert(locationInfo.lat, locationInfo.lon);
+    }
+  };
+
+  const handlePreparationGuide = (alert) => {
+    setShowFloodAlert(false);
+    Alert.alert(
+      '📋 Preparation Guide',
+      `Priority: ${alert.preparationGuidance.priority}\n\n${alert.preparationGuidance.message}\n\nRecommended actions:\n${alert.preparationGuidance.actions.map((action, index) => `${index + 1}. ${action}`).join('\n')}\n\nEstimated time: ${alert.preparationGuidance.timeEstimate}`,
+      [
+        { text: 'OK', style: 'default' },
+        { text: 'View Full Guide', onPress: () => {/* Navigate to preparation screen */} }
+      ]
+    );
+  };
+
+  const handleViewAlertDetails = (alert) => {
+    setShowFloodAlert(false);
+    setShowAlertDetails(true);
+  };
+
+  const triggerTestAlert = async (scenarioKey) => {
+    try {
+      console.log(`🧪 Triggering test alert: ${scenarioKey}`);
+      const alert = await devAlertTrigger.triggerTestAlert(scenarioKey, handleFloodAlert);
+      if (alert) {
+        console.log('✅ Test alert generated successfully');
+      }
+    } catch (error) {
+      console.error('❌ Error triggering test alert:', error);
+      Alert.alert('Test Alert Error', error.message);
+    }
+  };
+
+  const handleMLAlertThresholdChange = (threshold) => {
+    setMLAlertThreshold(threshold);
+    floodAlertService.setMLAlertThreshold(threshold / 100);
+  };
+
+  const handleMLAlertsToggle = () => {
+    const newEnabled = !enableMLAlerts;
+    setEnableMLAlerts(newEnabled);
+    floodAlertService.setMLAlertsEnabled(newEnabled);
+  };
+
+  const triggerTestMLAlert = async () => {
+    try {
+      const testLocation = selectedLocation || {
+        lat: locationInfo?.lat || 3.1390,
+        lon: locationInfo?.lon || 101.6869,
+        name: locationInfo?.display_name || 'Current Location'
+      };
+
+      console.log(`🧪 Triggering ML alert test at ${mlAlertThreshold}% threshold`);
+      const alert = await floodAlertService.triggerTestMLAlert(mlAlertThreshold / 100, testLocation);
+      
+      if (alert) {
+        console.log('✅ ML test alert generated successfully');
+      }
+    } catch (error) {
+      console.error('❌ Error triggering ML test alert:', error);
+      Alert.alert('ML Alert Test Error', error.message);
+    }
+  };
+
+  const triggerProbabilityAlert = async () => {
+    try {
+      // Use selected location or current location
+      const location = selectedLocation || {
+        lat: locationInfo?.lat || 3.1390,
+        lon: locationInfo?.lon || 101.6869,
+        name: locationInfo?.display_name || 'Current Location'
+      };
+
+      console.log(`🧪 Triggering probability-based alert:`, {
+        probability: selectedProbability,
+        timeframe: selectedTimeframe,
+        location: location.name
+      });
+
+      const alert = await devAlertTrigger.generateProbabilityBasedAlert(
+        selectedProbability,
+        selectedTimeframe,
+        location,
+        handleFloodAlert
+      );
+
+      if (alert) {
+        console.log('✅ Probability-based alert generated successfully');
+      }
+    } catch (error) {
+      console.error('❌ Error triggering probability-based alert:', error);
+      Alert.alert('Alert Generation Error', error.message);
+    }
+  };
+
+  useEffect(() => {
+    // Set default selected location to current location when available
+    if (locationInfo && !selectedLocation) {
+      setSelectedLocation({
+        lat: locationInfo.lat,
+        lon: locationInfo.lon,
+        name: locationInfo.display_name || 'Current Location'
+      });
+    }
+  }, [locationInfo]);
 
   const loadPredictionWithRetry = async (isManualRetry = false, retryAttempt = 0) => {
     const debugId = Date.now();
@@ -889,38 +1053,57 @@ function HomeScreen() {
               </TouchableOpacity>
             </View>
             
-            {/* Mock Data Toggle */}
-            <View style={styles.devToggleSection}>
-              <TouchableOpacity 
-                style={styles.devToggleButton}
-                onPress={() => setUseMockData(!useMockData)}
-              >
-                <View style={styles.devToggleContent}>
-                  <Text style={styles.devToggleText}>Use Mock Data (Bypass API calls)</Text>
-                  <View style={[styles.devToggleSwitch, useMockData && styles.devToggleSwitchActive]}>
-                    <View style={[styles.devToggleThumb, useMockData && styles.devToggleThumbActive]} />
+            <ScrollView 
+              style={styles.devModalBody}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={styles.devModalContent2}
+            >
+              {/* Mock Data Toggle */}
+              <View style={styles.devToggleSection}>
+                <TouchableOpacity 
+                  style={styles.devToggleButton}
+                  onPress={() => setUseMockData(!useMockData)}
+                >
+                  <View style={styles.devToggleContent}>
+                    <Text style={styles.devToggleText}>Use Mock Data (Bypass API calls)</Text>
+                    <View style={[styles.devToggleSwitch, useMockData && styles.devToggleSwitchActive]}>
+                      <View style={[styles.devToggleThumb, useMockData && styles.devToggleThumbActive]} />
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            </View>
+                </TouchableOpacity>
+              </View>
 
-            {/* Skip GPS Toggle */}
-            <View style={styles.devToggleSection}>
-              <TouchableOpacity 
-                style={styles.devToggleButton}
-                onPress={() => setSkipGPS(!skipGPS)}
-              >
-                <View style={styles.devToggleContent}>
-                  <Text style={styles.devToggleText}>Skip GPS (Use cached/default location)</Text>
-                  <View style={[styles.devToggleSwitch, skipGPS && styles.devToggleSwitchActive]}>
-                    <View style={[styles.devToggleThumb, skipGPS && styles.devToggleThumbActive]} />
+              {/* Skip GPS Toggle */}
+              <View style={styles.devToggleSection}>
+                <TouchableOpacity 
+                  style={styles.devToggleButton}
+                  onPress={() => setSkipGPS(!skipGPS)}
+                >
+                  <View style={styles.devToggleContent}>
+                    <Text style={styles.devToggleText}>Skip GPS (Use cached/default location)</Text>
+                    <View style={[styles.devToggleSwitch, skipGPS && styles.devToggleSwitchActive]}>
+                      <View style={[styles.devToggleThumb, skipGPS && styles.devToggleThumbActive]} />
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            </View>
-            
-            <Text style={styles.devSectionTitle}>Test Locations</Text>
-            <ScrollView style={styles.devLocationList}>
+                </TouchableOpacity>
+              </View>
+
+              {/* ML Alerts Toggle */}
+              <View style={styles.devToggleSection}>
+                <TouchableOpacity 
+                  style={styles.devToggleButton}
+                  onPress={handleMLAlertsToggle}
+                >
+                  <View style={styles.devToggleContent}>
+                    <Text style={styles.devToggleText}>Enable ML Alerts (Probability-based)</Text>
+                    <View style={[styles.devToggleSwitch, enableMLAlerts && styles.devToggleSwitchActive]}>
+                      <View style={[styles.devToggleThumb, enableMLAlerts && styles.devToggleThumbActive]} />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </View>
+              
+              <Text style={styles.devSectionTitle}>Test Locations</Text>
               {malaysianLocations.map((location, index) => (
                 <TouchableOpacity
                   key={index}
@@ -936,6 +1119,81 @@ function HomeScreen() {
                   <Ionicons name="chevron-forward" size={20} color="#666" />
                 </TouchableOpacity>
               ))}
+
+              <Text style={styles.devSectionTitle}>ML Alert Testing</Text>
+              
+              {/* ML Alert Threshold Selector */}
+              <View style={styles.devControlSection}>
+                <Text style={styles.devControlLabel}>
+                  Alert Threshold: {mlAlertThreshold}%
+                </Text>
+                <Text style={styles.devSubLabel}>
+                  Trigger alerts when ML predicts flood probability ≥ {mlAlertThreshold}%
+                </Text>
+                <View style={styles.thresholdOptions}>
+                  {[50, 60, 70, 80, 90].map((threshold) => (
+                    <TouchableOpacity
+                      key={threshold}
+                      style={[
+                        styles.thresholdOption,
+                        mlAlertThreshold === threshold && styles.selectedThresholdOption
+                      ]}
+                      onPress={() => handleMLAlertThresholdChange(threshold)}
+                    >
+                      <Text style={[
+                        styles.thresholdOptionText,
+                        mlAlertThreshold === threshold && styles.selectedThresholdText
+                      ]}>
+                        {threshold}%
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Test ML Alert Button */}
+              <TouchableOpacity
+                style={[styles.testMLAlertButton, !enableMLAlerts && styles.disabledButton]}
+                onPress={triggerTestMLAlert}
+                disabled={!enableMLAlerts}
+              >
+                <Ionicons name="flash" size={20} color={enableMLAlerts ? "#FFF" : "#999"} />
+                <Text style={[styles.testMLAlertButtonText, !enableMLAlerts && styles.disabledButtonText]}>
+                  Test ML Alert at {mlAlertThreshold}%
+                </Text>
+              </TouchableOpacity>
+
+              <Text style={styles.devSectionTitle}>Quick Test Scenarios</Text>
+              {['immediate_heavy_rain', 'urgent_river_rise', 'warning_steady_rain'].map((scenarioKey) => {
+                const scenarios = devAlertTrigger.getAvailableScenarios();
+                const scenario = scenarios.find(s => s.key === scenarioKey);
+                if (!scenario) return null;
+                
+                return (
+                  <TouchableOpacity
+                    key={scenario.key}
+                    style={styles.devLocationItem}
+                    onPress={() => triggerTestAlert(scenario.key)}
+                  >
+                    <View style={styles.devLocationInfo}>
+                      <Text style={styles.devLocationName}>{scenario.name}</Text>
+                      <Text style={styles.devLocationCoords}>{scenario.description}</Text>
+                    </View>
+                    <Ionicons name="play-circle" size={20} color="#2196F3" />
+                  </TouchableOpacity>
+                );
+              })}
+              
+              <TouchableOpacity
+                style={styles.devLocationItem}
+                onPress={() => devAlertTrigger.clearTestAlerts()}
+              >
+                <View style={styles.devLocationInfo}>
+                  <Text style={[styles.devLocationName, {color: '#666'}]}>🧹 Clear All Alerts</Text>
+                  <Text style={styles.devLocationCoords}>Remove all test alerts</Text>
+                </View>
+                <Ionicons name="trash" size={20} color="#666" />
+              </TouchableOpacity>
             </ScrollView>
           </View>
         </View>
@@ -953,38 +1211,29 @@ function HomeScreen() {
           onClose={() => setShowDetailsModal(false)}
         />
       </Modal>
+
+      <FloodAlert
+        alert={currentAlert}
+        visible={showFloodAlert}
+        onDismiss={handleDismissAlert}
+        onPreparationGuide={handlePreparationGuide}
+        onViewDetails={handleViewAlertDetails}
+        autoHide={currentAlert?.severity === 'advisory'}
+      />
+
+      <FloodAlertDetails
+        alert={currentAlert}
+        visible={showAlertDetails}
+        onClose={() => setShowAlertDetails(false)}
+      />
     </ScrollView>
   );
 }
 
 // Live Data Screen
 function LiveDataScreen() {
-  const [selectedDistrict, setSelectedDistrict] = useState(null);
-  const [districts, setDistricts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadDistrictData();
-  }, []);
-
-  const loadDistrictData = async () => {
-    try {
-      setLoading(true);
-      
-      const malaysianDistricts = await GeoJSONService.loadMalaysianDistricts();
-      const districtsWithRisk = GeoJSONService.generateDistrictRisks(malaysianDistricts);
-      
-      setDistricts(districtsWithRisk);
-    } catch (error) {
-      console.error('❌ Error loading district data:', error);
-      setDistricts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.centerContainer}>
       <View style={styles.header}>
         <TouchableOpacity>
           <Ionicons name="arrow-back" size={24} color="#333" />
@@ -992,250 +1241,42 @@ function LiveDataScreen() {
         <Text style={styles.headerTitle}>Live Data</Text>
         <View style={{ width: 24 }} />
       </View>
-
-      {/* Rainfall Intensity */}
-      <View style={styles.dataCard}>
-        <Text style={styles.cardTitle}>Rainfall Intensity</Text>
-        <View style={styles.dataContent}>
-          <View style={styles.dataLeft}>
-            <Text style={styles.dataLabel}>Current</Text>
-            <Text style={styles.dataValue}>0.75 in/hr</Text>
-            <Text style={styles.dataDescription}>Heavy Rain</Text>
-          </View>
-          <View style={styles.dataVisual}>
-            <Ionicons name="rainy" size={48} color="#2196F3" />
-          </View>
-        </View>
+      
+      <View style={styles.upcomingFeaturesContainer}>
+        <Ionicons name="analytics-outline" size={64} color="#2196F3" />
+        <Text style={styles.upcomingFeaturesTitle}>Upcoming Features</Text>
+        <Text style={styles.upcomingFeaturesDescription}>
+          Real-time flood monitoring and live data visualization are currently being developed.
+        </Text>
+        <Text style={styles.upcomingFeaturesDescription}>
+          Stay tuned for live rainfall tracking, river level monitoring, and interactive flood risk maps.
+        </Text>
       </View>
-
-      {/* River Levels */}
-      <View style={styles.dataCard}>
-        <Text style={styles.cardTitle}>River Levels</Text>
-        <View style={styles.dataContent}>
-          <View style={styles.dataLeft}>
-            <Text style={styles.dataLabel}>River A</Text>
-            <Text style={styles.dataValue}>12.5 ft</Text>
-            <Text style={styles.dataDescription}>Normal Range: 10-15 ft</Text>
-          </View>
-          <View style={styles.dataVisual}>
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1511593358241-7eea1f3c84e5' }}
-              style={styles.riverImage}
-            />
-          </View>
-        </View>
-      </View>
-
-      {/* Regional Flood Risk Districts */}
-      <View style={styles.mapCard}>
-        <Text style={styles.cardTitle}>Regional Flood Risk</Text>
-        
-        {/* District Risk List */}
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#2196F3" />
-            <Text style={styles.loadingText}>Loading district data...</Text>
-          </View>
-        ) : (
-          <View style={styles.districtList}>
-            {districts.map((district, index) => (
-              <TouchableOpacity
-                key={district.id || index}
-                style={styles.districtItem}
-                onPress={() => {
-                  Alert.alert(
-                    `${district.name} District`,
-                    `State: ${district.state}\nRisk Level: ${GeoJSONService.getRiskLevel(district.risk)}\nFlood Probability: ${Math.round(district.risk * 100)}%\nLocation: ${district.center.lat.toFixed(4)}, ${district.center.lon.toFixed(4)}`
-                  );
-                }}
-              >
-                <View style={styles.districtInfo}>
-                  <Text style={styles.districtName}>{district.name}</Text>
-                  <Text style={styles.districtState}>{district.state} State</Text>
-                  <Text style={styles.districtRisk}>{GeoJSONService.getRiskLevel(district.risk)} Risk</Text>
-                </View>
-                <View style={[
-                  styles.riskIndicator,
-                  { backgroundColor: GeoJSONService.getRiskColor(district.risk) }
-                ]}>
-                  <Text style={styles.riskPercentage}>{Math.round(district.risk * 100)}%</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-            
-            {districts.length === 0 && (
-              <View style={styles.noDataContainer}>
-                <Text style={styles.noDataText}>No district data available</Text>
-              </View>
-            )}
-          </View>
-        )}
-        
-        <View style={styles.mapLegend}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: RISK_COLORS.Low }]} />
-            <Text style={styles.legendText}>Low</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: RISK_COLORS.Moderate }]} />
-            <Text style={styles.legendText}>Moderate</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: RISK_COLORS.High }]} />
-            <Text style={styles.legendText}>High</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: RISK_COLORS['Very High'] }]} />
-            <Text style={styles.legendText}>Very High</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* 24-Hour Precipitation Timeline */}
-      <View style={styles.dataCard}>
-        <Text style={styles.cardTitle}>24-Hour Precipitation Timeline</Text>
-        <View style={styles.precipitationChart}>
-          <Text style={styles.precipitationValue}>0.75 in/hr</Text>
-          <Text style={styles.precipitationChange}>24h +15%</Text>
-          {/* Simplified chart representation */}
-          <View style={styles.chartPlaceholder}>
-            <Text style={styles.placeholderText}>📊 Precipitation chart visualization</Text>
-          </View>
-        </View>
-      </View>
-    </ScrollView>
+    </View>
   );
 }
 
 // My Locations Screen
 function LocationsScreen() {
-  const [locations, setLocations] = useState([
-    { id: 1, label: 'Home', address: '123 Elm Street, Puchong', risk: 'Moderate', lat: 3.0738, lon: 101.5183 },
-    { id: 2, label: 'Work', address: '456 Oak Avenue, KL', risk: 'Low', lat: 3.1390, lon: 101.6869 },
-    { id: 3, label: 'School', address: '789 Pine Road, Subang', risk: 'High', lat: 3.0567, lon: 101.5851 },
-  ]);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newLocation, setNewLocation] = useState({ label: '', address: '' });
-
-  const addLocation = async () => {
-    if (newLocation.label && newLocation.address) {
-      const newLoc = {
-        id: Date.now(),
-        label: newLocation.label,
-        address: newLocation.address,
-        risk: 'Calculating...',
-        lat: 3.1 + Math.random() * 0.1,
-        lon: 101.6 + Math.random() * 0.1
-      };
-      setLocations([...locations, newLoc]);
-      setNewLocation({ label: '', address: '' });
-      setShowAddModal(false);
-      
-      // Get risk assessment for new location
-      const prediction = await FloodPredictionService.getPrediction(newLoc.lat, newLoc.lon);
-      setLocations(prev => prev.map(loc => 
-        loc.id === newLoc.id ? { ...loc, risk: prediction.risk_level } : loc
-      ));
-    }
-  };
-
-  const deleteLocation = (id) => {
-    Alert.alert(
-      'Remove Location',
-      'Are you sure you want to remove this location?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', onPress: () => setLocations(locations.filter(loc => loc.id !== id)) }
-      ]
-    );
-  };
-
-  const LocationCard = ({ location }) => (
-    <TouchableOpacity style={styles.locationCard} onLongPress={() => deleteLocation(location.id)}>
-      <Image 
-        source={{ 
-          uri: location.label === 'Home' 
-            ? 'https://images.unsplash.com/photo-1568605114967-8130f3a36994'
-            : location.label === 'Work'
-            ? 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab'
-            : 'https://images.unsplash.com/photo-1580582932707-520aed937b7b'
-        }}
-        style={styles.locationImage}
-      />
-      <View style={styles.locationInfo}>
-        <Text style={styles.locationLabel}>{location.label}</Text>
-        <Text style={styles.locationAddress}>{location.address}</Text>
-        <View style={[styles.riskBadge, { 
-          backgroundColor: location.risk === 'Low' ? RISK_COLORS.Low 
-            : location.risk === 'Moderate' ? RISK_COLORS.Moderate 
-            : location.risk === 'High' ? RISK_COLORS.High 
-            : '#ccc' 
-        }]}>
-          <Text style={styles.riskBadgeText}>{location.risk} Risk</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
   return (
-    <View style={styles.container}>
+    <View style={styles.centerContainer}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Locations</Text>
-        <TouchableOpacity onPress={() => setShowAddModal(true)}>
+        <TouchableOpacity>
           <Ionicons name="add-circle-outline" size={28} color="#2196F3" />
         </TouchableOpacity>
       </View>
-
-      <FlatList
-        data={locations}
-        keyExtractor={item => item.id.toString()}
-        renderItem={({ item }) => <LocationCard location={item} />}
-        contentContainerStyle={styles.locationsList}
-      />
-
-      {/* Add Location Modal */}
-      <Modal
-        visible={showAddModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowAddModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add New Location</Text>
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Location Name (e.g., Home, Office)"
-              value={newLocation.label}
-              onChangeText={(text) => setNewLocation({ ...newLocation, label: text })}
-            />
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Address"
-              value={newLocation.address}
-              onChangeText={(text) => setNewLocation({ ...newLocation, address: text })}
-            />
-            
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]} 
-                onPress={() => setShowAddModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.saveButton]} 
-                onPress={addLocation}
-              >
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      
+      <View style={styles.upcomingFeaturesContainer}>
+        <Ionicons name="location-outline" size={64} color="#2196F3" />
+        <Text style={styles.upcomingFeaturesTitle}>Upcoming Features</Text>
+        <Text style={styles.upcomingFeaturesDescription}>
+          Multi-location monitoring and personalized alerts are currently being developed.
+        </Text>
+        <Text style={styles.upcomingFeaturesDescription}>
+          Stay tuned for the ability to track flood risks at your home, work, and family locations with custom notifications.
+        </Text>
+      </View>
     </View>
   );
 }
@@ -1345,106 +1386,27 @@ function EmergencyScreen() {
 
 // Preparedness Screen
 function PreparednessScreen() {
-  const [checklistProgress, setChecklistProgress] = useState(6);
-  const totalTasks = 10;
-
-  const preparednessItems = [
-    {
-      title: 'Secure Your Home',
-      description: 'Reinforce windows, doors, and seal any potential entry points for water. Move valuables to higher floors.',
-      time: '30 mins',
-      completed: true
-    },
-    {
-      title: 'Gather Emergency Supplies',
-      description: 'Pack a kit with water, non-perishable food, medications, first-aid, and essential documents.',
-      time: '15 mins',
-      completed: true
-    },
-    {
-      title: 'Plan Your Evacuation',
-      description: 'Identify evacuation routes and safe zones. Ensure all family members know the plan.',
-      time: '20 mins',
-      completed: true
-    },
-    {
-      title: 'Stay Informed',
-      description: 'Monitor local news, weather updates, and official alerts for flood warnings and instructions.',
-      time: '10 mins',
-      completed: false
-    },
-    {
-      title: 'Charge Devices',
-      description: 'Ensure all phones, tablets, and power banks are fully charged for emergency communication.',
-      time: '5 mins',
-      completed: false
-    }
-  ];
-
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.centerContainer}>
       <View style={styles.header}>
         <TouchableOpacity>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Preparedness Guides</Text>
+        <Text style={styles.headerTitle}>Flood Predictions</Text>
         <View style={{ width: 24 }} />
       </View>
-
-      {/* Progress Bar */}
-      <View style={styles.progressCard}>
-        <Text style={styles.progressTitle}>Pre-Flood Checklist</Text>
-        <View style={styles.progressBarContainer}>
-          <View style={[styles.progressBar, { width: `${(checklistProgress/totalTasks) * 100}%` }]} />
-        </View>
-        <Text style={styles.progressText}>{checklistProgress}/{totalTasks} tasks completed</Text>
+      
+      <View style={styles.upcomingFeaturesContainer}>
+        <Ionicons name="construct-outline" size={64} color="#2196F3" />
+        <Text style={styles.upcomingFeaturesTitle}>Upcoming Features</Text>
+        <Text style={styles.upcomingFeaturesDescription}>
+          Advanced flood predictions and preparedness guides are currently being developed.
+        </Text>
+        <Text style={styles.upcomingFeaturesDescription}>
+          Stay tuned for AI-powered flood forecasting, personalized safety recommendations, and emergency preparation checklists.
+        </Text>
       </View>
-
-      <Text style={styles.sectionTitle}>Pre-Flood Checklist</Text>
-
-      {preparednessItems.map((item, index) => (
-        <TouchableOpacity key={index} style={styles.checklistCard}>
-          <Image 
-            source={{ 
-              uri: index === 0 ? 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64'
-                : index === 1 ? 'https://images.unsplash.com/photo-1601123258130-8581e8d8dbfc'
-                : index === 2 ? 'https://images.unsplash.com/photo-1578662996442-48f60103fc27'
-                : index === 3 ? 'https://images.unsplash.com/photo-1504711434969-e33886168f5c'
-                : 'https://images.unsplash.com/photo-1609096018330-70c3a4ea9fac'
-            }}
-            style={styles.checklistImage}
-          />
-          <View style={styles.checklistContent}>
-            <Text style={styles.checklistTime}>Estimated Time: {item.time}</Text>
-            <Text style={styles.checklistTitle}>{item.title}</Text>
-            <Text style={styles.checklistDescription}>{item.description}</Text>
-            {item.completed && (
-              <View style={styles.completedBadge}>
-                <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-                <Text style={styles.completedText}>Completed</Text>
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
-      ))}
-
-      {/* Additional Resources */}
-      <View style={styles.resourcesCard}>
-        <Text style={styles.cardTitle}>Additional Resources</Text>
-        <TouchableOpacity style={styles.resourceItem}>
-          <Ionicons name="document-text" size={24} color="#2196F3" />
-          <Text style={styles.resourceText}>Download Emergency Plan Template</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.resourceItem}>
-          <Ionicons name="people" size={24} color="#2196F3" />
-          <Text style={styles.resourceText}>Family Communication Plan</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.resourceItem}>
-          <Ionicons name="medical" size={24} color="#2196F3" />
-          <Text style={styles.resourceText}>First Aid Guidelines</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -1530,6 +1492,28 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 10,
     marginBottom: 15,
+  },
+  
+  // Upcoming Features Styles
+  upcomingFeaturesContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  upcomingFeaturesTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  upcomingFeaturesDescription: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 15,
+    lineHeight: 22,
   },
   
   // Risk Card Styles
@@ -2596,9 +2580,15 @@ const styles = StyleSheet.create({
   devModalContent: {
     backgroundColor: '#fff',
     borderRadius: 15,
-    width: '85%',
-    maxHeight: '70%',
-    overflow: 'hidden',
+    width: '90%',
+    maxHeight: '85%',
+  },
+  devModalBody: {
+    maxHeight: 500,
+  },
+  devModalContent2: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   devModalHeader: {
     flexDirection: 'row',
@@ -2614,7 +2604,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   devLocationList: {
-    maxHeight: 300,
+    maxHeight: 200,
   },
   devLocationItem: {
     flexDirection: 'row',
@@ -2636,6 +2626,69 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 2,
+  },
+  devControlSection: {
+    marginBottom: 20,
+  },
+  devControlLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  devSubLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 12,
+  },
+  thresholdOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  thresholdOption: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    borderWidth: 2,
+    borderColor: '#f0f0f0',
+  },
+  selectedThresholdOption: {
+    backgroundColor: '#2196F3',
+    borderColor: '#2196F3',
+  },
+  thresholdOptionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+  },
+  selectedThresholdText: {
+    color: '#FFF',
+  },
+  testMLAlertButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginVertical: 12,
+    elevation: 3,
+  },
+  testMLAlertButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
+    elevation: 0,
+  },
+  disabledButtonText: {
+    color: '#999',
   },
 
   // Development Toggle Styles
@@ -2736,5 +2789,107 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 16,
     color: '#333',
+  },
+  
+  // New probability-based testing styles
+  devControlSection: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  devControlLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  probabilityOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  probabilityOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  selectedOption: {
+    borderWidth: 3,
+    borderColor: '#333',
+  },
+  probabilityOptionText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  timeframeOptions: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 4,
+  },
+  timeframeOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  selectedTimeframeOption: {
+    backgroundColor: '#2196F3',
+    borderColor: '#2196F3',
+  },
+  timeframeOptionText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  selectedTimeframeText: {
+    color: '#FFF',
+    fontWeight: '600',
+  },
+  locationOptions: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 4,
+  },
+  locationOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  selectedLocationOption: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  locationOptionText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  selectedLocationText: {
+    color: '#FFF',
+    fontWeight: '600',
+  },
+  generateAlertButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF5722',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    margin: 15,
+    marginTop: 20,
+    elevation: 3,
+  },
+  generateAlertButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });

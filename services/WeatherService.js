@@ -107,6 +107,307 @@ class WeatherService {
   }
 
   /**
+   * Get comprehensive flood risk assessment for alert system
+   * @param {number} latitude - Latitude coordinate
+   * @param {number} longitude - Longitude coordinate
+   * @returns {Promise} - Comprehensive flood risk data
+   */
+  async getFloodRiskAssessment(latitude, longitude) {
+    try {
+      const [weatherData, precipData, forecastData] = await Promise.all([
+        this.getCurrentWeather(latitude, longitude),
+        this.getPrecipitationData(latitude, longitude),
+        this.getFloodTimingForecast(latitude, longitude, 48)
+      ]);
+
+      // Calculate current flood risk based on multiple factors
+      const currentRisk = this.calculateFloodRisk({
+        precipitation: precipData.current,
+        forecast24h: precipData.forecast24h,
+        riverLevel: weatherData.river_data?.level || 5,
+        humidity: weatherData.current_conditions?.humidity || 75,
+        pressure: weatherData.current_conditions?.pressure || 1010
+      });
+
+      // Identify critical rainfall periods
+      const criticalPeriods = this.identifyCriticalRainfallPeriods(forecastData.forecast);
+
+      return {
+        currentRisk,
+        currentConditions: {
+          precipitation: precipData.current,
+          intensity: precipData.intensity,
+          temperature: weatherData.current_conditions?.temperature || 28,
+          humidity: weatherData.current_conditions?.humidity || 75,
+          riverLevel: weatherData.river_data?.level || 5,
+          pressure: weatherData.current_conditions?.pressure || 1010
+        },
+        forecast: {
+          next24h: precipData.forecast24h,
+          hourlyData: forecastData.forecast,
+          criticalPeriods,
+          peakRainfall: forecastData.peakRainfall
+        },
+        floodPrediction: {
+          isFloodLikely: currentRisk.probability > 0.6,
+          riskLevel: currentRisk.level,
+          confidence: currentRisk.confidence,
+          timeToFlood: this.estimateTimeToFlood(criticalPeriods),
+          expectedDuration: this.estimateFloodDuration(criticalPeriods)
+        },
+        alerts: {
+          thresholdExceeded: precipData.current > PRECIPITATION_THRESHOLDS.MODERATE,
+          severeWeatherWarning: precipData.current > PRECIPITATION_THRESHOLDS.HEAVY,
+          immediateAction: precipData.current > PRECIPITATION_THRESHOLDS.EXTREME
+        },
+        lastUpdated: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error getting flood risk assessment:', error);
+      return this.getMockFloodRiskAssessment();
+    }
+  }
+
+  /**
+   * Calculate flood risk based on multiple weather parameters
+   * @param {Object} conditions - Weather conditions
+   * @returns {Object} - Risk assessment
+   */
+  calculateFloodRisk(conditions) {
+    let riskScore = 0;
+    let factors = [];
+
+    // Precipitation risk (40% weight)
+    if (conditions.precipitation > PRECIPITATION_THRESHOLDS.EXTREME) {
+      riskScore += 40;
+      factors.push('Extreme rainfall detected');
+    } else if (conditions.precipitation > PRECIPITATION_THRESHOLDS.HEAVY) {
+      riskScore += 30;
+      factors.push('Heavy rainfall detected');
+    } else if (conditions.precipitation > PRECIPITATION_THRESHOLDS.MODERATE) {
+      riskScore += 20;
+      factors.push('Moderate rainfall detected');
+    } else if (conditions.precipitation > PRECIPITATION_THRESHOLDS.LIGHT) {
+      riskScore += 10;
+      factors.push('Light rainfall detected');
+    }
+
+    // 24h forecast risk (25% weight)
+    if (conditions.forecast24h > 80) {
+      riskScore += 25;
+      factors.push('High 24h precipitation forecast');
+    } else if (conditions.forecast24h > 50) {
+      riskScore += 18;
+      factors.push('Elevated 24h precipitation forecast');
+    } else if (conditions.forecast24h > 25) {
+      riskScore += 12;
+      factors.push('Moderate 24h precipitation forecast');
+    }
+
+    // River level risk (20% weight)
+    if (conditions.riverLevel > 8) {
+      riskScore += 20;
+      factors.push('High river levels');
+    } else if (conditions.riverLevel > 6.5) {
+      riskScore += 15;
+      factors.push('Elevated river levels');
+    } else if (conditions.riverLevel > 6) {
+      riskScore += 8;
+      factors.push('Above normal river levels');
+    }
+
+    // Atmospheric conditions (15% weight)
+    if (conditions.pressure < 1005 && conditions.humidity > 90) {
+      riskScore += 15;
+      factors.push('Unstable atmospheric conditions');
+    } else if (conditions.pressure < 1008 && conditions.humidity > 85) {
+      riskScore += 10;
+      factors.push('Favorable conditions for heavy rain');
+    }
+
+    // Determine risk level and confidence
+    let level, probability, confidence;
+    
+    if (riskScore >= 80) {
+      level = 'Very High';
+      probability = 0.9;
+      confidence = 0.85;
+    } else if (riskScore >= 60) {
+      level = 'High';
+      probability = 0.75;
+      confidence = 0.8;
+    } else if (riskScore >= 40) {
+      level = 'Medium';
+      probability = 0.6;
+      confidence = 0.75;
+    } else if (riskScore >= 20) {
+      level = 'Low';
+      probability = 0.3;
+      confidence = 0.7;
+    } else {
+      level = 'Very Low';
+      probability = 0.1;
+      confidence = 0.65;
+    }
+
+    return {
+      level,
+      probability,
+      confidence,
+      score: riskScore,
+      factors,
+      recommendation: this.getFloodRecommendation(level, factors)
+    };
+  }
+
+  /**
+   * Identify critical rainfall periods that could lead to flooding
+   * @param {Array} hourlyForecast - Hourly forecast data
+   * @returns {Array} - Critical periods
+   */
+  identifyCriticalRainfallPeriods(hourlyForecast) {
+    const criticalPeriods = [];
+    let currentPeriod = null;
+    
+    hourlyForecast.forEach((hour, index) => {
+      const isCritical = hour.precipitation > PRECIPITATION_THRESHOLDS.MODERATE || 
+                        (hour.precipitation > PRECIPITATION_THRESHOLDS.LIGHT && hour.humidity > 90);
+      
+      if (isCritical) {
+        if (!currentPeriod) {
+          currentPeriod = {
+            start: hour.time,
+            end: hour.time,
+            maxPrecipitation: hour.precipitation,
+            avgPrecipitation: hour.precipitation,
+            duration: 1,
+            severity: this.getPrecipitationIntensity(hour.precipitation),
+            floodRisk: hour.precipitation > PRECIPITATION_THRESHOLDS.MODERATE
+          };
+        } else {
+          currentPeriod.end = hour.time;
+          currentPeriod.maxPrecipitation = Math.max(currentPeriod.maxPrecipitation, hour.precipitation);
+          currentPeriod.avgPrecipitation = (currentPeriod.avgPrecipitation * currentPeriod.duration + hour.precipitation) / (currentPeriod.duration + 1);
+          currentPeriod.duration += 1;
+          currentPeriod.severity = this.getPrecipitationIntensity(currentPeriod.maxPrecipitation);
+          currentPeriod.floodRisk = currentPeriod.floodRisk || hour.precipitation > PRECIPITATION_THRESHOLDS.MODERATE;
+        }
+      } else if (currentPeriod) {
+        // End of critical period
+        criticalPeriods.push(currentPeriod);
+        currentPeriod = null;
+      }
+    });
+    
+    if (currentPeriod) {
+      criticalPeriods.push(currentPeriod);
+    }
+    
+    return criticalPeriods.filter(period => period.floodRisk);
+  }
+
+  /**
+   * Estimate time until flooding based on critical periods
+   * @param {Array} criticalPeriods - Critical rainfall periods
+   * @returns {number} - Time to flood in milliseconds
+   */
+  estimateTimeToFlood(criticalPeriods) {
+    if (criticalPeriods.length === 0) return null;
+    
+    const nextCritical = criticalPeriods[0];
+    const now = new Date();
+    const startTime = new Date(nextCritical.start);
+    
+    return Math.max(0, startTime.getTime() - now.getTime());
+  }
+
+  /**
+   * Estimate flood duration based on critical periods
+   * @param {Array} criticalPeriods - Critical rainfall periods
+   * @returns {number} - Expected duration in hours
+   */
+  estimateFloodDuration(criticalPeriods) {
+    if (criticalPeriods.length === 0) return 0;
+    
+    // Sum all critical periods duration
+    const totalDuration = criticalPeriods.reduce((sum, period) => sum + period.duration, 0);
+    
+    // Estimate flood duration (typically longer than rain due to drainage)
+    return Math.min(totalDuration * 1.5, 24); // Cap at 24 hours
+  }
+
+  /**
+   * Get flood recommendation based on risk level
+   * @param {string} level - Risk level
+   * @param {Array} factors - Risk factors
+   * @returns {string} - Recommendation
+   */
+  getFloodRecommendation(level, factors) {
+    switch (level) {
+      case 'Very High':
+        return 'Immediate evacuation recommended. Move to higher ground immediately.';
+      case 'High':
+        return 'High flood risk. Prepare for possible evacuation and avoid low-lying areas.';
+      case 'Medium':
+        return 'Moderate flood risk. Stay alert and avoid flood-prone areas.';
+      case 'Low':
+        return 'Low flood risk. Monitor weather conditions and stay informed.';
+      default:
+        return 'Weather conditions are stable. Continue normal activities.';
+    }
+  }
+
+  /**
+   * Mock comprehensive flood risk assessment
+   * @returns {Object} - Mock assessment data
+   */
+  getMockFloodRiskAssessment() {
+    const currentPrecip = Math.random() * 20;
+    const forecast24h = Math.random() * 40;
+    
+    return {
+      currentRisk: this.calculateFloodRisk({
+        precipitation: currentPrecip,
+        forecast24h: forecast24h,
+        riverLevel: 5 + Math.random() * 3,
+        humidity: 70 + Math.random() * 25,
+        pressure: 1008 + Math.random() * 10
+      }),
+      currentConditions: {
+        precipitation: currentPrecip,
+        intensity: this.getPrecipitationIntensity(currentPrecip),
+        temperature: 26 + Math.random() * 6,
+        humidity: 70 + Math.random() * 25,
+        riverLevel: 5 + Math.random() * 3,
+        pressure: 1008 + Math.random() * 10
+      },
+      forecast: {
+        next24h: forecast24h,
+        hourlyData: this.generateHourlyForecast({current_conditions: {temperature: 28, precipitation: currentPrecip}}, 48),
+        criticalPeriods: [],
+        peakRainfall: {
+          time: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
+          precipitation: Math.max(currentPrecip, Math.random() * 30),
+          intensity: 'moderate'
+        }
+      },
+      floodPrediction: {
+        isFloodLikely: currentPrecip > PRECIPITATION_THRESHOLDS.MODERATE,
+        riskLevel: currentPrecip > PRECIPITATION_THRESHOLDS.HEAVY ? 'High' : 'Medium',
+        confidence: 0.75,
+        timeToFlood: Math.random() * 24 * 60 * 60 * 1000,
+        expectedDuration: 2 + Math.random() * 6
+      },
+      alerts: {
+        thresholdExceeded: currentPrecip > PRECIPITATION_THRESHOLDS.MODERATE,
+        severeWeatherWarning: currentPrecip > PRECIPITATION_THRESHOLDS.HEAVY,
+        immediateAction: currentPrecip > PRECIPITATION_THRESHOLDS.EXTREME
+      },
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  /**
    * Get weather forecast for flood timing prediction
    * @param {number} latitude - Latitude coordinate
    * @param {number} longitude - Longitude coordinate

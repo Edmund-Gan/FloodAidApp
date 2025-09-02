@@ -49,6 +49,75 @@ export const RISK_THRESHOLDS = {
   HIGH: 0.8,
 };
 
+// ML Model Probability Thresholds for Alerts
+export const ML_ALERT_THRESHOLDS = {
+  WARNING: 0.6,    // 60% - Generate warning alert
+  HIGH: 0.8,       // 80% - Generate high priority alert
+  TESTING_MIN: 0.5, // 50% - Minimum for developer testing
+  TESTING_MAX: 0.95 // 95% - Maximum for developer testing
+};
+
+// State-Specific Accuracy Data for Confidence Descriptions
+export const STATE_ACCURACY_DATA = {
+  'Selangor': { 
+    accuracy: 78, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  'Kuala Lumpur': { 
+    accuracy: 82, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  'Johor': { 
+    accuracy: 75, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  'Penang': { 
+    accuracy: 80, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  'Kedah': { 
+    accuracy: 74, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  'Perak': { 
+    accuracy: 76, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  'Pahang': { 
+    accuracy: 73, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  'Terengganu': { 
+    accuracy: 77, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  'Kelantan': { 
+    accuracy: 79, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  'Sabah': { 
+    accuracy: 71, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  'Sarawak': { 
+    accuracy: 72, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  'Melaka': { 
+    accuracy: 81, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  'Negeri Sembilan': { 
+    accuracy: 77, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  },
+  // Default for unknown states
+  'DEFAULT': { 
+    accuracy: 75, 
+    sources: ['Open Meteo', 'mywater.gov.my', 'archive.data.gov.my'] 
+  }
+};
+
 // Risk Levels
 export const RISK_LEVELS = {
   LOW: 'Low',

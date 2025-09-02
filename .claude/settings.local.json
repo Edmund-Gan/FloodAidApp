@@ -38,7 +38,11 @@
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
       "Bash(node:*)",
-      "Bash(npx expo start:*)"
+      "Bash(npx expo start:*)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Bash(dir)",
+      "Bash(dir screens)"
     ],
     "deny": [],
     "ask": []
