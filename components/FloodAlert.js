@@ -3,15 +3,13 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Modal,
-  Animated,
   Dimensions,
   StyleSheet,
   Alert as RNAlert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, RISK_LEVELS, ANIMATION_DURATION } from '../utils/constants';
+import { COLORS, RISK_LEVELS } from '../utils/constants';
 
 const { width } = Dimensions.get('window');
 
@@ -24,27 +22,20 @@ const FloodAlert = ({
   autoHide = false,
   autoHideDelay = 10000 
 }) => {
-  const [isVisible, setIsVisible] = useState(visible);
   const [countdown, setCountdown] = useState(alert?.countdownTime || 0);
   const [countdownDisplay, setCountdownDisplay] = useState(alert?.countdownDisplay || '');
   
-  const slideAnim = useRef(new Animated.Value(-100)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
   const countdownIntervalRef = useRef(null);
 
   useEffect(() => {
-    setIsVisible(visible);
     if (visible && alert) {
-      showAlert();
       startCountdown();
       
       if (autoHide && alert.severity !== 'immediate') {
         setTimeout(() => {
-          hideAlert();
+          onDismiss?.();
         }, autoHideDelay);
       }
-    } else {
-      hideAlert();
     }
 
     return () => {
@@ -54,54 +45,6 @@ const FloodAlert = ({
     };
   }, [visible, alert]);
 
-  const showAlert = () => {
-    // Slide in animation
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: ANIMATION_DURATION.MEDIUM,
-      useNativeDriver: true,
-    }).start();
-
-    // Pulse animation for urgent alerts
-    if (alert?.severity === 'immediate' || alert?.severity === 'urgent') {
-      startPulseAnimation();
-    }
-  };
-
-  const hideAlert = () => {
-    Animated.timing(slideAnim, {
-      toValue: -100,
-      duration: ANIMATION_DURATION.MEDIUM,
-      useNativeDriver: true,
-    }).start(() => {
-      setIsVisible(false);
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-      }
-    });
-  };
-
-  const startPulseAnimation = () => {
-    const pulse = () => {
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.05,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        if (alert?.severity === 'immediate' || alert?.severity === 'urgent') {
-          pulse();
-        }
-      });
-    };
-    pulse();
-  };
 
   const startCountdown = () => {
     if (!alert?.countdownTime) return;
@@ -186,13 +129,11 @@ const FloodAlert = ({
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Dismiss', style: 'destructive', onPress: () => {
-            hideAlert();
             onDismiss?.();
           }}
         ]
       );
     } else {
-      hideAlert();
       onDismiss?.();
     }
   };
@@ -201,32 +142,16 @@ const FloodAlert = ({
     onPreparationGuide?.(alert);
   };
 
-  if (!alert || !isVisible) {
+  if (!alert || !visible) {
     return null;
   }
 
   const config = getSeverityConfig(alert.severity);
 
   return (
-    <Modal
-      transparent={true}
-      visible={isVisible}
-      animationType="none"
-      onRequestClose={handleDismiss}
-    >
-      <View style={styles.overlay}>
-        <Animated.View
-          style={[
-            styles.alertContainer,
-            {
-              transform: [
-                { translateY: slideAnim },
-                { scale: pulseAnim }
-              ]
-            }
-          ]}
-        >
-          <LinearGradient colors={config.colors} style={styles.alertContent}>
+    <View style={[styles.overlay, visible && styles.overlayVisible]}>
+      <View style={styles.alertContainer}>
+        <LinearGradient colors={config.colors} style={styles.alertContent}>
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.headerLeft}>
@@ -316,8 +241,8 @@ const FloodAlert = ({
                 style={[styles.actionButton, styles.preparationButton]}
                 onPress={handlePreparationGuide}
               >
-                <Ionicons name="list" size={20} color={COLORS.TEXT_ON_PRIMARY} />
-                <Text style={styles.buttonText}>
+                <Ionicons name="list" size={20} color="#FFFFFF" />
+                <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>
                   View Preparation Guide
                 </Text>
               </TouchableOpacity>
@@ -326,28 +251,33 @@ const FloodAlert = ({
                 style={[styles.actionButton, styles.detailsButton]}
                 onPress={() => onViewDetails?.(alert)}
               >
-                <Ionicons name="information-circle" size={20} color={COLORS.PRIMARY} />
-                <Text style={[styles.buttonText, { color: COLORS.PRIMARY }]}>
+                <Ionicons name="information-circle" size={20} color="#2196F3" />
+                <Text style={[styles.buttonText, { color: '#2196F3' }]}>
                   View Details
                 </Text>
               </TouchableOpacity>
             </View>
           </LinearGradient>
-        </Animated.View>
+        </View>
       </View>
-    </Modal>
-  );
-};
+    );
+  };
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-start',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     paddingTop: 50,
+    paddingHorizontal: 16,
+    pointerEvents: 'none', // Allow touch events to pass through when not visible
+  },
+  overlayVisible: {
+    zIndex: 9999,
+    pointerEvents: 'auto', // Enable touch events when visible
   },
   alertContainer: {
-    marginHorizontal: 16,
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 10,
@@ -355,6 +285,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+    pointerEvents: 'auto', // Ensure alert itself can receive touch events
   },
   alertContent: {
     padding: 16,
@@ -454,6 +385,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
+    marginTop: 4,
   },
   actionButton: {
     flexDirection: 'row',
@@ -466,12 +398,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   preparationButton: {
-    backgroundColor: COLORS.PRIMARY,
+    backgroundColor: '#2196F3',
   },
   detailsButton: {
     backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: COLORS.PRIMARY,
+    borderWidth: 1,
+    borderColor: '#2196F3',
     elevation: 0,
   },
   buttonText: {
