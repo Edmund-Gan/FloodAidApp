@@ -1,4 +1,3 @@
-import weatherService from '../services/WeatherService';
 import FloodPredictionModel from '../services/FloodPredictionModel';
 import { notificationService } from './NotificationService';
 import { 
@@ -54,18 +53,7 @@ class FloodAlertService {
     try {
       const locationKey = `${location.lat}_${location.lng}`;
       
-      // Get current weather and forecast
-      const weatherData = await weatherService.getCurrentWeather(location.lat, location.lng);
-      const forecastData = await weatherService.getFloodTimingForecast(location.lat, location.lng, 48);
-      
-      // Check current rainfall threshold
-      const currentRainfall = weatherData.current_conditions?.precipitation || 0;
-      const isCurrentlyRaining = currentRainfall > PRECIPITATION_THRESHOLDS.LIGHT;
-      
-      // Find next significant rainfall period
-      const nextFloodPeriod = this.findNextFloodPeriod(forecastData.floodRiskPeriods);
-      
-      // NEW: Check ML prediction if enabled
+      // Use embedded ML prediction as the primary source
       let mlPrediction = null;
       let shouldTriggerMLAlert = false;
       
@@ -81,9 +69,9 @@ class FloodAlertService {
         }
       }
       
-      // Generate alert if weather OR ML indicates risk
-      if (nextFloodPeriod || isCurrentlyRaining || shouldTriggerMLAlert) {
-        const alert = await this.generateFloodAlert(location, weatherData, nextFloodPeriod, currentRainfall, mlPrediction);
+      // Generate alert based on ML prediction
+      if (shouldTriggerMLAlert && mlPrediction) {
+        const alert = await this.generateFloodAlert(location, mlPrediction);
         
         // Store alert
         this.activeAlerts.set(locationKey, alert);
@@ -110,84 +98,31 @@ class FloodAlertService {
     }
   }
 
-  /**
-   * Find the next significant flood period from forecast
-   * @param {Array} floodRiskPeriods - Array of risk periods
-   * @returns {Object|null} - Next flood period or null
-   */
-  findNextFloodPeriod(floodRiskPeriods) {
-    if (!floodRiskPeriods || floodRiskPeriods.length === 0) {
-      return null;
-    }
-
-    const now = new Date();
-    
-    // Sort periods by start time and find the next one
-    const futurePeriods = floodRiskPeriods
-      .filter(period => new Date(period.start) > now)
-      .sort((a, b) => new Date(a.start) - new Date(b.start));
-    
-    return futurePeriods.length > 0 ? futurePeriods[0] : null;
-  }
 
   /**
-   * Generate comprehensive flood alert
+   * Generate comprehensive flood alert based on ML prediction
    * @param {Object} location - Location object
-   * @param {Object} weatherData - Current weather data
-   * @param {Object} floodPeriod - Expected flood period
-   * @param {number} currentRainfall - Current rainfall amount
+   * @param {Object} mlPrediction - ML prediction data
    * @returns {Object} - Flood alert object
    */
-  async generateFloodAlert(location, weatherData, floodPeriod, currentRainfall, mlPrediction = null) {
+  async generateFloodAlert(location, mlPrediction) {
     const now = new Date();
     
-    // Determine if flooding is imminent or predicted
-    const isImminent = currentRainfall > PRECIPITATION_THRESHOLDS.MODERATE;
+    // ML-based prediction alert
+    const probability = mlPrediction.flood_probability || 0;
+    const timeframeHours = mlPrediction.timeframe_hours || 24;
+    const futureTime = new Date(now.getTime() + timeframeHours * 60 * 60 * 1000);
     
-    let floodTimeframe, countdownTime, riskLevel, severity;
+    const floodTimeframe = {
+      start: now,
+      end: futureTime,
+      description: `ML model predicts ${Math.round(probability * 100)}% flood risk within ${timeframeHours} hours`
+    };
     
-    if (isImminent) {
-      // Current flooding conditions
-      floodTimeframe = {
-        start: now,
-        end: new Date(now.getTime() + 2 * 60 * 60 * 1000), // Next 2 hours
-        description: 'Flood conditions detected now'
-      };
-      countdownTime = 0; // No preparation time left
-      riskLevel = currentRainfall > PRECIPITATION_THRESHOLDS.HEAVY ? RISK_LEVELS.VERY_HIGH : RISK_LEVELS.HIGH;
-      severity = 'immediate';
-    } else if (floodPeriod) {
-      // Predicted flooding
-      const startTime = new Date(floodPeriod.start);
-      const endTime = new Date(floodPeriod.end);
-      
-      floodTimeframe = {
-        start: startTime,
-        end: endTime,
-        description: this.formatFloodTimeframe(startTime, endTime)
-      };
-      
-      countdownTime = Math.max(0, startTime.getTime() - now.getTime());
-      riskLevel = floodPeriod.maxPrecipitation > PRECIPITATION_THRESHOLDS.HEAVY ? 
-                  RISK_LEVELS.HIGH : RISK_LEVELS.MEDIUM;
-      severity = this.calculateSeverity(countdownTime);
-    } else if (mlPrediction) {
-      // ML-based prediction alert
-      const probability = mlPrediction.flood_probability || 0;
-      const timeframeHours = mlPrediction.timeframe_hours || 24;
-      const futureTime = new Date(now.getTime() + timeframeHours * 60 * 60 * 1000);
-      
-      floodTimeframe = {
-        start: now,
-        end: futureTime,
-        description: `ML model predicts ${Math.round(probability * 100)}% flood risk within ${timeframeHours} hours`
-      };
-      
-      countdownTime = Math.max(0, timeframeHours * 60 * 60 * 1000 / 4); // Quarter of timeframe for preparation
-      riskLevel = probability >= ML_ALERT_THRESHOLDS.HIGH ? RISK_LEVELS.HIGH : 
-                  probability >= ML_ALERT_THRESHOLDS.WARNING ? RISK_LEVELS.MEDIUM : RISK_LEVELS.LOW;
-      severity = probability >= ML_ALERT_THRESHOLDS.HIGH ? 'urgent' : 'warning';
-    }
+    const countdownTime = Math.max(0, timeframeHours * 60 * 60 * 1000 / 4); // Quarter of timeframe for preparation
+    const riskLevel = probability >= ML_ALERT_THRESHOLDS.HIGH ? RISK_LEVELS.HIGH : 
+                      probability >= ML_ALERT_THRESHOLDS.WARNING ? RISK_LEVELS.MEDIUM : RISK_LEVELS.LOW;
+    const severity = probability >= ML_ALERT_THRESHOLDS.HIGH ? 'urgent' : 'warning';
 
     return {
       id: `alert_${location.lat}_${location.lng}_${Date.now()}`,
@@ -200,11 +135,16 @@ class FloodAlertService {
       countdownDisplay: this.formatCountdown(countdownTime),
       riskLevel,
       severity,
-      expectedRainfall: floodPeriod?.maxPrecipitation || currentRainfall,
+      expectedRainfall: mlPrediction.weather_summary?.rainfall_24h || 0,
       currentConditions: {
-        rainfall: currentRainfall,
-        temperature: weatherData.current_conditions?.temperature || 28,
-        humidity: weatherData.current_conditions?.humidity || 75
+        rainfall: mlPrediction.weather_summary?.rainfall_24h || 0,
+        temperature: mlPrediction.weather_summary?.current_temp || 28,
+        humidity: 75 // Default as humidity not in ML prediction
+      },
+      mlPrediction: {
+        probability: probability,
+        confidence: mlPrediction.confidence || 'medium',
+        model_version: mlPrediction.model_version || 'embedded'
       },
       preparationGuidance: this.getPreparationGuidance(countdownTime, riskLevel),
       timestamp: now.toISOString(),
@@ -478,13 +418,7 @@ class FloodAlertService {
       data_sources: ['ML Model Test']
     };
 
-    const alert = await this.generateFloodAlert(location, {
-      current_conditions: {
-        precipitation: 2, // Light rain
-        temperature: 28,
-        humidity: 80
-      }
-    }, null, 2, mockMLPrediction);
+    const alert = await this.generateFloodAlert(location, mockMLPrediction);
 
     // Trigger callbacks
     this.alertCallbacks.forEach(callback => callback(alert));

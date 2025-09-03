@@ -153,7 +153,6 @@ export const RIVER_LEVEL_THRESHOLDS = {
 
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: 'http://localhost:5000',
   TIMEOUT: 10000,
   RETRY_ATTEMPTS: 3,
   GOOGLE_MAPS_API_KEY: 'AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM',

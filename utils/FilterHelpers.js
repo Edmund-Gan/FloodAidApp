@@ -244,7 +244,11 @@ export const getStateAbbreviation = (stateName) => {
     'Sarawak': 'SWK',
     'Selangor': 'SGR',
     'Terengganu': 'TRG',
-    'Wilayah Persekutuan': 'WP'
+    'Wilayah Persekutuan': 'WP',
+    // WP variations
+    'WP Kuala Lumpur': 'KL',
+    'WP Labuan': 'LBN',
+    'WP Putrajaya': 'PJY'
   };
   
   return abbreviations[stateName] || stateName.substring(0, 3).toUpperCase();

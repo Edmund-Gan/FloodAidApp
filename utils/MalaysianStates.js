@@ -105,6 +105,25 @@ export const MALAYSIAN_STATES = {
     longitude: 101.6869,
     name: 'Wilayah Persekutuan',
     region: 'Federal Territory'
+  },
+  // WP variations for compatibility with data sources
+  'WP Kuala Lumpur': {
+    latitude: 3.1390,
+    longitude: 101.6869,
+    name: 'Kuala Lumpur',
+    region: 'Federal Territory'
+  },
+  'WP Labuan': {
+    latitude: 5.2831,
+    longitude: 115.2308,
+    name: 'Labuan',
+    region: 'Federal Territory'
+  },
+  'WP Putrajaya': {
+    latitude: 2.9264,
+    longitude: 101.6964,
+    name: 'Putrajaya',
+    region: 'Federal Territory'
   }
 };
 

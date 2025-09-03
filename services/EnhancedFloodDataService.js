@@ -122,6 +122,17 @@ class EnhancedFloodDataService {
   }
 
   /**
+   * Normalize state name for consistency
+   */
+  static normalizeStateName(stateName) {
+    // Handle WP variations - normalize to match MalaysianStates.js keys
+    if (stateName === 'WP Kuala Lumpur') return 'Kuala Lumpur';
+    if (stateName === 'WP Labuan') return 'Labuan';
+    if (stateName === 'WP Putrajaya') return 'Putrajaya';
+    return stateName;
+  }
+
+  /**
    * Create aggregated data for map visualization from detailed events
    */
   static createAggregatedData(detailedEvents) {
@@ -130,10 +141,12 @@ class EnhancedFloodDataService {
     // Group events by state
     detailedEvents.forEach(event => {
       const stateName = event.state;
+      const normalizedStateName = this.normalizeStateName(stateName);
       
-      if (!stateData[stateName]) {
-        stateData[stateName] = {
-          state: stateName,
+      if (!stateData[normalizedStateName]) {
+        stateData[normalizedStateName] = {
+          state: stateName, // Keep original for display
+          normalizedState: normalizedStateName, // For coordinate lookup
           events: [],
           districts: new Set(),
           totalEvents: 0,
@@ -149,43 +162,44 @@ class EnhancedFloodDataService {
       const daysSince = Math.floor((new Date() - parsedDate) / (1000 * 60 * 60 * 24));
       
       // Add event info
-      stateData[stateName].events.push({
+      stateData[normalizedStateName].events.push({
         ...event,
         parsedDate,
         daysSince
       });
       
-      stateData[stateName].districts.add(event.district);
-      stateData[stateName].totalEvents++;
+      stateData[normalizedStateName].districts.add(event.district);
+      stateData[normalizedStateName].totalEvents++;
       
       if (daysSince <= 365) { // Recent events in last year
-        stateData[stateName].recentEvents++;
+        stateData[normalizedStateName].recentEvents++;
       }
       
       // Track yearly events
-      stateData[stateName].yearlyEvents[year] = (stateData[stateName].yearlyEvents[year] || 0) + 1;
+      stateData[normalizedStateName].yearlyEvents[year] = (stateData[normalizedStateName].yearlyEvents[year] || 0) + 1;
       
       // Track causes
       const causes = this.parseFloodCauses(event.floodCause);
       causes.forEach(cause => {
-        stateData[stateName].causes[cause] = (stateData[stateName].causes[cause] || 0) + 1;
+        stateData[normalizedStateName].causes[cause] = (stateData[normalizedStateName].causes[cause] || 0) + 1;
       });
       
       // Track river basins
       const basins = this.parseRiverBasins(event.riverBasin);
-      basins.forEach(basin => stateData[stateName].riverBasins.add(basin));
+      basins.forEach(basin => stateData[normalizedStateName].riverBasins.add(basin));
     });
 
     // Create map markers for each state
     const markers = [];
     
     Object.values(stateData).forEach(stateInfo => {
-      const coordinates = getStateCoordinates(stateInfo.state);
+      // Use normalized state name for coordinate lookup
+      const coordinates = getStateCoordinates(stateInfo.normalizedState);
       
       if (coordinates) {
         markers.push({
-          id: `state-${stateInfo.state}`,
-          state: stateInfo.state,
+          id: `state-${stateInfo.normalizedState}`,
+          state: stateInfo.state, // Keep original for display
           latitude: coordinates.latitude,
           longitude: coordinates.longitude,
           totalEvents: stateInfo.totalEvents,

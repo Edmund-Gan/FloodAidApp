@@ -63,7 +63,13 @@
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Machine Learning Model/**)",
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Machine Learning Model/**)",
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
-      "Bash(rd:*)"
+      "Bash(rd:*)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Machine Learning Model/**)",
+      "Bash(del \"D:\\Monash\\FIT5120\\Actual Project\\FloodAidApp\\services\\FloodAPI.js\")"
     ],
     "deny": [],
     "ask": []

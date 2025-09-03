@@ -21,17 +21,36 @@ import MapLocationPicker from '../components/MapLocationPicker';
 import { COLORS } from '../utils/constants';
 
 const getLocationImage = (locationType) => {
-  switch (locationType?.toLowerCase()) {
-    case 'home':
-      return require('../assets/Location Image/Home.jpg');
-    case 'office':
-    case 'work':
-      return require('../assets/Location Image/Office.jpg');
-    case 'school':
-      return require('../assets/Location Image/School.jpg');
-    default:
-      return require('../assets/Location Image/Home.jpg');
+  try {
+    switch (locationType?.toLowerCase()) {
+      case 'home':
+        return require('../assets/location-images/Home.jpg');
+      case 'office':
+      case 'work':
+      case 'workplace':
+        return require('../assets/location-images/Office.jpg');
+      case 'school':
+        return require('../assets/location-images/School.jpg');
+      default:
+        return require('../assets/location-images/Home.jpg');
+    }
+  } catch (error) {
+    console.warn('Image loading error:', error);
+    return null;
   }
+};
+
+const getLocationImageUri = (locationType) => {
+  const imageMap = {
+    home: 'https://via.placeholder.com/80x60/4a90e2/ffffff?text=HOME',
+    office: 'https://via.placeholder.com/80x60/7ed321/ffffff?text=OFFICE',
+    work: 'https://via.placeholder.com/80x60/7ed321/ffffff?text=WORK',
+    school: 'https://via.placeholder.com/80x60/f5a623/ffffff?text=SCHOOL',
+    default: 'https://via.placeholder.com/80x60/9b9b9b/ffffff?text=LOC'
+  };
+  
+  const key = locationType?.toLowerCase() || 'default';
+  return imageMap[key] || imageMap.default;
 };
 
 export default function MyLocationsScreen({ navigation }) {
@@ -54,6 +73,7 @@ export default function MyLocationsScreen({ navigation }) {
     customLabel: '',
     familyMember: '',
   });
+  const [selectedAddressData, setSelectedAddressData] = useState(null);
   const [refreshingLocation, setRefreshingLocation] = useState(null);
 
   React.useEffect(() => {
@@ -64,18 +84,7 @@ export default function MyLocationsScreen({ navigation }) {
     if (addressData.needsMapSelection) {
       setMapPickerVisible(true);
     } else if (addressData.coordinates) {
-      const locationData = {
-        name: addressData.address,
-        subtitle: newLocation.subtitle || 'My Location',
-        customLabel: newLocation.customLabel || `${newLocation.familyMember || 'Me'} - ${newLocation.subtitle || 'Location'}`,
-        familyMember: newLocation.familyMember || null,
-        address: addressData.formattedAddress || addressData.address,
-        coordinates: addressData.coordinates,
-        image: getLocationImage(newLocation.subtitle || 'Home'),
-        source: addressData.source
-      };
-
-      handleAddLocationFromData(locationData);
+      setSelectedAddressData(addressData);
     }
   };
 
@@ -101,6 +110,7 @@ export default function MyLocationsScreen({ navigation }) {
     try {
       await addLocation(locationData);
       setNewLocation({ name: '', subtitle: 'Home', customLabel: '', familyMember: '' });
+      setSelectedAddressData(null);
       setModalVisible(false);
       
       Alert.alert(
@@ -116,6 +126,26 @@ export default function MyLocationsScreen({ navigation }) {
         [{ text: 'OK' }]
       );
     }
+  };
+
+  const handleSaveLocation = async () => {
+    if (!selectedAddressData || !selectedAddressData.coordinates) {
+      Alert.alert('Error', 'Please select an address first.');
+      return;
+    }
+
+    const locationData = {
+      name: selectedAddressData.address,
+      subtitle: newLocation.subtitle || 'My Location',
+      customLabel: newLocation.customLabel || `${newLocation.familyMember || 'Me'} - ${newLocation.subtitle || 'Location'}`,
+      familyMember: newLocation.familyMember || null,
+      address: selectedAddressData.formattedAddress || selectedAddressData.address,
+      coordinates: selectedAddressData.coordinates,
+      image: getLocationImage(newLocation.subtitle || 'Home'),
+      source: selectedAddressData.source
+    };
+
+    handleAddLocationFromData(locationData);
   };
 
   const handleDeleteLocation = (id) => {
@@ -201,8 +231,18 @@ export default function MyLocationsScreen({ navigation }) {
           return (
             <View key={location.id} style={styles.locationCard}>
               <Image 
-                source={typeof location.image === 'string' ? { uri: location.image } : location.image}
+                source={
+                  // First try to use local assets based on location type
+                  getLocationImage(location.subtitle) ||
+                  // Fallback to existing image if it's a require() object
+                  (location.image && typeof location.image === 'object' ? location.image : null) ||
+                  // Last resort: use placeholder URL
+                  { uri: getLocationImageUri(location.subtitle) }
+                }
                 style={styles.locationImage}
+                onError={(error) => {
+                  console.log('Image failed to load for', location.subtitle, error);
+                }}
               />
               <View style={styles.locationInfo}>
                 <View style={styles.locationHeader}>
@@ -334,13 +374,34 @@ export default function MyLocationsScreen({ navigation }) {
               />
             </View>
 
+            {selectedAddressData && (
+              <View style={styles.addressPreview}>
+                <Text style={styles.previewLabel}>Selected Address:</Text>
+                <Text style={styles.previewAddress}>
+                  {selectedAddressData.formattedAddress || selectedAddressData.address}
+                </Text>
+              </View>
+            )}
+
             <View style={styles.modalButtons}>
               <TouchableOpacity 
                 style={styles.cancelButton}
-                onPress={() => setModalVisible(false)}
+                onPress={() => {
+                  setModalVisible(false);
+                  setSelectedAddressData(null);
+                }}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
+              
+              {selectedAddressData && (
+                <TouchableOpacity 
+                  style={styles.addLocationButton}
+                  onPress={handleSaveLocation}
+                >
+                  <Text style={styles.addLocationButtonText}>Save Location</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
@@ -612,5 +673,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.TEXT_ON_PRIMARY,
     fontWeight: '500',
+  },
+  addressPreview: {
+    backgroundColor: '#f0f8ff',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.PRIMARY,
+  },
+  previewLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.PRIMARY,
+    marginBottom: 4,
+  },
+  previewAddress: {
+    fontSize: 14,
+    color: COLORS.TEXT_PRIMARY,
+    lineHeight: 18,
   },
 });

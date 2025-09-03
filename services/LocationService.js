@@ -12,13 +12,22 @@ class LocationService {
   
   /**
    * Detect if running in emulator/simulator
+   * Improved detection for Expo Go on real devices
    */
   static isEmulator() {
-    // Enhanced emulator detection logic
+    // Enhanced emulator detection logic with Expo Go consideration
     const deviceName = Constants.deviceName?.toLowerCase() || '';
     const modelName = Constants.deviceModelName?.toLowerCase() || '';
+    const appOwnership = Constants.appOwnership; // 'expo', 'standalone', or 'guest'
     
-    const isEmulator = 
+    // Real device indicators (override emulator detection)
+    const isRealDeviceIndicator = 
+      // If running in Expo Go on a real device, Constants.isDevice should be true
+      (appOwnership === 'expo' && Constants.isDevice === true) ||
+      // Specific real device model patterns
+      (modelName && !modelName.includes('emulator') && !modelName.includes('simulator') && !modelName.includes('sdk'));
+    
+    const isEmulatorIndicator = 
       // Android emulator indicators
       deviceName.includes('emulator') ||
       deviceName.includes('simulator') ||
@@ -29,18 +38,20 @@ class LocationService {
       deviceName.includes('generic') ||
       deviceName.includes('android_x86') ||
       // iOS simulator indicators  
-      (Constants.platform?.ios && Constants.isDevice === false) ||
-      // Generic indicators
-      !Constants.isDevice ||
-      // Development environment indicators
-      process.env.NODE_ENV === 'development' && !Constants.isDevice;
+      (Constants.platform?.ios && Constants.isDevice === false);
+    
+    // If we have strong real device indicators, override emulator detection
+    const isEmulator = isEmulatorIndicator && !isRealDeviceIndicator;
     
     console.log(`🔍 Enhanced emulator detection: ${isEmulator ? 'EMULATOR/SIMULATOR' : 'REAL DEVICE'}`, {
       deviceName: Constants.deviceName,
       modelName: Constants.deviceModelName,
       isDevice: Constants.isDevice,
+      appOwnership: Constants.appOwnership,
       platform: Constants.platform,
-      nodeEnv: process.env.NODE_ENV
+      isRealDeviceIndicator,
+      isEmulatorIndicator,
+      finalDecision: isEmulator ? 'EMULATOR' : 'REAL_DEVICE'
     });
     
     return isEmulator;
@@ -209,9 +220,9 @@ class LocationService {
     
     // GPS configuration with increased timeouts for better reliability
     const emulatorConfig = {
-      timeout: isEmulatorDevice ? 18000 : 30000, // 18s for emulator (increased), 30s for device
+      timeout: isEmulatorDevice ? 30000 : 60000, // 30s for emulator, 60s for device (increased)
       accuracy: isEmulatorDevice ? Location.Accuracy.Balanced : Location.Accuracy.High,
-      progressInterval: isEmulatorDevice ? 5000 : 3000 // 5s progress for emulator, 3s for device
+      progressInterval: 10000 // 10s progress interval to reduce log spam
     };
     
     console.log(`🔧 GPS Configuration: ${isEmulatorDevice ? 'EMULATOR MODE' : 'DEVICE MODE'}`, emulatorConfig);
@@ -247,19 +258,11 @@ class LocationService {
       // Track this request for potential cancellation
       this.activeRequests.set(debugId, { progressTimeout, cancelCallback });
       
-      // Enhanced timeout using Promise.race to ensure cleanup
-      const gpsPromise = Location.getCurrentPositionAsync({
+      // Use Expo's built-in timeout mechanism (more reliable than Promise.race)
+      const location = await Location.getCurrentPositionAsync({
         accuracy: emulatorConfig.accuracy,
         timeout: emulatorConfig.timeout,
       });
-      
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error(`GPS timeout after ${emulatorConfig.timeout}ms [${debugId}]`));
-        }, emulatorConfig.timeout + 500); // Add 500ms buffer
-      });
-      
-      const location = await Promise.race([gpsPromise, timeoutPromise]);
       
       // Check if request was cancelled during GPS acquisition
       if (isCancelled) {

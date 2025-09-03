@@ -934,13 +934,9 @@ function HomeScreen() {
         </View>
         <View style={styles.headerButtons}>
           {/* Development: Manual Location Selection */}
-          <TouchableOpacity 
-            style={styles.devButton} 
+          <TouchableOpacity
             onPress={() => setShowDevModal(true)}
           >
-            <Ionicons name="location-outline" size={20} color="#2196F3" />
-          </TouchableOpacity>
-          <TouchableOpacity>
             <Ionicons name="settings-outline" size={24} color="#333" />
           </TouchableOpacity>
         </View>

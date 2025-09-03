@@ -30,7 +30,8 @@ export default function AddressSearchInput({
   const searchTimeoutRef = useRef(null);
 
   useEffect(() => {
-    if (searchText.length > 2) {
+    const words = searchText.trim().split(/\s+/).filter(word => word.length > 0);
+    if (words.length >= 3 || searchText.length > 10) {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
@@ -62,7 +63,7 @@ export default function AddressSearchInput({
         `key=${GOOGLE_MAPS_API_KEY}&` +
         `components=country:MY&` +
         `language=en&` +
-        `types=address`
+        `types=geocode|establishment`
       );
       
       const data = await response.json();
@@ -73,10 +74,10 @@ export default function AddressSearchInput({
           description: prediction.description,
           mainText: prediction.structured_formatting?.main_text || prediction.description,
           secondaryText: prediction.structured_formatting?.secondary_text || '',
-          similarity: calculateSimilarity(query, prediction.description)
+          types: prediction.types || [],
+          isEstablishment: prediction.types?.includes('establishment') || false
         }));
         
-        malaysianSuggestions.sort((a, b) => b.similarity - a.similarity);
         setSuggestions(malaysianSuggestions);
         setShowSuggestions(true);
       } else if (data.status === 'ZERO_RESULTS') {
@@ -94,29 +95,6 @@ export default function AddressSearchInput({
     }
   };
 
-  const calculateSimilarity = (query, address) => {
-    const queryLower = query.toLowerCase().trim();
-    const addressLower = address.toLowerCase().trim();
-    
-    if (addressLower.includes(queryLower)) {
-      return 1.0;
-    }
-    
-    const queryWords = queryLower.split(/\s+/);
-    const addressWords = addressLower.split(/\s+/);
-    
-    let matchCount = 0;
-    for (const queryWord of queryWords) {
-      for (const addressWord of addressWords) {
-        if (addressWord.includes(queryWord) || queryWord.includes(addressWord)) {
-          matchCount++;
-          break;
-        }
-      }
-    }
-    
-    return matchCount / queryWords.length;
-  };
 
   const handleAPIError = () => {
     setSuggestions([{
@@ -145,9 +123,13 @@ export default function AddressSearchInput({
       const placeDetails = await getPlaceDetails(suggestion.placeId);
       
       if (placeDetails) {
+        const isEstablishment = suggestion.isEstablishment;
+        
         const locationData = {
-          address: suggestion.description,
+          address: isEstablishment ? (placeDetails.name || suggestion.mainText) : suggestion.description,
           formattedAddress: placeDetails.formatted_address,
+          placeName: placeDetails.name,
+          vicinity: placeDetails.vicinity,
           coordinates: {
             latitude: placeDetails.geometry.location.lat,
             longitude: placeDetails.geometry.location.lng
@@ -155,7 +137,8 @@ export default function AddressSearchInput({
           placeId: suggestion.placeId,
           addressComponents: placeDetails.address_components,
           verified: true,
-          source: 'google_places'
+          source: 'google_places',
+          isEstablishment: isEstablishment
         };
         
         if (onAddressSelected) {
@@ -185,7 +168,7 @@ export default function AddressSearchInput({
         `https://maps.googleapis.com/maps/api/place/details/json?` +
         `place_id=${placeId}&` +
         `key=${GOOGLE_MAPS_API_KEY}&` +
-        `fields=formatted_address,geometry,address_components`
+        `fields=formatted_address,geometry,address_components,name,vicinity`
       );
       
       const data = await response.json();
@@ -248,9 +231,9 @@ export default function AddressSearchInput({
             {item.secondaryText}
           </Text>
         </View>
-        {item.similarity > 0.8 && !item.isFallback && (
-          <View style={styles.highMatchBadge}>
-            <Text style={styles.highMatchText}>Best Match</Text>
+        {item.isEstablishment && !item.isFallback && (
+          <View style={styles.establishmentBadge}>
+            <Text style={styles.establishmentText}>Place</Text>
           </View>
         )}
       </View>
@@ -392,14 +375,14 @@ const styles = StyleSheet.create({
     color: '#b8860b',
     fontStyle: 'italic',
   },
-  highMatchBadge: {
-    backgroundColor: COLORS.SUCCESS,
+  establishmentBadge: {
+    backgroundColor: COLORS.PRIMARY,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
     alignSelf: 'flex-start',
   },
-  highMatchText: {
+  establishmentText: {
     fontSize: 10,
     fontWeight: '600',
     color: COLORS.TEXT_ON_PRIMARY,
