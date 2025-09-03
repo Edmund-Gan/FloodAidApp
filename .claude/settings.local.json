@@ -42,7 +42,13 @@
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
       "Bash(dir)",
-      "Bash(dir screens)"
+      "Bash(dir screens)",
+      "Bash(dir:*)",
+      "Bash(npx expo config:*)",
+      "Bash(npx expo prebuild:*)",
+      "Bash(if exist node_modules rmdir /s /q node_modules)",
+      "Bash(if exist package-lock.json del package-lock.json)",
+      "Bash(npm cache clean:*)"
     ],
     "deny": [],
     "ask": []

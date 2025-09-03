@@ -5,14 +5,12 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  Image,
   FlatList,
   Modal,
   TextInput,
   Alert,
   ActivityIndicator,
   Dimensions,
-  Platform,
   StatusBar,
   RefreshControl
 } from 'react-native';
@@ -32,6 +30,8 @@ import FloodAlertDetails from './components/FloodAlertDetails';
 import floodAlertService from './utils/FloodAlertService';
 import devAlertTrigger from './utils/DevAlertTrigger';
 import { STATE_ACCURACY_DATA } from './utils/constants';
+import { RISK_COLORS, getRiskColor, getRiskLevel } from './utils/RiskCalculations';
+import MockDataService from './utils/MockDataService';
 
 // Import FloodHotspotsScreen for Epic 3 - Using CSV data version
 import FloodHotspotsScreen from './screens/FloodHotspotsCSV';
@@ -46,33 +46,10 @@ const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.googleMapsApiKey ||
 
 
 
-// Color theme based on risk levels
-const RISK_COLORS = {
-  Low: '#4CAF50',
-  Moderate: '#FFC107',
-  High: '#FF9800',
-  'Very High': '#F44336'
-};
-
 // API Configuration
 const API_BASE_URL = process.env.NODE_ENV === 'development' 
   ? 'http://192.168.1.100:8000/api'  // Local development
   : 'https://floodaid-api.malaysia.gov.my/api';  // Production
-
-// Utility functions
-const getRiskColor = (probability) => {
-  if (probability < 0.3) return RISK_COLORS.Low;
-  if (probability < 0.6) return RISK_COLORS.Moderate;
-  if (probability < 0.8) return RISK_COLORS.High;
-  return RISK_COLORS['Very High'];
-};
-
-// Epic 1: Risk Level Classification (High: 80-100%, Medium: 60-79%, Low: <60%)
-const getRiskLevel = (probability) => {
-  if (probability >= 0.8) return 'High';        // 80-100%
-  if (probability >= 0.6) return 'Medium';      // 60-79%
-  return 'Low';                                 // <60%
-};
 
 // Generate dynamic risk descriptions based on prediction data
 const getRiskDescription = (prediction, locationInfo) => {
@@ -134,87 +111,6 @@ const getRiskDescription = (prediction, locationInfo) => {
   return finalDescription;
 };
 
-// API Service
-class FloodPredictionService {
-  static async getPrediction(lat, lon) {
-    
-    try {
-      // Create AbortController for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, 5000); // 5 second timeout
-
-      
-      const response = await fetch(`${API_BASE_URL}/predict/${lat}/${lon}`, {
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`API request failed with status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      return data;
-      
-    } catch (error) {
-      console.error('❌ Error fetching prediction:', error);
-      
-      // Return mock data for development
-      return {
-        risk_level: 'High',
-        flood_probability: 0.75,
-        confidence: 0.80,
-        timeframe_hours: 12.5,
-        contributing_factors: ['Heavy rainfall expected', 'River levels rising'],
-        weather_summary: {
-          current_temp: 28,
-          rainfall_24h: 45,
-          wind_speed: 15
-        }
-      };
-    }
-  }
-
-  static async getMultipleLocationPredictions(locations) {
-    
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const response = await fetch(`${API_BASE_URL}/predict/multiple`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locations }),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) throw new Error(`API request failed: ${response.status}`);
-      
-      const data = await response.json();
-      return data;
-      
-    } catch (error) {
-      console.error('❌ Error fetching multiple predictions:', error);
-      
-      // Return mock data
-      return {
-        predictions: locations.map(loc => ({
-          label: loc.label,
-          risk_level: ['Low', 'Moderate', 'High'][Math.floor(Math.random() * 3)],
-          probability: Math.random() * 0.8 + 0.1
-        }))
-      };
-    }
-  }
-}
 
 // Detailed Flood Prediction Modal Component
 function FloodDetailsModal({ prediction, locationInfo, onClose }) {
@@ -459,42 +355,8 @@ const malaysianLocations = [
   { name: 'Kuching, Sarawak', lat: 1.5533, lon: 110.3592, state: 'Sarawak' },
 ];
 
-// Mock data for development bypass
-const getMockMLPrediction = () => ({
-  flood_probability: 0.35,
-  risk_level: 'Low',
-  confidence: 0.78,
-  timeframe_hours: 0,
-  expected_duration_hours: 0,
-  peak_probability: 0.40,
-  contributing_factors: [
-    'Current rainfall levels are normal',
-    'No significant weather warnings',
-    'River levels within normal range'
-  ],
-  weather_summary: {
-    current_temp: 28,
-    rainfall_24h: 2.1,
-    wind_speed: 8.5
-  },
-  risk_indicators: {
-    heavy_rain_warning: false,
-    extreme_rain_warning: false,
-    high_humidity_warning: false,
-    consecutive_rain_days: 0,
-    total_forecast_rain: 15.2,
-    current_risk_score: 0.35
-  },
-  location: {
-    lat: 3.0738,
-    lon: 101.5183,
-    display_name: 'Puchong, Selangor (Mock Data)',
-    state: 'Selangor'
-  },
-  timestamp: new Date().toISOString(),
-  model_version: 'mock-v1.0',
-  data_sources: ['Mock GPS', 'Mock Weather API']
-});
+// Use centralized mock data service
+const getMockMLPrediction = () => MockDataService.getMockMLPrediction();
 
 // Home/Current Risk Screen (Epic 1: AI-Based Prediction)
 function HomeScreen() {
