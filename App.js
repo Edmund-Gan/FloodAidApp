@@ -271,10 +271,17 @@ function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose 
           </View>
           <View style={styles.weatherDetailItem}>
             <Ionicons name="rainy-outline" size={24} color="#2196F3" />
-            <Text style={styles.weatherDetailLabel}>24h Rainfall</Text>
+            <Text style={styles.weatherDetailLabel}>Past 24h Rainfall</Text>
             <Text style={styles.weatherDetailValue}>
-              {realTimeWeather?.weather_summary?.rainfall_24h || 
+              {realTimeWeather?.weather_summary?.rainfall_24h_past || 
                prediction?.weather_summary?.rainfall_24h || 0}mm
+            </Text>
+          </View>
+          <View style={styles.weatherDetailItem}>
+            <Ionicons name="rainy" size={24} color="#1976D2" />
+            <Text style={styles.weatherDetailLabel}>Next 24h Forecast</Text>
+            <Text style={styles.weatherDetailValue}>
+              {realTimeWeather?.weather_summary?.rainfall_24h_forecast || 0}mm
             </Text>
           </View>
           <View style={styles.weatherDetailItem}>
@@ -299,7 +306,7 @@ function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose 
             </Text>
           </View>
           <View style={styles.trendItem}>
-            <Text style={styles.trendLabel}>Total Forecast Rain</Text>
+            <Text style={styles.trendLabel}>Next 7 Days Forecast</Text>
             <Text style={styles.trendValue}>
               {Math.round(realTimeWeather?.weather_indicators?.total_forecast_rain || 
                          prediction?.risk_indicators?.total_forecast_rain || 0)}mm
@@ -1051,10 +1058,17 @@ function HomeScreen() {
           <View style={styles.weatherItem}>
             <Ionicons name="rainy-outline" size={24} color="#2196F3" />
             <Text style={styles.weatherValue}>
-              {realTimeWeather?.weather_summary?.rainfall_24h || 
+              {realTimeWeather?.weather_summary?.rainfall_24h_past || 
                prediction?.weather_summary?.rainfall_24h || 0}mm
             </Text>
-            <Text style={styles.weatherLabel}>24h Rainfall</Text>
+            <Text style={styles.weatherLabel} numberOfLines={1}>Past 24h</Text>
+          </View>
+          <View style={styles.weatherItem}>
+            <Ionicons name="rainy" size={24} color="#1976D2" />
+            <Text style={styles.weatherValue}>
+              {realTimeWeather?.weather_summary?.rainfall_24h_forecast || 0}mm
+            </Text>
+            <Text style={styles.weatherLabel} numberOfLines={1}>Next 24h</Text>
           </View>
           <View style={styles.weatherItem}>
             <Ionicons name="speedometer-outline" size={24} color="#2196F3" />
@@ -2012,6 +2026,9 @@ const styles = StyleSheet.create({
   },
   weatherItem: {
     alignItems: 'center',
+    flex: 1,
+    maxWidth: '18%',
+    paddingHorizontal: 2,
   },
   weatherValue: {
     fontSize: 18,
@@ -2020,9 +2037,10 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   weatherLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
     marginTop: 2,
+    textAlign: 'center',
   },
   
   // Rain Forecast Styles

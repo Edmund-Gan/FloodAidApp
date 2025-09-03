@@ -88,7 +88,8 @@ class RealTimeWeatherService {
       current_temp: Math.round(current.temperature_2m || 0),
       current_humidity: Math.round(current.relative_humidity_2m || 0),
       current_precipitation: current.precipitation || 0,
-      rainfall_24h: this.calculate24hRainfall(hourly),
+      rainfall_24h_past: this.calculate24hRainfall(hourly), // Historical rainfall (past 24h)
+      rainfall_24h_forecast: this.calculateNext24hForecastRainfall(hourly), // Forecast rainfall (next 24h)
       wind_speed: Math.round(current.wind_speed_10m || 0),
       pressure: Math.round(current.pressure_msl || 0)
     };
@@ -101,6 +102,12 @@ class RealTimeWeatherService {
         current: Math.round(current.relative_humidity_2m || 0),
         trend: this.calculateHumidityTrend(hourly),
         forecast_24h: this.calculateAverage24hHumidity(hourly)
+      },
+      data_sources: {
+        past_24h_rainfall: 'Historical (Open Meteo)',
+        next_24h_rainfall: 'Forecast (Open Meteo)',
+        next_7_days_rainfall: 'Forecast (Open Meteo)',
+        time_reference: new Date().toISOString()
       },
       last_updated: new Date().toISOString(),
       source: 'Open Meteo API'
@@ -172,7 +179,7 @@ class RealTimeWeatherService {
   }
 
   /**
-   * Calculate 24-hour rainfall from hourly data
+   * Calculate 24-hour rainfall from hourly data (PAST 24 hours)
    * @param {Object} hourly - Hourly weather data
    * @returns {number} - 24h rainfall in mm
    */
@@ -189,6 +196,26 @@ class RealTimeWeatherService {
     });
     
     return Math.round(rainfall * 10) / 10;
+  }
+
+  /**
+   * Calculate next 24-hour forecast rainfall from hourly data (NEXT 24 hours)
+   * @param {Object} hourly - Hourly weather data
+   * @returns {number} - 24h forecast rainfall in mm
+   */
+  calculateNext24hForecastRainfall(hourly) {
+    const now = new Date();
+    const twentyFourHoursLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    
+    let forecastRainfall = 0;
+    hourly.time.forEach((timeStr, index) => {
+      const time = new Date(timeStr);
+      if (time >= now && time <= twentyFourHoursLater) {
+        forecastRainfall += hourly.precipitation[index] || 0;
+      }
+    });
+    
+    return Math.round(forecastRainfall * 10) / 10;
   }
 
   /**

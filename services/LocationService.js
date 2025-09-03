@@ -172,13 +172,26 @@ class LocationService {
   }
   
   /**
-   * Get user's current GPS location with proper permission handling
+   * Get user's current GPS location with proper permission handling and optimization
    */
   static async getCurrentLocation(skipGPS = false) {
     const debugId = Date.now();
     const isEmulatorDevice = this.isEmulator();
     
     console.log(`📍 LocationService [${debugId}]: ${skipGPS ? 'SKIPPING GPS' : 'Requesting location'} permissions...`);
+    
+    // For non-GPS requests, try cached location first for better performance
+    if (!skipGPS) {
+      const cachedLocation = await this.getCachedLocation();
+      if (cachedLocation && (Date.now() - cachedLocation.cacheTime) < 30000) { // Use cache if less than 30 seconds old
+        console.log(`⚡ [${debugId}]: Using fresh cached location (${Math.round((Date.now() - cachedLocation.cacheTime)/1000)}s old)`);
+        return {
+          ...cachedLocation,
+          isCached: true,
+          debugId
+        };
+      }
+    }
     
     // Cancel any existing requests before starting new one
     if (this.activeRequests.size > 0) {
@@ -218,14 +231,16 @@ class LocationService {
       return defaultLocation;
     }
     
-    // GPS configuration with increased timeouts for better reliability
-    const emulatorConfig = {
-      timeout: isEmulatorDevice ? 30000 : 60000, // 30s for emulator, 60s for device (increased)
+    // GPS configuration optimized for reliability and speed
+    const gpsConfig = {
+      timeout: isEmulatorDevice ? 20000 : 45000, // Reduced timeouts: 20s for emulator, 45s for device
       accuracy: isEmulatorDevice ? Location.Accuracy.Balanced : Location.Accuracy.High,
-      progressInterval: 10000 // 10s progress interval to reduce log spam
+      progressInterval: 8000, // Reduced to 8s for better user feedback
+      maximumAge: 30000, // Accept GPS readings up to 30 seconds old
+      enableHighAccuracy: !isEmulatorDevice // Only use high accuracy on real devices
     };
     
-    console.log(`🔧 GPS Configuration: ${isEmulatorDevice ? 'EMULATOR MODE' : 'DEVICE MODE'}`, emulatorConfig);
+    console.log(`🔧 GPS Configuration: ${isEmulatorDevice ? 'EMULATOR MODE' : 'DEVICE MODE'}`, gpsConfig);
     
     try {
       // Request location permissions
@@ -241,12 +256,12 @@ class LocationService {
       console.log('✅ Location permission granted');
       
       // Get current position with emulator-aware configuration
-      console.log(`📡 [${debugId}]: Calling getCurrentPositionAsync() with ${emulatorConfig.timeout}ms timeout`);
+      console.log(`📡 [${debugId}]: Calling getCurrentPositionAsync() with ${gpsConfig.timeout}ms timeout`);
       
       // Add progress tracking for GPS request
       const progressTimeout = setInterval(() => {
         console.log(`⏳ [${debugId}]: GPS request still in progress...`);
-      }, emulatorConfig.progressInterval);
+      }, gpsConfig.progressInterval);
       
       // Create cancellation flag
       let isCancelled = false;
@@ -258,10 +273,12 @@ class LocationService {
       // Track this request for potential cancellation
       this.activeRequests.set(debugId, { progressTimeout, cancelCallback });
       
-      // Use Expo's built-in timeout mechanism (more reliable than Promise.race)
+      // Use Expo's built-in timeout mechanism with optimized settings
       const location = await Location.getCurrentPositionAsync({
-        accuracy: emulatorConfig.accuracy,
-        timeout: emulatorConfig.timeout,
+        accuracy: gpsConfig.accuracy,
+        timeout: gpsConfig.timeout,
+        maximumAge: gpsConfig.maximumAge,
+        enableHighAccuracy: gpsConfig.enableHighAccuracy
       });
       
       // Check if request was cancelled during GPS acquisition

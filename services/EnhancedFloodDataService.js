@@ -70,17 +70,35 @@ class EnhancedFloodDataService {
    * Process detailed events with enhanced metadata
    */
   static processDetailedEvents(rawEvents) {
-    return rawEvents.map(event => ({
-      ...event,
-      // Parse date for sorting and filtering
-      parsedDate: this.parseDate(event.date),
-      // Clean and categorize flood causes
-      causes: this.parseFloodCauses(event.floodCause),
-      // Clean river basin information
-      riverBasins: this.parseRiverBasins(event.riverBasin),
-      // Add search-friendly text
-      searchText: `${event.state} ${event.district} ${event.floodCause}`.toLowerCase()
-    })).sort((a, b) => b.parsedDate - a.parsedDate); // Sort by date, newest first
+    if (!rawEvents || !Array.isArray(rawEvents)) {
+      console.warn('⚠️ Invalid rawEvents data, returning empty array');
+      return [];
+    }
+    
+    return rawEvents.map(event => {
+      try {
+        return {
+          ...event,
+          // Parse date for sorting and filtering
+          parsedDate: this.parseDate(event.date),
+          // Clean and categorize flood causes
+          causes: this.parseFloodCauses(event.floodCause),
+          // Clean river basin information
+          riverBasins: this.parseRiverBasins(event.riverBasin),
+          // Add search-friendly text
+          searchText: `${event.state || ''} ${event.district || ''} ${event.floodCause || ''}`.toLowerCase()
+        };
+      } catch (error) {
+        console.warn('⚠️ Error processing event:', event, error);
+        return {
+          ...event,
+          parsedDate: new Date(),
+          causes: [],
+          riverBasins: [],
+          searchText: `${event.state || ''} ${event.district || ''}`.toLowerCase()
+        };
+      }
+    }).sort((a, b) => b.parsedDate - a.parsedDate); // Sort by date, newest first
   }
 
   /**

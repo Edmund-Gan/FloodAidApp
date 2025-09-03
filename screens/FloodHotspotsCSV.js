@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   View,
+  ScrollView,
   TouchableOpacity,
   Alert,
   Modal,
@@ -110,6 +111,16 @@ export default function FloodHotspotsCSV({ navigation }) {
       setAreaSummary(summary);
     } catch (error) {
       console.error('Error loading state details:', error);
+      // Set fallback summary data to prevent crashes
+      setAreaSummary({
+        totalEvents: state.totalEvents || 0,
+        recentEvents: state.recentEvents || 0,
+        mostRecentEvent: null,
+        topCauses: ['Data temporarily unavailable'],
+        riverBasins: ['Loading...'],
+        yearlyBreakdown: {},
+        error: 'Unable to load detailed state information'
+      });
     }
     
     setShowModal(true);

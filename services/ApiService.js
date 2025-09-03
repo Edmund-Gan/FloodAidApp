@@ -189,8 +189,9 @@ class ApiService {
         temp_max: this.calculateMax(hourly.temperature_2m, last24Hours),
         temp_min: this.calculateMin(hourly.temperature_2m, last24Hours),
         
-        // Precipitation features (key for flood prediction)
-        rainfall_24h: this.calculateSum(hourly.rain, last24Hours),
+        // Precipitation features (key for flood prediction) - PAST data
+        rainfall_24h: this.calculateSum(hourly.rain, last24Hours), // Historical data
+        rainfall_24h_past: this.calculateSum(hourly.rain, last24Hours), // Explicit past data
         precipitation_24h: this.calculateSum(hourly.precipitation, last24Hours),
         rainfall_intensity: this.calculateAverage(hourly.rain, 6), // Last 6 hours
         
