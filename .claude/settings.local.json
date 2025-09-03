@@ -53,7 +53,15 @@
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
       "Bash(del convert_csv.js)",
-      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)"
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Machine Learning Model/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Machine Learning Model/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Machine Learning Model/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Machine Learning Model/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Machine Learning Model/**)"
     ],
     "deny": [],
     "ask": []

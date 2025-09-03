@@ -77,8 +77,8 @@ class RealTimeWeatherService {
     const hourly = data.hourly;
     const daily = data.daily;
 
-    // Calculate risk indicators from real data
-    const riskIndicators = this.calculateRealRiskIndicators(daily, hourly);
+    // Calculate weather indicators from real data (NO flood risk)
+    const weatherIndicators = this.calculateWeatherIndicators(daily, hourly);
     
     // Process rain forecast with specific dates
     const rainForecast = this.processRainForecast(daily);
@@ -94,7 +94,7 @@ class RealTimeWeatherService {
     };
 
     return {
-      risk_indicators: riskIndicators,
+      weather_indicators: weatherIndicators, // RENAMED: No longer "risk" indicators
       weather_summary: weatherSummary,
       rain_forecast: rainForecast,
       humidity: {
@@ -108,12 +108,12 @@ class RealTimeWeatherService {
   }
 
   /**
-   * Calculate real risk indicators from weather data
+   * Calculate weather indicators from weather data (NO flood risk calculations)
    * @param {Object} daily - Daily forecast data
    * @param {Object} hourly - Hourly forecast data
-   * @returns {Object} - Risk indicators
+   * @returns {Object} - Weather indicators only
    */
-  calculateRealRiskIndicators(daily, hourly) {
+  calculateWeatherIndicators(daily, hourly) {
     // Total forecast rain for next 7 days
     const totalForecastRain = daily.precipitation_sum
       .slice(0, 7)
@@ -122,10 +122,7 @@ class RealTimeWeatherService {
     // Count consecutive rain days
     const consecutiveRainDays = this.countConsecutiveRainDays(daily);
     
-    // Calculate current risk score based on real weather patterns
-    const currentRiskScore = this.calculateCurrentRiskScore(daily, hourly);
-    
-    // Determine warning levels based on real thresholds
+    // Determine warning levels based on weather thresholds (NOT flood risk)
     const warnings = this.calculateWeatherWarnings(daily, hourly);
 
     return {
@@ -134,9 +131,8 @@ class RealTimeWeatherService {
       high_humidity_warning: warnings.highHumidity,
       consecutive_rain_days: consecutiveRainDays,
       total_forecast_rain: Math.round(totalForecastRain * 10) / 10, // Round to 1 decimal
-      current_risk_score: Math.round(currentRiskScore * 100) / 100, // Round to 2 decimals
-      risk_level: this.determineRiskLevel(currentRiskScore),
       next_rain_day: this.findNextRainDay(daily)
+      // REMOVED: current_risk_score, risk_level - these are FLOOD PREDICTIONS, not weather data
     };
   }
 
@@ -214,33 +210,7 @@ class RealTimeWeatherService {
     return consecutiveDays;
   }
 
-  /**
-   * Calculate current risk score based on weather patterns
-   * @param {Object} daily - Daily forecast data
-   * @param {Object} hourly - Hourly forecast data
-   * @returns {number} - Risk score between 0 and 1
-   */
-  calculateCurrentRiskScore(daily, hourly) {
-    let riskScore = 0;
-
-    // Factor 1: Total upcoming rain (0-0.4)
-    const totalRain = daily.precipitation_sum.slice(0, 3).reduce((sum, rain) => sum + (rain || 0), 0);
-    riskScore += Math.min(totalRain / 100, 0.4);
-
-    // Factor 2: Consecutive rain days (0-0.3)
-    const consecutiveDays = this.countConsecutiveRainDays(daily);
-    riskScore += Math.min(consecutiveDays / 7, 0.3);
-
-    // Factor 3: Rain intensity (0-0.2)
-    const maxDailyRain = Math.max(...daily.precipitation_sum.slice(0, 3));
-    riskScore += Math.min(maxDailyRain / 50, 0.2);
-
-    // Factor 4: Rain probability (0-0.1)
-    const avgProbability = daily.precipitation_probability_max.slice(0, 3).reduce((sum, prob) => sum + (prob || 0), 0) / 3;
-    riskScore += Math.min(avgProbability / 1000, 0.1);
-
-    return Math.min(riskScore, 1.0);
-  }
+  // REMOVED: calculateCurrentRiskScore - Weather service should NOT calculate flood risk
 
   /**
    * Calculate weather warnings based on thresholds
@@ -259,16 +229,7 @@ class RealTimeWeatherService {
     };
   }
 
-  /**
-   * Determine risk level from risk score
-   * @param {number} riskScore - Risk score between 0 and 1
-   * @returns {string} - Risk level
-   */
-  determineRiskLevel(riskScore) {
-    if (riskScore >= 0.7) return 'High';
-    if (riskScore >= 0.4) return 'Medium';
-    return 'Low';
-  }
+  // REMOVED: determineRiskLevel - Weather service should NOT determine flood risk levels
 
   /**
    * Find next day with rain

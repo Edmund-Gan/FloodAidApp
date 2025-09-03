@@ -1,0 +1,78 @@
+{
+  "model_version": "3.0-embedded",
+  "features_count": 31,
+  "f1_score": 0.8095,
+  "performance_improvement": "38.35%",
+  "feature_order": [
+    "latitude", "longitude", "temp_max", "temp_min", "temp_mean",
+    "precipitation_sum", "rain_sum", "precipitation_hours",
+    "wind_speed_max", "wind_gusts_max", "wind_direction",
+    "river_discharge", "river_discharge_mean", "river_discharge_median",
+    "elevation",
+    "monsoon_season_encoded", "monsoon_phase_encoded",
+    "days_since_monsoon_start", "monsoon_intensity",
+    "is_january", "is_february", "is_march", "is_april", "is_may", "is_june",
+    "is_july", "is_august", "is_september", "is_october", "is_november", "is_december"
+  ],
+  "malaysian_states": [
+    "JOHOR", "KEDAH", "KELANTAN", "MELAKA", "NEGERI SEMBILAN",
+    "PAHANG", "PERAK", "PERLIS", "PULAU PINANG", "SABAH",
+    "SARAWAK", "SELANGOR", "TERENGGANU", "WILAYAH PERSEKUTUAN"
+  ],
+  "state_risk_multipliers": {
+    "SELANGOR": 1.2,
+    "WILAYAH PERSEKUTUAN": 1.3,
+    "JOHOR": 1.1,
+    "KEDAH": 1.15,
+    "KELANTAN": 1.25,
+    "TERENGGANU": 1.25,
+    "PAHANG": 1.1,
+    "PERAK": 1.05,
+    "PULAU PINANG": 1.0,
+    "MELAKA": 1.0,
+    "NEGERI SEMBILAN": 1.0,
+    "PERLIS": 1.0,
+    "SABAH": 0.95,
+    "SARAWAK": 0.9
+  },
+  "monsoon_patterns": {
+    "northeast": {
+      "months": [11, 12, 1, 2, 3],
+      "intensity": 0.36,
+      "season_code": 0,
+      "flood_rate": 0.3624
+    },
+    "southwest": {
+      "months": [5, 6, 7, 8, 9],
+      "intensity": 0.10,
+      "season_code": 1,
+      "flood_rate": 0.1020
+    },
+    "inter_monsoon": {
+      "months": [4, 10],
+      "intensity": 0.38,
+      "season_code": 2,
+      "flood_rate": 0.3756
+    }
+  },
+  "default_values": {
+    "elevation": 50.0,
+    "temp_max": 32.0,
+    "temp_min": 24.0,
+    "temp_mean": 28.0,
+    "precipitation_sum": 5.0,
+    "rain_sum": 5.0,
+    "precipitation_hours": 2.0,
+    "wind_speed_max": 15.0,
+    "wind_gusts_max": 20.0,
+    "wind_direction": 180.0,
+    "river_discharge": 50.0,
+    "river_discharge_mean": 50.0,
+    "river_discharge_median": 50.0
+  },
+  "risk_thresholds": {
+    "high": 0.7,
+    "medium": 0.4,
+    "low": 0.0
+  }
+}

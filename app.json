@@ -60,7 +60,6 @@
       ]
     ],
     "extra": {
-      "apiUrl": "http://192.168.1.100:8000/api",
       "openMeteoApiUrl": "https://api.open-meteo.com/v1",
       "googleMapsApiKey": "AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM"
     }

@@ -3,62 +3,17 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.1.100:8000/api';
 const OPEN_METEO_URL = Constants.expoConfig?.extra?.openMeteoApiUrl || 'https://api.open-meteo.com/v1';
+// Note: External ML APIs removed - using embedded ML service instead
 
 class ApiService {
   constructor() {
-    this.client = axios.create({
-      baseURL: API_BASE_URL,
-      timeout: 15000, // Increased timeout to 15 seconds
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    // Note: Removed HTTP client for ML APIs - using embedded ML service
+    // Only keeping weather data functionality
   }
 
-  // Flood Prediction APIs
-  async getPrediction(lat, lon) {
-    try {
-      const response = await this.client.get(`/predict/${lat}/${lon}`);
-      await this.cacheData(`prediction_${lat}_${lon}`, response.data);
-      return response.data;
-    } catch (error) {
-      console.error('API Error:', error);
-      const cached = await this.getCachedData(`prediction_${lat}_${lon}`);
-      if (cached) return cached;
-      
-      // Return mock data for development
-      return this.getMockPrediction();
-    }
-  }
-
-  async getMultipleLocationPredictions(locations) {
-    try {
-      const response = await this.client.post('/predict/multiple', { locations });
-      return response.data;
-    } catch (error) {
-      return this.getMockMultiplePredictions(locations);
-    }
-  }
-
-  async getRegionalRisks(region) {
-    try {
-      const response = await this.client.get(`/regional/${region}`);
-      return response.data;
-    } catch (error) {
-      return this.getMockRegionalRisks();
-    }
-  }
-
-  async getHistoricalData(district) {
-    try {
-      const response = await this.client.get(`/historical/${district}`);
-      return response.data;
-    } catch (error) {
-      return this.getMockHistoricalData(district);
-    }
-  }
+  // Note: All ML prediction APIs removed - using embedded ML service instead
+  // Keeping only weather data APIs and mock data generators for development
 
   // Weather Data from Open Meteo
   async getWeatherData(lat, lon) {
@@ -83,90 +38,110 @@ class ApiService {
     }
   }
 
-  // Enhanced Weather Data for ML Training Model Compatibility
+  // Enhanced Weather Data for 31-Feature ML Model Compatibility
   async getTrainingModelData(lat, lon, forecastDays = 7) {
-    console.log(`🌤️ Getting ML training compatible weather data for ${lat}, ${lon}`);
+    console.log(`🌤️ Getting Enhanced 31-Feature ML compatible weather data for ${lat}, ${lon}`);
     
     try {
-      const params = {
+      // Primary request with all required parameters for 31-feature model
+      const enhancedParams = {
         latitude: lat,
         longitude: lon,
-        // Simplified hourly parameters - only ML essentials to avoid timeout
-        hourly: 'temperature_2m,precipitation,relative_humidity_2m,wind_speed_10m',
+        // Comprehensive hourly parameters for 31-feature model
+        hourly: [
+          'temperature_2m',
+          'precipitation', 
+          'rain',
+          'relative_humidity_2m',
+          'wind_speed_10m',
+          'wind_gusts_10m',
+          'wind_direction_10m',
+          'surface_pressure',
+          'cloud_cover',
+          'visibility',
+          'dewpoint_2m'
+        ].join(','),
         
-        // Essential daily parameters only
-        daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum',
+        // Enhanced daily parameters
+        daily: [
+          'temperature_2m_max',
+          'temperature_2m_min', 
+          'precipitation_sum',
+          'rain_sum',
+          'precipitation_hours',
+          'wind_speed_10m_max',
+          'wind_gusts_10m_max'
+        ].join(','),
         
-        // Reduced forecast days to speed up request
-        forecast_days: 3,
+        forecast_days: Math.min(forecastDays, 7),
         current_weather: true,
         timezone: 'Asia/Kuala_Lumpur'
-        // Removed past_days to reduce request size
       };
 
-      console.log('🚀 Making enhanced weather API request...');
+      console.log('🚀 Making enhanced 31-feature weather API request...');
       
-      // Increase timeout to 15 seconds for weather API calls
       const response = await axios.get(`${OPEN_METEO_URL}/forecast`, { 
-        params,
-        timeout: 15000 // 15 seconds timeout
+        params: enhancedParams,
+        timeout: 20000 // Increased timeout for comprehensive data
       });
       
       if (!response.data) {
-        throw new Error('No weather data received');
+        throw new Error('No enhanced weather data received');
       }
       
-      console.log('✅ Enhanced weather data retrieved successfully');
+      console.log('✅ Enhanced 31-feature weather data retrieved successfully');
       
-      // Process and structure data for ML model
-      return this.processWeatherForML(response.data);
+      // Get additional river discharge data from flood API
+      const riverData = await this.getRiverDischargeData(lat, lon);
+      
+      // Process and structure data for enhanced ML model
+      return this.processWeatherForEnhancedML(response.data, riverData, lat, lon);
       
     } catch (error) {
-      console.error('❌ Error getting enhanced training model weather data:', error);
+      console.error('❌ Error getting enhanced 31-feature weather data:', error);
       
-      // Fallback: try basic weather request with minimal parameters
+      // Fallback: try basic weather request with core parameters
       try {
-        console.log('🔄 Attempting fallback to basic weather request...');
+        console.log('🔄 Attempting fallback to core weather parameters...');
         
-        const basicParams = {
+        const coreParams = {
           latitude: lat,
           longitude: lon,
-          hourly: 'temperature_2m,precipitation',
-          daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum',
-          forecast_days: 1,
+          hourly: 'temperature_2m,precipitation,rain,relative_humidity_2m,wind_speed_10m',
+          daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum',
+          forecast_days: 3,
           current_weather: true,
           timezone: 'Asia/Kuala_Lumpur'
         };
         
         const fallbackResponse = await axios.get(`${OPEN_METEO_URL}/forecast`, {
-          params: basicParams,
-          timeout: 10000 // Shorter timeout for fallback
+          params: coreParams,
+          timeout: 15000
         });
         
         if (fallbackResponse.data) {
           console.log('✅ Fallback weather data retrieved successfully');
-          return this.processWeatherForML(fallbackResponse.data);
+          return this.processWeatherForEnhancedML(fallbackResponse.data, null, lat, lon);
         }
         
       } catch (fallbackError) {
         console.error('❌ Fallback weather request also failed:', fallbackError);
       }
       
-      // If both requests fail, throw error to force retry or user notification
-      throw new Error(`Failed to fetch real weather data: ${error.message}`);
+      throw new Error(`Failed to fetch enhanced weather data: ${error.message}`);
     }
   }
 
-  // Process weather data for ML model compatibility
-  processWeatherForML(rawData) {
-    console.log('🔄 Processing weather data for ML compatibility...');
+  // Process weather data for Enhanced 31-Feature ML model compatibility
+  processWeatherForEnhancedML(rawData, riverData, lat, lon) {
+    console.log('🔄 Processing weather data for Enhanced 31-Feature ML compatibility...');
     
     try {
       const processed = {
         location: {
           latitude: rawData.latitude,
           longitude: rawData.longitude,
-          elevation: rawData.elevation,
+          elevation: rawData.elevation || 50,
           timezone: rawData.timezone
         },
         
@@ -178,21 +153,24 @@ class ApiService {
           time: rawData.current_weather?.time || new Date().toISOString()
         },
         
-        // Features for ML model (last 24 hours average)
-        features: this.extractMLFeatures(rawData),
+        // Enhanced features for 31-feature ML model
+        features: this.extractEnhancedMLFeatures(rawData, riverData, lat, lon),
         
-        // 7-day forecast for flood prediction
-        forecast: this.extractForecastFeatures(rawData),
+        // Enhanced forecast with monsoon awareness
+        forecast: this.extractEnhancedForecastFeatures(rawData),
         
-        // Flood risk indicators
-        risk_indicators: this.calculateRiskIndicators(rawData)
+        // Enhanced risk indicators
+        risk_indicators: this.calculateEnhancedRiskIndicators(rawData),
+        
+        // New: Monsoon information
+        monsoon_info: this.calculateMonsoonFeatures(new Date())
       };
       
-      console.log('✅ Weather data processed for ML model');
+      console.log('✅ Weather data processed for Enhanced 31-Feature ML model');
       return processed;
       
     } catch (error) {
-      console.error('❌ Error processing weather data:', error);
+      console.error('❌ Error processing enhanced weather data:', error);
       return null;
     }
   }
@@ -426,9 +404,300 @@ class ApiService {
     return { day: peakDay, rainfall: peakRainfall };
   }
 
-  // Mock data generator for development
+  // Enhanced 31-Feature ML Model Functions
+  
+  // Extract Enhanced ML features including monsoon and temporal features
+  extractEnhancedMLFeatures(data, riverData, lat, lon) {
+    try {
+      const hourly = data.hourly || {};
+      const daily = data.daily || {};
+      const last24Hours = 24;
+      
+      // Original weather features (15)
+      const originalFeatures = {
+        latitude: lat,
+        longitude: lon,
+        elevation: data.elevation || 50,
+        temp_max: this.calculateMax(hourly.temperature_2m, last24Hours),
+        temp_min: this.calculateMin(hourly.temperature_2m, last24Hours),
+        temp_mean: this.calculateAverage(hourly.temperature_2m, last24Hours),
+        precipitation_sum: this.calculateSum(hourly.precipitation, last24Hours),
+        rain_sum: this.calculateSum(hourly.rain, last24Hours),
+        precipitation_hours: this.calculatePrecipitationHours(hourly.precipitation, last24Hours),
+        wind_speed_max: this.calculateMax(hourly.wind_speed_10m, last24Hours),
+        wind_gusts_max: this.calculateMax(hourly.wind_gusts_10m, last24Hours),
+        wind_direction: this.calculateAverage(hourly.wind_direction_10m, last24Hours),
+        river_discharge: riverData?.river_discharge || this.estimateRiverDischarge(lat, lon),
+        river_discharge_mean: riverData?.river_discharge_mean || this.estimateRiverDischarge(lat, lon) * 0.8,
+        river_discharge_median: riverData?.river_discharge_median || this.estimateRiverDischarge(lat, lon) * 0.7
+      };
+      
+      // Monsoon & temporal features (16)
+      const monsoonFeatures = this.calculateMonsoonFeatures(new Date());
+      const temporalFeatures = this.calculateMonthlyFeatures(new Date());
+      
+      return {
+        ...originalFeatures,
+        ...monsoonFeatures,
+        ...temporalFeatures
+      };
+      
+    } catch (error) {
+      console.error('Error extracting enhanced ML features:', error);
+      return null;
+    }
+  }
+  
+  // Calculate monsoon pattern features
+  calculateMonsoonFeatures(date) {
+    const month = date.getMonth() + 1; // 1-12
+    const dayOfYear = this.getDayOfYear(date);
+    
+    let monsoonSeason, monsoonPhase, daysSinceMonsoonStart, monsoonIntensity;
+    
+    // Malaysian monsoon seasons based on documentation
+    if (month >= 11 || month <= 3) {
+      // Northeast Monsoon (Nov-Mar)
+      monsoonSeason = 0;
+      if (month === 11) {
+        monsoonPhase = 0; // Early
+        daysSinceMonsoonStart = date.getDate();
+      } else if (month === 12 || month === 1) {
+        monsoonPhase = 1; // Peak
+        daysSinceMonsoonStart = month === 12 ? 30 + date.getDate() : 60 + date.getDate();
+      } else {
+        monsoonPhase = 2; // Late
+        daysSinceMonsoonStart = 90 + date.getDate();
+      }
+      monsoonIntensity = 0.36; // 36.24% flood rate
+    } else if (month >= 5 && month <= 9) {
+      // Southwest Monsoon (May-Sep)
+      monsoonSeason = 1;
+      if (month === 5) {
+        monsoonPhase = 0; // Early
+        daysSinceMonsoonStart = date.getDate();
+      } else if (month === 6 || month === 7) {
+        monsoonPhase = 1; // Peak
+        daysSinceMonsoonStart = month === 6 ? 30 + date.getDate() : 60 + date.getDate();
+      } else {
+        monsoonPhase = 2; // Late
+        daysSinceMonsoonStart = month === 8 ? 90 + date.getDate() : 120 + date.getDate();
+      }
+      monsoonIntensity = 0.10; // 10.20% flood rate
+    } else {
+      // Inter-monsoon (Apr, Oct)
+      monsoonSeason = 2;
+      monsoonPhase = 3; // Transition
+      daysSinceMonsoonStart = date.getDate();
+      monsoonIntensity = 0.38; // 37.56% flood rate
+    }
+    
+    return {
+      monsoon_season_encoded: monsoonSeason,
+      monsoon_phase_encoded: monsoonPhase,
+      days_since_monsoon_start: daysSinceMonsoonStart,
+      monsoon_intensity: monsoonIntensity
+    };
+  }
+  
+  // Calculate monthly temporal features (one-hot encoded)
+  calculateMonthlyFeatures(date) {
+    const month = date.getMonth() + 1; // 1-12
+    
+    return {
+      is_january: month === 1 ? 1 : 0,
+      is_february: month === 2 ? 1 : 0,
+      is_march: month === 3 ? 1 : 0,
+      is_april: month === 4 ? 1 : 0,
+      is_may: month === 5 ? 1 : 0,
+      is_june: month === 6 ? 1 : 0,
+      is_july: month === 7 ? 1 : 0,
+      is_august: month === 8 ? 1 : 0,
+      is_september: month === 9 ? 1 : 0,
+      is_october: month === 10 ? 1 : 0,
+      is_november: month === 11 ? 1 : 0,
+      is_december: month === 12 ? 1 : 0
+    };
+  }
+  
+  // Get river discharge data from Open Meteo Flood API
+  async getRiverDischargeData(lat, lon) {
+    try {
+      const params = {
+        latitude: lat,
+        longitude: lon,
+        hourly: 'river_discharge',
+        forecast_days: 1
+      };
+      
+      const response = await axios.get(`${OPEN_METEO_URL}/flood`, { 
+        params,
+        timeout: 10000
+      });
+      
+      if (response.data?.hourly?.river_discharge) {
+        const discharge = response.data.hourly.river_discharge;
+        return {
+          river_discharge: this.calculateAverage(discharge, 24),
+          river_discharge_mean: this.calculateAverage(discharge),
+          river_discharge_median: this.calculateMedian(discharge)
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.log('River discharge data not available, using estimates');
+      return null;
+    }
+  }
+  
+  // Enhanced forecast features with monsoon awareness
+  extractEnhancedForecastFeatures(data) {
+    try {
+      const daily = data.daily || {};
+      const forecastDays = daily.time?.length || 0;
+      
+      if (forecastDays === 0) {
+        return [];
+      }
+      
+      const forecast = [];
+      
+      for (let i = 0; i < forecastDays; i++) {
+        const date = new Date(daily.time[i]);
+        const monsoonInfo = this.calculateMonsoonFeatures(date);
+        
+        forecast.push({
+          date: daily.time[i],
+          temp_max: daily.temperature_2m_max?.[i] || 30,
+          temp_min: daily.temperature_2m_min?.[i] || 24,
+          precipitation_sum: daily.precipitation_sum?.[i] || 0,
+          rain_sum: daily.rain_sum?.[i] || 0,
+          precipitation_hours: daily.precipitation_hours?.[i] || 0,
+          wind_speed_max: daily.wind_speed_10m_max?.[i] || 0,
+          wind_gusts_max: daily.wind_gusts_10m_max?.[i] || 0,
+          
+          // Enhanced flood risk with monsoon awareness
+          flood_risk_score: this.calculateEnhancedDailyFloodRisk(
+            daily.precipitation_sum?.[i] || 0,
+            daily.rain_sum?.[i] || 0,
+            monsoonInfo.monsoon_intensity
+          ),
+          
+          // Monsoon context for this day
+          monsoon_season: this.getMonsoonSeasonName(monsoonInfo.monsoon_season_encoded),
+          monsoon_intensity: monsoonInfo.monsoon_intensity
+        });
+      }
+      
+      return forecast;
+      
+    } catch (error) {
+      console.error('Error extracting enhanced forecast features:', error);
+      return [];
+    }
+  }
+  
+  // Enhanced risk indicators with monsoon patterns
+  calculateEnhancedRiskIndicators(data) {
+    try {
+      const features = this.extractEnhancedMLFeatures(data, null, data.latitude, data.longitude);
+      const forecast = this.extractEnhancedForecastFeatures(data);
+      const monsoonInfo = this.calculateMonsoonFeatures(new Date());
+      
+      return {
+        // Enhanced current risk factors
+        heavy_rain_warning: features.rain_sum > 20,
+        extreme_rain_warning: features.rain_sum > 50,
+        high_humidity_warning: features.temp_mean > 25 && features.rain_sum > 10,
+        monsoon_peak_warning: monsoonInfo.monsoon_phase_encoded === 1,
+        
+        // Enhanced forecast risk factors
+        consecutive_rain_days: this.countConsecutiveRainDays(forecast),
+        peak_rainfall_day: this.findPeakRainfallDay(forecast),
+        total_forecast_rain: forecast.reduce((sum, day) => sum + (day.rain_sum || 0), 0),
+        monsoon_amplified_risk: monsoonInfo.monsoon_intensity > 0.3,
+        
+        // Enhanced risk scores
+        current_risk_score: this.calculateEnhancedCurrentRiskScore(features, monsoonInfo),
+        forecast_risk_scores: forecast.map(day => day.flood_risk_score),
+        monsoon_risk_multiplier: monsoonInfo.monsoon_intensity
+      };
+      
+    } catch (error) {
+      console.error('Error calculating enhanced risk indicators:', error);
+      return null;
+    }
+  }
+
+  // Helper functions for enhanced features
+  
+  calculatePrecipitationHours(precipitationArray, lastN = null) {
+    if (!precipitationArray) return 0;
+    const data = lastN ? precipitationArray.slice(-lastN) : precipitationArray;
+    return data.filter(val => val > 0.1).length; // Hours with >0.1mm precipitation
+  }
+  
+  estimateRiverDischarge(lat, lon) {
+    // Rough estimation based on location and season
+    const baseDischarge = 2.5; // m³/s
+    const monsoonInfo = this.calculateMonsoonFeatures(new Date());
+    return baseDischarge * (1 + monsoonInfo.monsoon_intensity);
+  }
+  
+  calculateMedian(array) {
+    if (!array || array.length === 0) return 0;
+    const filtered = array.filter(val => val !== null && val !== undefined);
+    const sorted = filtered.sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+  }
+  
+  getDayOfYear(date) {
+    const start = new Date(date.getFullYear(), 0, 0);
+    const diff = date - start;
+    const oneDay = 1000 * 60 * 60 * 24;
+    return Math.floor(diff / oneDay);
+  }
+  
+  getMonsoonSeasonName(encoded) {
+    switch (encoded) {
+      case 0: return 'Northeast Monsoon';
+      case 1: return 'Southwest Monsoon';
+      case 2: return 'Inter-monsoon';
+      default: return 'Unknown';
+    }
+  }
+  
+  calculateEnhancedDailyFloodRisk(precipitation, rainfall, monsoonIntensity) {
+    const precipitationScore = Math.min(precipitation / 50, 1);
+    const rainfallScore = Math.min(rainfall / 40, 1);
+    const monsoonMultiplier = 1 + monsoonIntensity;
+    
+    return Math.min((precipitationScore * 0.4 + rainfallScore * 0.6) * monsoonMultiplier, 1);
+  }
+  
+  calculateEnhancedCurrentRiskScore(features, monsoonInfo) {
+    let score = 0;
+    
+    // Base weather risk (60%)
+    score += Math.min((features.rain_sum || 0) / 50 * 0.3, 0.3);
+    score += Math.min((features.precipitation_sum || 0) / 60 * 0.2, 0.2);
+    score += Math.min((features.wind_speed_max || 0) / 40 * 0.1, 0.1);
+    
+    // Monsoon amplification (40%)
+    const monsoonRisk = monsoonInfo.monsoon_intensity * 0.4;
+    score += monsoonRisk;
+    
+    return Math.min(score, 1);
+  }
+  
+  // Enhanced mock data generator for 31-feature development
   getMockTrainingModelData(lat, lon, forecastDays) {
-    console.log('🔄 Generating mock training model data...');
+    console.log('🔄 Generating enhanced 31-feature mock training model data...');
+    
+    const monsoonInfo = this.calculateMonsoonFeatures(new Date());
+    const monthlyInfo = this.calculateMonthlyFeatures(new Date());
     
     return {
       location: { latitude: lat, longitude: lon, elevation: 50, timezone: 'Asia/Kuala_Lumpur' },
@@ -436,45 +705,73 @@ class ApiService {
         temperature: 28 + Math.random() * 6,
         windspeed: 5 + Math.random() * 15,
         winddirection: Math.random() * 360,
-        weathercode: Math.random() > 0.7 ? 61 : 1, // 61 = rain, 1 = clear
+        weathercode: Math.random() > 0.7 ? 61 : 1,
         time: new Date().toISOString()
       },
       features: {
-        temp_avg: 28 + Math.random() * 4,
+        // Original 15 features
+        latitude: lat,
+        longitude: lon,
+        elevation: 50,
         temp_max: 32 + Math.random() * 3,
         temp_min: 24 + Math.random() * 3,
-        rainfall_24h: Math.random() * 40,
-        precipitation_24h: Math.random() * 45,
-        rainfall_intensity: Math.random() * 15,
-        humidity_avg: 70 + Math.random() * 20,
-        pressure_avg: 1010 + Math.random() * 10,
-        pressure_trend: -2 + Math.random() * 4,
-        wind_speed_avg: 5 + Math.random() * 10,
+        temp_mean: 28 + Math.random() * 4,
+        precipitation_sum: Math.random() * 45,
+        rain_sum: Math.random() * 40,
+        precipitation_hours: Math.floor(Math.random() * 12),
         wind_speed_max: 10 + Math.random() * 20,
         wind_gusts_max: 15 + Math.random() * 25,
-        cloud_cover_avg: Math.random() * 100,
-        visibility_avg: 5000 + Math.random() * 5000,
-        dewpoint_avg: 20 + Math.random() * 8
+        wind_direction: Math.random() * 360,
+        river_discharge: 2 + Math.random() * 3,
+        river_discharge_mean: 1.8 + Math.random() * 2.5,
+        river_discharge_median: 1.5 + Math.random() * 2,
+        
+        // Monsoon features (4)
+        ...monsoonInfo,
+        
+        // Monthly features (12)
+        ...monthlyInfo
       },
-      forecast: Array.from({ length: forecastDays }, (_, i) => ({
-        date: new Date(Date.now() + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        temp_max: 30 + Math.random() * 5,
-        temp_min: 23 + Math.random() * 4,
-        precipitation_sum: Math.random() * 30,
-        rain_sum: Math.random() * 25,
-        precipitation_probability: Math.random() * 100,
-        wind_speed_max: 10 + Math.random() * 15,
-        flood_risk_score: Math.random()
-      })),
+      forecast: Array.from({ length: forecastDays }, (_, i) => {
+        const forecastDate = new Date(Date.now() + i * 24 * 60 * 60 * 1000);
+        const dailyMonsoon = this.calculateMonsoonFeatures(forecastDate);
+        
+        return {
+          date: forecastDate.toISOString().split('T')[0],
+          temp_max: 30 + Math.random() * 5,
+          temp_min: 23 + Math.random() * 4,
+          precipitation_sum: Math.random() * 30,
+          rain_sum: Math.random() * 25,
+          precipitation_hours: Math.floor(Math.random() * 8),
+          wind_speed_max: 10 + Math.random() * 15,
+          wind_gusts_max: 12 + Math.random() * 20,
+          flood_risk_score: this.calculateEnhancedDailyFloodRisk(
+            Math.random() * 30,
+            Math.random() * 25,
+            dailyMonsoon.monsoon_intensity
+          ),
+          monsoon_season: this.getMonsoonSeasonName(dailyMonsoon.monsoon_season_encoded),
+          monsoon_intensity: dailyMonsoon.monsoon_intensity
+        };
+      }),
       risk_indicators: {
         heavy_rain_warning: Math.random() > 0.6,
         extreme_rain_warning: Math.random() > 0.8,
         high_humidity_warning: Math.random() > 0.5,
+        monsoon_peak_warning: monsoonInfo.monsoon_phase_encoded === 1,
         consecutive_rain_days: Math.floor(Math.random() * 4),
         peak_rainfall_day: { day: Math.floor(Math.random() * forecastDays), rainfall: Math.random() * 30 },
         total_forecast_rain: Math.random() * 100,
+        monsoon_amplified_risk: monsoonInfo.monsoon_intensity > 0.3,
         current_risk_score: Math.random(),
-        forecast_risk_scores: Array.from({ length: forecastDays }, () => Math.random())
+        forecast_risk_scores: Array.from({ length: forecastDays }, () => Math.random()),
+        monsoon_risk_multiplier: monsoonInfo.monsoon_intensity
+      },
+      monsoon_info: {
+        season: this.getMonsoonSeasonName(monsoonInfo.monsoon_season_encoded),
+        phase: monsoonInfo.monsoon_phase_encoded,
+        intensity: monsoonInfo.monsoon_intensity,
+        days_since_start: monsoonInfo.days_since_monsoon_start
       }
     };
   }
@@ -548,7 +845,49 @@ class ApiService {
     }
   }
 
-  // Mock Data Generators
+  // Enhanced Mock Data Generators (31-Feature Model Compatible)
+  getMockEnhancedPrediction(lat, lon) {
+    const riskLevels = ['Low', 'Medium', 'High'];
+    const probability = Math.random();
+    const monsoonInfo = this.calculateMonsoonFeatures(new Date());
+    const riskLevel = probability >= 0.7 ? 'High' : probability >= 0.4 ? 'Medium' : 'Low';
+    
+    return {
+      success: true,
+      risk_level: riskLevel,
+      flood_probability: Number(probability.toFixed(4)),
+      confidence: probability <= 0.2 || probability >= 0.7 ? 'High' : 'Medium',
+      location_info: {
+        state: this.getStateFromCoordinates(lat, lon),
+        coordinates: [lat, lon]
+      },
+      weather_summary: {
+        temp_max: 30 + Math.random() * 5,
+        precipitation_sum: Math.random() * 45,
+        rain_sum: Math.random() * 40,
+        wind_speed_max: 10 + Math.random() * 20,
+        wind_gusts_max: 15 + Math.random() * 25,
+        river_discharge: 2 + Math.random() * 3,
+        monsoon_season: this.getMonsoonSeasonName(monsoonInfo.monsoon_season_encoded)
+      },
+      prediction_details: {
+        model_used: Math.random() > 0.5 ? 'XGBoost' : 'Random Forest',
+        model_key: this.getStateFromCoordinates(lat, lon),
+        features_count: 31,
+        f1_score: 0.8095,
+        prediction_date: new Date().toISOString().split('T')[0],
+        binary_prediction: probability > 0.5 ? 1 : 0
+      },
+      api_info: {
+        version: '2.0',
+        model_type: 'Enhanced 31-Feature (Mock)',
+        performance_improvement: '38.35%',
+        f1_score: 0.8095
+      }
+    };
+  }
+
+  // Legacy Mock Data (for fallback compatibility)
   getMockPrediction() {
     const riskLevels = ['Low', 'Moderate', 'High', 'Very High'];
     const probability = Math.random();
@@ -572,6 +911,19 @@ class ApiService {
     };
   }
 
+  getMockEnhancedMultiplePredictions(locations) {
+    return {
+      success: true,
+      total_locations: locations.length,
+      results: locations.map((loc, index) => this.getMockEnhancedPrediction(loc.latitude, loc.longitude)),
+      api_info: {
+        version: '2.0',
+        model_type: 'Enhanced 31-Feature (Mock)',
+        performance_improvement: '38.35%'
+      }
+    };
+  }
+
   getMockMultiplePredictions(locations) {
     return {
       predictions: locations.map(loc => ({
@@ -581,6 +933,19 @@ class ApiService {
       }))
     };
   }
+
+  // Helper methods for enhanced features
+  getStateFromCoordinates(lat, lon) {
+    // Simple coordinate-based state mapping for Malaysia
+    if (lat >= 4.0 && lat <= 7.5 && lon >= 115.0 && lon <= 119.5) return 'SABAH';
+    if (lat >= 0.8 && lat <= 5.0 && lon >= 109.0 && lon <= 115.5) return 'SARAWAK';
+    if (lat >= 3.0 && lat <= 3.3 && lon >= 101.5 && lon <= 101.8) return 'WILAYAH PERSEKUTUAN';
+    if (lat >= 1.0 && lat <= 2.8 && lon >= 102.5 && lon <= 104.5) return 'JOHOR';
+    if (lat >= 2.8 && lat <= 4.0 && lon >= 100.8 && lon <= 102.0) return 'SELANGOR';
+    return 'SELANGOR'; // Default fallback
+  }
+
+  // Note: API health checks removed - using embedded ML service
 
   getMockRegionalRisks() {
     const districts = [

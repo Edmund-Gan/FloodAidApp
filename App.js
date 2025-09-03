@@ -101,11 +101,19 @@ const getRiskDescription = (prediction, locationInfo) => {
     // Use actual ML model confidence (F1 score: 71.25%)
     const displayConfidence = confidence;
     
-    // Get data sources from prediction metadata  
-    const dataSources = prediction.data_sources || ['GPS', 'Google Maps', 'Open Meteo', 'ML Model'];
-    const primarySources = dataSources.slice(0, 3); // Use top 3 sources
+    // Get data sources from enhanced prediction metadata  
+    const dataSources = prediction.data_sources || ['GPS', 'Google Maps', 'Open Meteo Professional', 'Enhanced ML Model'];
+    const primarySources = dataSources.slice(0, 3);
     
-    confidenceText = ` Based on your state, we have ${displayConfidence}% of accuracy based on historical data from ${primarySources.join(', ')}.`;
+    const modelType = prediction.model_info?.model_type || 'ML Model';
+    const featuresCount = prediction.model_info?.features_count || 'multiple';
+    
+    confidenceText = ` Based on enhanced ${featuresCount}-feature ${modelType}, we have ${displayConfidence}% accuracy from ${primarySources.join(', ')}.`;
+    
+    // Add monsoon context if available
+    if (prediction.weather_summary?.monsoon_season && prediction.weather_summary?.monsoon_season !== 'Unknown') {
+      confidenceText += ` Current ${prediction.weather_summary.monsoon_season} conditions are factored into this prediction.`;
+    }
   } else if (prediction?.is_na) {
     confidenceText = ' Prediction confidence unavailable due to API connectivity issues.';
   }
@@ -140,32 +148,25 @@ function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose 
   const renderRiskAnalysis = () => (
     <ScrollView style={styles.tabContent}>
       <View style={styles.detailSection}>
-        <Text style={styles.detailSectionTitle}>Risk Breakdown</Text>
+        <Text style={styles.detailSectionTitle}>
+          {prediction?.is_na ? 'Weather Data (Flood Prediction Unavailable)' : 'Risk Breakdown'}
+        </Text>
         <View style={styles.riskMeter}>
           <View style={[styles.riskMeterFill, { 
-            width: `${realTimeWeather?.risk_indicators?.current_risk_score ? 
-                      realTimeWeather.risk_indicators.current_risk_score * 100 :
-                      prediction.flood_probability * 100}%`,
-            backgroundColor: getRiskColor(
-              realTimeWeather?.risk_indicators?.current_risk_score || 
-              prediction.flood_probability
-            )
+            width: prediction?.is_na ? '0%' : `${prediction.flood_probability * 100}%`,
+            backgroundColor: prediction?.is_na ? '#E0E0E0' : getRiskColor(prediction.flood_probability)
           }]} />
           <Text style={styles.riskMeterText}>
-            {realTimeWeather?.risk_indicators?.current_risk_score ? 
-              Math.round(realTimeWeather.risk_indicators.current_risk_score * 100) :
-              Math.round(prediction.flood_probability * 100)}% Flood Probability
+            {prediction?.is_na ? 'Flood Prediction Not Available' :
+              Math.round(prediction.flood_probability * 100) + '% Flood Probability'}
           </Text>
         </View>
         
         <View style={styles.riskStats}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Risk Level</Text>
-            <Text style={[styles.statValue, { color: getRiskColor(
-              realTimeWeather?.risk_indicators?.current_risk_score || 
-              prediction.flood_probability
-            ) }]}>
-              {realTimeWeather?.risk_indicators?.risk_level || prediction.risk_level}
+            <Text style={[styles.statValue, { color: prediction?.is_na ? '#666' : getRiskColor(prediction.flood_probability) }]}>
+              {prediction?.is_na ? 'N/A' : prediction.risk_level}
             </Text>
           </View>
           <View style={styles.statItem}>
@@ -174,19 +175,53 @@ function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose 
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Peak Risk</Text>
-            <Text style={styles.statValue}>{Math.round(prediction.timeframe_hours)}h</Text>
+            <Text style={styles.statValue}>
+              {prediction?.is_na ? 'N/A' : Math.round(prediction.timeframe_hours) + 'h'}
+            </Text>
           </View>
         </View>
       </View>
 
-      <View style={styles.detailSection}>
-        <Text style={styles.detailSectionTitle}>Contributing Factors</Text>
-        {prediction.contributing_factors.map((factor, index) => (
-          <View key={index} style={styles.factorDetailItem}>
-            <Ionicons name="warning-outline" size={20} color="#FF9800" />
-            <Text style={styles.factorDetailText}>{factor}</Text>
+      {/* Information section when prediction is N/A */}
+      {prediction?.is_na && (
+        <View style={styles.detailSection}>
+          <Text style={styles.detailSectionTitle}>Data Status</Text>
+          <View style={styles.infoCard}>
+            <Ionicons name="information-circle" size={24} color="#2196F3" />
+            <View style={styles.infoContent}>
+              <Text style={styles.infoTitle}>AI Flood Prediction Unavailable</Text>
+              <Text style={styles.infoText}>
+                {realTimeWeather ? 
+                  'Current weather conditions are being monitored. Weather data is provided by Open Meteo API.' :
+                  'Both AI prediction and weather monitoring are currently unavailable. Please check your internet connection.'}
+              </Text>
+              {realTimeWeather && (
+                <Text style={styles.infoSubtext}>
+                  Real-time temperature, rainfall, and atmospheric conditions are still available below.
+                </Text>
+              )}
+            </View>
           </View>
-        ))}
+        </View>
+      )}
+
+      <View style={styles.detailSection}>
+        <Text style={styles.detailSectionTitle}>
+          {prediction?.is_na ? 'System Status' : 'Contributing Factors'}
+        </Text>
+        {prediction?.is_na ? (
+          <View style={styles.factorDetailItem}>
+            <Ionicons name="information-circle-outline" size={20} color="#666" />
+            <Text style={styles.factorDetailText}>AI flood prediction system unavailable</Text>
+          </View>
+        ) : (
+          prediction.contributing_factors.map((factor, index) => (
+            <View key={index} style={styles.factorDetailItem}>
+              <Ionicons name="warning-outline" size={20} color="#FF9800" />
+              <Text style={styles.factorDetailText}>{factor}</Text>
+            </View>
+          ))
+        )}
       </View>
 
       {prediction.risk_indicators && (
@@ -253,14 +288,14 @@ function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose 
           <View style={styles.trendItem}>
             <Text style={styles.trendLabel}>Consecutive Rain Days</Text>
             <Text style={styles.trendValue}>
-              {realTimeWeather?.risk_indicators?.consecutive_rain_days || 
+              {realTimeWeather?.weather_indicators?.consecutive_rain_days || 
                prediction?.risk_indicators?.consecutive_rain_days || 0} days
             </Text>
           </View>
           <View style={styles.trendItem}>
             <Text style={styles.trendLabel}>Total Forecast Rain</Text>
             <Text style={styles.trendValue}>
-              {Math.round(realTimeWeather?.risk_indicators?.total_forecast_rain || 
+              {Math.round(realTimeWeather?.weather_indicators?.total_forecast_rain || 
                          prediction?.risk_indicators?.total_forecast_rain || 0)}mm
             </Text>
           </View>
@@ -566,6 +601,19 @@ function HomeScreen() {
     }
   }, [locationInfo]);
 
+  // Independent weather loading - separate from ML prediction failures
+  useEffect(() => {
+    // Trigger weather loading after initial mount, regardless of ML prediction status
+    const timer = setTimeout(() => {
+      if (!realTimeWeather && !weatherLoading) {
+        console.log('🌤️ Triggering independent weather data loading...');
+        loadRealTimeWeather();
+      }
+    }, 2000); // Wait 2 seconds for ML prediction to complete first
+
+    return () => clearTimeout(timer);
+  }, []); // Run only once on mount
+
   const loadPredictionWithRetry = async (isManualRetry = false, retryAttempt = 0) => {
     const debugId = Date.now();
     const currentRetry = isManualRetry ? retryCount + 1 : retryAttempt;
@@ -648,22 +696,9 @@ function HomeScreen() {
         return;
       }
       
-      // After 3 attempts or manual retry fails, fall back to mock data if available
+      // After 3 attempts, don't fall back to mock data - show proper N/A state
       if (currentRetry >= 2) {
-        try {
-          const mockPrediction = getMockMLPrediction();
-          setPrediction(mockPrediction);
-          setLocationInfo({
-            lat: 3.0738,
-            lon: 101.5183,
-            display_name: 'Puchong, Selangor (Mock Data)',
-            isDev: true,
-            isMock: true
-          });
-          return;
-        } catch (mockError) {
-          console.error(`❌ [${debugId}]: Even mock data failed:`, mockError);
-        }
+        console.log(`⚠️ [${debugId}]: Maximum retry attempts reached, showing N/A prediction`);
       }
       
       setError({
@@ -690,19 +725,50 @@ function HomeScreen() {
   };
 
   const loadRealTimeWeather = async () => {
-    if (!locationInfo) return;
-    
     setWeatherLoading(true);
     try {
-      console.log('🌤️ Loading real-time weather data for home page...');
-      const weatherData = await realTimeWeatherService.getHomePageWeatherData(
-        locationInfo.lat, 
-        locationInfo.lon
-      );
-      setRealTimeWeather(weatherData);
-      console.log('✅ Real-time weather data loaded successfully');
+      let weatherLocation = locationInfo;
+      
+      // If ML prediction failed and locationInfo is null, get location independently for weather
+      if (!weatherLocation) {
+        console.log('🌤️ ML prediction failed, getting location independently for weather...');
+        try {
+          const locationResult = await LocationService.getCurrentLocation(skipGPS);
+          if (locationResult && locationResult.lat && locationResult.lon) {
+            weatherLocation = {
+              lat: locationResult.lat,
+              lon: locationResult.lon,
+              display_name: locationResult.display_name || 'Current Location'
+            };
+            console.log('✅ Independent location obtained for weather:', weatherLocation.display_name);
+          }
+        } catch (locationError) {
+          console.error('❌ Failed to get location for weather:', locationError);
+          // Use fallback coordinates for Malaysia (Kuala Lumpur city center)
+          weatherLocation = {
+            lat: 3.1390,
+            lon: 101.6869,
+            display_name: 'Malaysia (Fallback Location)',
+            isFallback: true
+          };
+          console.log('⚠️ Using fallback location for weather data');
+        }
+      }
+      
+      if (weatherLocation) {
+        console.log('🌤️ Loading real-time weather data for home page...');
+        const weatherData = await realTimeWeatherService.getHomePageWeatherData(
+          weatherLocation.lat, 
+          weatherLocation.lon
+        );
+        setRealTimeWeather(weatherData);
+        console.log('✅ Real-time weather data loaded successfully');
+      } else {
+        console.log('⚠️ No location available for weather data');
+      }
     } catch (error) {
       console.error('❌ Error loading real-time weather:', error);
+      // Weather API failure is now independent of ML prediction failure
       // Keep existing prediction data if weather fails
     } finally {
       setWeatherLoading(false);
@@ -837,20 +903,7 @@ function HomeScreen() {
             </Text>
           </TouchableOpacity>
           
-          {/* Show development mock data toggle */}
-          <View style={styles.devToggleSection}>
-            <TouchableOpacity 
-              style={styles.mockDataToggle} 
-              onPress={() => setUseMockData(!useMockData)}
-            >
-              <Ionicons 
-                name={useMockData ? "toggle" : "toggle-outline"} 
-                size={32} 
-                color={useMockData ? "#4CAF50" : "#666"} 
-              />
-              <Text style={styles.mockDataLabel}>Use Mock Data</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Mock data toggle moved to developer controls only */}
         </View>
       </ScrollView>
     );
@@ -892,9 +945,11 @@ function HomeScreen() {
       {/* Main Risk Card */}
       <View style={styles.riskCard}>
         <View style={styles.riskHeader}>
-          <View style={[styles.riskLevelIndicator, { backgroundColor: getRiskColor(prediction.flood_probability) }]}>
+          <View style={[styles.riskLevelIndicator, { 
+            backgroundColor: prediction?.is_na ? '#9E9E9E' : getRiskColor(prediction.flood_probability) 
+          }]}>
             <Text style={styles.riskLevelText}>
-              {getRiskLevel(prediction.flood_probability)} Risk
+              {prediction?.is_na ? 'Weather Data Only' : `${getRiskLevel(prediction.flood_probability)} Risk`}
             </Text>
           </View>
         </View>
@@ -902,8 +957,7 @@ function HomeScreen() {
         <View style={styles.riskMetrics}>
           <View style={styles.metricItem}>
             <Text style={styles.metricValue}>
-              {realTimeWeather?.risk_indicators?.current_risk_score ? 
-                Math.round(realTimeWeather.risk_indicators.current_risk_score * 100) + '%' :
+              {prediction?.is_na ? 'N/A' : 
                 (prediction.flood_probability !== null ? 
                   Math.round(prediction.flood_probability * 100) + '%' : 'N/A')}
             </Text>
@@ -921,9 +975,21 @@ function HomeScreen() {
         <Text style={styles.riskDescription}>
           {getRiskDescription(prediction, locationInfo)}
         </Text>
+
+        {/* Show status when ML fails */}
+        {prediction?.is_na && (
+          <View style={styles.partialDataWarning}>
+            <Ionicons name="information-circle-outline" size={16} color="#FF9800" />
+            <Text style={styles.partialDataText}>
+              {realTimeWeather ? 
+                'AI flood prediction unavailable. Showing current weather conditions only.' :
+                'Both flood prediction and weather data unavailable. Please check your connection.'}
+            </Text>
+          </View>
+        )}
         
-        {/* Show countdown timer only for High risk */}
-        {getRiskLevel(prediction.flood_probability) === 'High' && (
+        {/* Show countdown timer only for High risk when prediction is available */}
+        {!prediction?.is_na && getRiskLevel(prediction.flood_probability) === 'High' && (
           <View style={styles.countdownSection}>
             <Text style={styles.countdownLabel}>Time Until Risk Peak:</Text>
             <Text style={styles.countdownValue}>
@@ -934,15 +1000,22 @@ function HomeScreen() {
       </View>
 
 
-      {/* Contributing Factors */}
+      {/* Contributing Factors / System Status */}
       <View style={styles.factorsCard}>
-        <Text style={styles.cardTitle}>Risk Factors</Text>
-        {prediction.contributing_factors.map((factor, index) => (
-          <View key={index} style={styles.factorItem}>
-            <Ionicons name="warning-outline" size={20} color="#FF9800" />
-            <Text style={styles.factorText}>{factor}</Text>
+        <Text style={styles.cardTitle}>{prediction?.is_na ? 'System Status' : 'Risk Factors'}</Text>
+        {prediction?.is_na ? (
+          <View style={styles.factorItem}>
+            <Ionicons name="information-circle-outline" size={20} color="#666" />
+            <Text style={styles.factorText}>AI flood prediction system currently unavailable</Text>
           </View>
-        ))}
+        ) : (
+          prediction.contributing_factors.map((factor, index) => (
+            <View key={index} style={styles.factorItem}>
+              <Ionicons name="warning-outline" size={20} color="#FF9800" />
+              <Text style={styles.factorText}>{factor}</Text>
+            </View>
+          ))
+        )}
       </View>
 
       {/* Weather Card */}
@@ -1033,36 +1106,7 @@ function HomeScreen() {
         </View>
       )}
 
-      {/* Fallback Rain Forecast Card when real-time weather unavailable */}
-      {!realTimeWeather?.rain_forecast && prediction?.weather_summary && (
-        <View style={styles.forecastCard}>
-          <Text style={styles.cardTitle}>Weather Forecast (Limited Data)</Text>
-          
-          <View style={styles.forecastSummary}>
-            <Ionicons name="information-circle-outline" size={20} color="#FFA500" />
-            <Text style={styles.forecastSummaryText}>
-              Real-time weather data unavailable. Using prediction data.
-            </Text>
-          </View>
-
-          <View style={styles.weatherDetailGrid}>
-            <View style={styles.weatherDetailItem}>
-              <Ionicons name="thermometer-outline" size={20} color="#666" />
-              <Text style={styles.weatherDetailLabel}>Temperature</Text>
-              <Text style={styles.weatherDetailValue}>
-                {prediction.weather_summary.current_temp || '--'}°C
-              </Text>
-            </View>
-            <View style={styles.weatherDetailItem}>
-              <Ionicons name="water-outline" size={20} color="#666" />
-              <Text style={styles.weatherDetailLabel}>Humidity</Text>
-              <Text style={styles.weatherDetailValue}>
-                {prediction.weather_summary.humidity || '--'}%
-              </Text>
-            </View>
-          </View>
-        </View>
-      )}
+      {/* REMOVED: Fallback Rain Forecast Card - redundant when prediction is N/A, weather data shown in main Weather Card */}
 
       <TouchableOpacity 
         style={styles.primaryButton}
@@ -1094,20 +1138,12 @@ function HomeScreen() {
               {/* Mock Data Toggle */}
               <View style={styles.devToggleSection}>
                 <TouchableOpacity 
-                  style={[
-                    styles.devToggleButton,
-                    realTimeWeather && styles.devToggleButtonDisabled
-                  ]}
-                  onPress={() => {
-                    if (!realTimeWeather) {
-                      setUseMockData(!useMockData);
-                    }
-                  }}
-                  disabled={!!realTimeWeather}
+                  style={styles.devToggleButton}
+                  onPress={() => setUseMockData(!useMockData)}
                 >
                   <View style={styles.devToggleContent}>
                     <Text style={styles.devToggleText}>
-                      Use Mock Data {realTimeWeather ? '(Real-time data active)' : '(Bypass API calls)'}
+                      Use Mock Data (Development Only)
                     </Text>
                     <View style={[styles.devToggleSwitch, useMockData && styles.devToggleSwitchActive]}>
                       <View style={[styles.devToggleThumb, useMockData && styles.devToggleThumbActive]} />
@@ -1818,6 +1854,55 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 8,
     flexWrap: 'wrap',
+  },
+  
+  // Partial data warning styles
+  partialDataWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3CD',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+  },
+  partialDataText: {
+    fontSize: 13,
+    color: '#856404',
+    marginLeft: 8,
+    flex: 1,
+  },
+
+  // Info card styles for N/A data status
+  infoCard: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
+  },
+  infoContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1976D2',
+    marginBottom: 6,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#424242',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  infoSubtext: {
+    fontSize: 13,
+    color: '#757575',
+    fontStyle: 'italic',
   },
   
   // Risk Percentage Card
@@ -2949,18 +3034,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  mockDataToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-  },
-  mockDataLabel: {
-    marginLeft: 10,
-    fontSize: 16,
-    color: '#333',
-  },
+  // REMOVED: mockDataToggle and mockDataLabel - moved to developer controls only
   
   // New probability-based testing styles
   devControlSection: {
