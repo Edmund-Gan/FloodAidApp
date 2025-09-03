@@ -33,9 +33,15 @@ import { STATE_ACCURACY_DATA } from './utils/constants';
 import { RISK_COLORS, getRiskColor, getRiskLevel } from './utils/RiskCalculations';
 import MockDataService from './utils/MockDataService';
 import RealTimeWeatherService from './services/RealTimeWeatherService';
+import DeveloperModeButton from './components/DeveloperModeButton';
 
 // Import FloodHotspotsScreen for Epic 3 - Using CSV data version
 import FloodHotspotsScreen from './screens/FloodHotspotsCSV';
+
+// Import Multi-Location Alerts Components and Context
+import MyLocationsScreen from './screens/MyLocationsScreen';
+import { LocationProvider } from './context/LocationContext';
+import { UserProvider } from './context/UserContext';
 
 const { width, height } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
@@ -1115,6 +1121,9 @@ function HomeScreen() {
         <Text style={styles.primaryButtonText}>View Details</Text>
       </TouchableOpacity>
 
+      {/* Developer Mode Button - Only visible in development */}
+      <DeveloperModeButton onAlertGenerated={handleFloodAlert} />
+
       {/* Development: Manual Location Selection Modal */}
       <Modal
         visible={showDevModal}
@@ -1363,29 +1372,9 @@ function LiveDataScreen() {
   );
 }
 
-// My Locations Screen
-function LocationsScreen() {
-  return (
-    <View style={styles.centerContainer}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Locations</Text>
-        <TouchableOpacity>
-          <Ionicons name="add-circle-outline" size={28} color="#2196F3" />
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.upcomingFeaturesContainer}>
-        <Ionicons name="location-outline" size={64} color="#2196F3" />
-        <Text style={styles.upcomingFeaturesTitle}>Upcoming Features</Text>
-        <Text style={styles.upcomingFeaturesDescription}>
-          Multi-location monitoring and personalized alerts are currently being developed.
-        </Text>
-        <Text style={styles.upcomingFeaturesDescription}>
-          Stay tuned for the ability to track flood risks at your home, work, and family locations with custom notifications.
-        </Text>
-      </View>
-    </View>
-  );
+// My Locations Screen - Now using the enhanced MyLocationsScreen component
+function LocationsScreen({ navigation }) {
+  return <MyLocationsScreen navigation={navigation} />;
 }
 
 // Emergency Screen
@@ -1520,38 +1509,42 @@ function PreparednessScreen() {
 // Main App Component
 export default function App() {
   return (
-    <NavigationContainer>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ focused, color, size }) => {
-            let iconName;
-            if (route.name === 'Home') {
-              iconName = focused ? 'home' : 'home-outline';
-            } else if (route.name === 'Predictions') {
-              iconName = focused ? 'trending-up' : 'trending-up-outline';
-            } else if (route.name === 'Live Data') {
-              iconName = focused ? 'water' : 'water-outline';
-            } else if (route.name === 'Hotspots') {
-              iconName = focused ? 'location' : 'location-outline';
-            } else if (route.name === 'Locations') {
-              iconName = focused ? 'pin' : 'pin-outline';
-            }
-            return <Ionicons name={iconName} size={size} color={color} />;
-          },
-          tabBarActiveTintColor: '#2196F3',
-          tabBarInactiveTintColor: 'gray',
-          tabBarStyle: styles.tabBar,
-          headerShown: false,
-        })}
-      >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Predictions" component={PreparednessScreen} />
-        <Tab.Screen name="Live Data" component={LiveDataScreen} />
-        <Tab.Screen name="Hotspots" component={FloodHotspotsScreen} />
-        <Tab.Screen name="Locations" component={LocationsScreen} />
-      </Tab.Navigator>
-    </NavigationContainer>
+    <UserProvider>
+      <LocationProvider>
+        <NavigationContainer>
+          <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+          <Tab.Navigator
+            screenOptions={({ route }) => ({
+              tabBarIcon: ({ focused, color, size }) => {
+                let iconName;
+                if (route.name === 'Home') {
+                  iconName = focused ? 'home' : 'home-outline';
+                } else if (route.name === 'Predictions') {
+                  iconName = focused ? 'trending-up' : 'trending-up-outline';
+                } else if (route.name === 'Live Data') {
+                  iconName = focused ? 'water' : 'water-outline';
+                } else if (route.name === 'Hotspots') {
+                  iconName = focused ? 'location' : 'location-outline';
+                } else if (route.name === 'Locations') {
+                  iconName = focused ? 'pin' : 'pin-outline';
+                }
+                return <Ionicons name={iconName} size={size} color={color} />;
+              },
+              tabBarActiveTintColor: '#2196F3',
+              tabBarInactiveTintColor: 'gray',
+              tabBarStyle: styles.tabBar,
+              headerShown: false,
+            })}
+          >
+            <Tab.Screen name="Home" component={HomeScreen} />
+            <Tab.Screen name="Predictions" component={PreparednessScreen} />
+            <Tab.Screen name="Live Data" component={LiveDataScreen} />
+            <Tab.Screen name="Hotspots" component={FloodHotspotsScreen} />
+            <Tab.Screen name="Locations" component={LocationsScreen} />
+          </Tab.Navigator>
+        </NavigationContainer>
+      </LocationProvider>
+    </UserProvider>
   );
 }
 

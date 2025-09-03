@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,54 +9,120 @@ import {
   Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
+  Switch,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import { LocationContext } from '../context/LocationContext';
 import { UserContext } from '../context/UserContext';
+import AddressSearchInput from '../components/AddressSearchInput';
+import MapLocationPicker from '../components/MapLocationPicker';
 import { COLORS } from '../utils/constants';
+
+const getLocationImage = (locationType) => {
+  switch (locationType?.toLowerCase()) {
+    case 'home':
+      return require('../assets/Location Image/Home.jpg');
+    case 'office':
+    case 'work':
+      return require('../assets/Location Image/Office.jpg');
+    case 'school':
+      return require('../assets/Location Image/School.jpg');
+    default:
+      return require('../assets/Location Image/Home.jpg');
+  }
+};
 
 export default function MyLocationsScreen({ navigation }) {
   const { 
     monitoredLocations, 
     addLocation, 
     removeLocation, 
-    toggleLocationNotifications 
+    refreshLocationRisk,
+    updateLocationCustomLabel
   } = useContext(LocationContext);
   const { logFeatureUsage } = useContext(UserContext);
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [mapPickerVisible, setMapPickerVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const [newLocation, setNewLocation] = useState({
     name: '',
-    subtitle: '',
+    subtitle: 'Home',
+    customLabel: '',
+    familyMember: '',
   });
+  const [refreshingLocation, setRefreshingLocation] = useState(null);
 
   React.useEffect(() => {
     logFeatureUsage('my_locations');
   }, []);
 
-  const handleAddLocation = () => {
-    if (newLocation.name.trim() && newLocation.subtitle.trim()) {
-      addLocation({
-        name: newLocation.name,
-        subtitle: newLocation.subtitle,
-        address: newLocation.name + ', Malaysia',
-        coordinates: { 
-          latitude: 3.1390 + (Math.random() - 0.5) * 0.1, 
-          longitude: 101.6869 + (Math.random() - 0.5) * 0.1 
-        },
-        image: 'https://via.placeholder.com/80x60/666/FFFFFF?text=New'
-      });
-      setNewLocation({ name: '', subtitle: '' });
+  const handleAddressSelected = (addressData) => {
+    if (addressData.needsMapSelection) {
+      setMapPickerVisible(true);
+    } else if (addressData.coordinates) {
+      const locationData = {
+        name: addressData.address,
+        subtitle: newLocation.subtitle || 'My Location',
+        customLabel: newLocation.customLabel || `${newLocation.familyMember || 'Me'} - ${newLocation.subtitle || 'Location'}`,
+        familyMember: newLocation.familyMember || null,
+        address: addressData.formattedAddress || addressData.address,
+        coordinates: addressData.coordinates,
+        image: getLocationImage(newLocation.subtitle || 'Home'),
+        source: addressData.source
+      };
+
+      handleAddLocationFromData(locationData);
+    }
+  };
+
+  const handleMapLocationSelected = (locationData) => {
+    setMapPickerVisible(false);
+    
+    const enhancedLocation = {
+      name: newLocation.name || locationData.address,
+      subtitle: newLocation.subtitle || 'Map Location',
+      customLabel: newLocation.customLabel || `${newLocation.familyMember || 'Me'} - ${newLocation.subtitle || 'Location'}`,
+      familyMember: newLocation.familyMember || null,
+      address: locationData.formattedAddress || locationData.address,
+      coordinates: locationData.coordinates,
+      image: getLocationImage(newLocation.subtitle || 'Home'),
+      source: 'map_selection',
+      coverageStatus: locationData.coverageStatus
+    };
+
+    handleAddLocationFromData(enhancedLocation);
+  };
+
+  const handleAddLocationFromData = async (locationData) => {
+    try {
+      await addLocation(locationData);
+      setNewLocation({ name: '', subtitle: 'Home', customLabel: '', familyMember: '' });
       setModalVisible(false);
-    } else {
-      Alert.alert('Error', 'Please fill in all fields');
+      
+      Alert.alert(
+        'Location Added',
+        `${locationData.customLabel} has been added to your monitored locations.`,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error adding location:', error);
+      Alert.alert(
+        'Error',
+        'Failed to add location. Please try again.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
   const handleDeleteLocation = (id) => {
+    const location = monitoredLocations.find(loc => loc.id === id);
     Alert.alert(
       'Delete Location',
-      'Are you sure you want to remove this location?',
+      `Are you sure you want to remove "${location?.customLabel || location?.name}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
@@ -68,12 +134,53 @@ export default function MyLocationsScreen({ navigation }) {
     );
   };
 
-  const getRiskIcon = (riskLevel) => {
-    if (riskLevel.includes('High')) return 'warning';
-    if (riskLevel.includes('Moderate')) return 'alert-circle';
-    if (riskLevel.includes('Low')) return 'checkmark-circle';
-    return 'help-circle';
+  const handleEditLocation = (location) => {
+    setSelectedLocation(location);
+    setNewLocation({
+      name: location.name,
+      subtitle: location.subtitle,
+      customLabel: location.customLabel || location.subtitle,
+      familyMember: location.familyMember || ''
+    });
+    setEditModalVisible(true);
   };
+
+  const handleUpdateLocation = async () => {
+    if (selectedLocation && newLocation.customLabel.trim()) {
+      try {
+        updateLocationCustomLabel(
+          selectedLocation.id, 
+          newLocation.customLabel.trim(),
+          newLocation.familyMember.trim() || null
+        );
+        setEditModalVisible(false);
+        setSelectedLocation(null);
+        setNewLocation({ name: '', subtitle: 'Home', customLabel: '', familyMember: '' });
+        
+        Alert.alert(
+          'Location Updated',
+          'Location details have been updated successfully.',
+          [{ text: 'OK' }]
+        );
+      } catch (error) {
+        Alert.alert('Error', 'Failed to update location. Please try again.');
+      }
+    } else {
+      Alert.alert('Error', 'Please provide a custom label for this location.');
+    }
+  };
+
+  const handleRefreshLocation = async (locationId) => {
+    setRefreshingLocation(locationId);
+    try {
+      await refreshLocationRisk(locationId);
+    } catch (error) {
+      console.error('Failed to refresh location risk:', error);
+    } finally {
+      setRefreshingLocation(null);
+    }
+  };
+
 
   return (
     <View style={styles.container}>
@@ -88,34 +195,73 @@ export default function MyLocationsScreen({ navigation }) {
       </View>
 
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {monitoredLocations.map((location) => (
-          <View key={location.id} style={styles.locationCard}>
-            <Image 
-              source={{ uri: location.image }}
-              style={styles.locationImage}
-            />
-            <View style={styles.locationInfo}>
-              <Text style={styles.locationName}>{location.name}</Text>
-              <Text style={styles.locationSubtitle}>{location.subtitle}</Text>
-              <View style={styles.riskContainer}>
-                <Ionicons 
-                  name={getRiskIcon(location.riskLevel)} 
-                  size={16} 
-                  color={location.riskColor} 
-                />
-                <Text style={[styles.riskLevel, { color: location.riskColor }]}>
-                  {location.riskLevel}
+        {monitoredLocations.map((location) => {
+          const isRefreshing = refreshingLocation === location.id;
+          
+          return (
+            <View key={location.id} style={styles.locationCard}>
+              <Image 
+                source={typeof location.image === 'string' ? { uri: location.image } : location.image}
+                style={styles.locationImage}
+              />
+              <View style={styles.locationInfo}>
+                <View style={styles.locationHeader}>
+                  <Text style={styles.locationName} numberOfLines={1}>
+                    {location.customLabel || location.name}
+                  </Text>
+                </View>
+                
+                <Text style={styles.locationAddress} numberOfLines={2}>
+                  {location.address || location.name}
+                </Text>
+                
+                <View style={styles.riskContainer}>
+                  <Text style={styles.riskScoreLabel}>Flood Risk Score: </Text>
+                  <Text style={[styles.riskScore, { color: location.riskColor }]}>
+                    {location.riskProbability ? `${Math.round(location.riskProbability * 100)}%` : 'N/A'}
+                  </Text>
+                </View>
+                
+                
+                <Text style={styles.lastUpdated}>
+                  Updated: {location.lastUpdated ? 
+                    new Date(location.lastUpdated).toLocaleTimeString('en-MY', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    }) : 'Never'}
                 </Text>
               </View>
+              
+              <View style={styles.actionButtons}>
+                <TouchableOpacity 
+                  style={styles.actionButton}
+                  onPress={() => handleEditLocation(location)}
+                >
+                  <Ionicons name="create-outline" size={18} color={COLORS.PRIMARY} />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.actionButton}
+                  onPress={() => handleRefreshLocation(location.id)}
+                  disabled={isRefreshing}
+                >
+                  {isRefreshing ? (
+                    <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+                  ) : (
+                    <Ionicons name="refresh-outline" size={18} color={COLORS.PRIMARY} />
+                  )}
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.actionButton, styles.deleteButton]}
+                  onPress={() => handleDeleteLocation(location.id)}
+                >
+                  <Ionicons name="trash-outline" size={18} color={COLORS.ERROR} />
+                </TouchableOpacity>
+              </View>
             </View>
-            <TouchableOpacity 
-              style={styles.menuButton}
-              onPress={() => handleDeleteLocation(location.id)}
-            >
-              <Ionicons name="trash-outline" size={20} color={COLORS.TEXT_SECONDARY} />
-            </TouchableOpacity>
-          </View>
-        ))}
+          );
+        })}
 
         {monitoredLocations.length === 0 && (
           <View style={styles.emptyState}>
@@ -145,22 +291,46 @@ export default function MyLocationsScreen({ navigation }) {
             </View>
             
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Address</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter address..."
-                value={newLocation.name}
-                onChangeText={(text) => setNewLocation({...newLocation, name: text})}
+              <Text style={styles.inputLabel}>Address Search</Text>
+              <AddressSearchInput
+                onAddressSelected={handleAddressSelected}
+                placeholder="Search for an address in Malaysia..."
+                showMapFallback={true}
               />
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Label</Text>
+              <Text style={styles.inputLabel}>Location Type</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={newLocation.subtitle}
+                  style={styles.picker}
+                  onValueChange={(itemValue) => setNewLocation({...newLocation, subtitle: itemValue})}
+                >
+                  <Picker.Item label="Home" value="Home" />
+                  <Picker.Item label="Office" value="Office" />
+                  <Picker.Item label="School" value="School" />
+                </Picker>
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Custom Label (Optional)</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="e.g., Home, Work, School..."
-                value={newLocation.subtitle}
-                onChangeText={(text) => setNewLocation({...newLocation, subtitle: text})}
+                placeholder="e.g., Alice - Home, Parents - House..."
+                value={newLocation.customLabel}
+                onChangeText={(text) => setNewLocation({...newLocation, customLabel: text})}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Family Member (Optional)</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="e.g., Alice, John, Parents..."
+                value={newLocation.familyMember}
+                onChangeText={(text) => setNewLocation({...newLocation, familyMember: text})}
               />
             </View>
 
@@ -171,16 +341,72 @@ export default function MyLocationsScreen({ navigation }) {
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Location Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={editModalVisible}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Location</Text>
+              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                <Ionicons name="close" size={24} color={COLORS.TEXT_SECONDARY} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Custom Label</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="e.g., Alice - Home, Parents - House..."
+                value={newLocation.customLabel}
+                onChangeText={(text) => setNewLocation({...newLocation, customLabel: text})}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Family Member (Optional)</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="e.g., Alice, John, Parents..."
+                value={newLocation.familyMember}
+                onChangeText={(text) => setNewLocation({...newLocation, familyMember: text})}
+              />
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.cancelButton}
+                onPress={() => setEditModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.addLocationButton}
-                onPress={handleAddLocation}
+                onPress={handleUpdateLocation}
               >
-                <Text style={styles.addLocationButtonText}>Add Location</Text>
+                <Text style={styles.addLocationButtonText}>Update Location</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
+      {/* Map Location Picker */}
+      <MapLocationPicker
+        visible={mapPickerVisible}
+        onLocationSelected={handleMapLocationSelected}
+        onCancel={() => setMapPickerVisible(false)}
+        initialAddress={newLocation.name}
+      />
     </View>
   );
 }
@@ -228,7 +454,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   locationImage: {
     width: 80,
@@ -240,28 +466,55 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 15,
   },
+  locationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
   locationName: {
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.TEXT_PRIMARY,
-    marginBottom: 5,
+    flex: 1,
   },
-  locationSubtitle: {
+  locationAddress: {
     fontSize: 14,
     color: COLORS.TEXT_SECONDARY,
     marginBottom: 8,
+    lineHeight: 18,
   },
   riskContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 4,
   },
-  riskLevel: {
-    fontSize: 14,
+  riskScoreLabel: {
+    fontSize: 13,
+    color: COLORS.TEXT_SECONDARY,
     fontWeight: '500',
-    marginLeft: 5,
   },
-  menuButton: {
-    padding: 10,
+  riskScore: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  lastUpdated: {
+    fontSize: 11,
+    color: COLORS.TEXT_LIGHT,
+    marginTop: 4,
+  },
+  actionButtons: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  actionButton: {
+    padding: 8,
+    borderRadius: 6,
+    marginVertical: 2,
+  },
+  deleteButton: {
+    marginTop: 4,
   },
   emptyState: {
     alignItems: 'center',
@@ -319,6 +572,15 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     color: COLORS.TEXT_PRIMARY,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    backgroundColor: COLORS.SURFACE,
+  },
+  picker: {
+    height: 50,
   },
   modalButtons: {
     flexDirection: 'row',

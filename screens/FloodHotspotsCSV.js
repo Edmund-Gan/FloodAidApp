@@ -17,28 +17,26 @@ import {
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 
-import FloodDataCSV from '../services/FloodDataCSV';
+import EnhancedFloodDataService from '../services/EnhancedFloodDataService';
 import { MALAYSIA_CENTER, getFloodDensityColor, getMarkerSize } from '../utils/MalaysianStates';
 import { getStateAbbreviation } from '../utils/FilterHelpers';
 
 // Import new components
-import StateSelector from '../components/StateSelector';
+import AreaSearchSelector from '../components/AreaSearchSelector';
 import QuickStats from '../components/QuickStats';
 
 const { width, height } = Dimensions.get('window');
 
 export default function FloodHotspotsCSV({ navigation }) {
-  // Data state
+  // Enhanced data state
   const [allFloodStates, setAllFloodStates] = useState([]);
-  const [availableStateNames, setAvailableStateNames] = useState([]);
-  const [selectedState, setSelectedState] = useState(null);
+  const [selectedArea, setSelectedArea] = useState(null);
+  const [selectedStateData, setSelectedStateData] = useState(null);
+  const [areaSummary, setAreaSummary] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState(null);
   const [maxEventCount, setMaxEventCount] = useState(1);
-
-  // State selection for basic filtering
-  const [selectedStates, setSelectedStates] = useState([]);
 
   useEffect(() => {
     loadFloodData();
@@ -47,51 +45,73 @@ export default function FloodHotspotsCSV({ navigation }) {
   const loadFloodData = async () => {
     try {
       setLoading(true);
-      const states = await FloodDataCSV.loadFloodData();
-      const stats = await FloodDataCSV.getFloodStatistics();
+      const data = await EnhancedFloodDataService.loadAllFloodData();
+      const stats = await EnhancedFloodDataService.getFloodStatistics();
       
-      setAllFloodStates(states);
+      setAllFloodStates(data.aggregated);
       setStatistics(stats);
       
-      // Extract available state names for search functionality
-      const stateNames = states.map(state => state.state).sort();
-      setAvailableStateNames(stateNames);
-      
       // Calculate max event count for scaling
-      if (states.length > 0) {
-        const maxCount = Math.max(...states.map(state => state.totalEvents));
+      if (data.aggregated.length > 0) {
+        const maxCount = Math.max(...data.aggregated.map(state => state.totalEvents));
         setMaxEventCount(maxCount);
       }
       
-      console.log(`📊 Loaded ${states.length} state flood aggregations for visualization`);
-      console.log(`🔍 Available states for search: ${stateNames.join(', ')}`);
+      console.log(`📊 Loaded ${data.aggregated.length} state aggregations and ${data.detailed.length} detailed events`);
+      console.log(`🔍 Search index: ${data.searchIndex.districts.length} districts, ${data.searchIndex.states.length} states`);
     } catch (error) {
-      console.error('Error loading flood data:', error);
+      console.error('Error loading enhanced flood data:', error);
       Alert.alert('Data Error', 'Unable to load flood event data');
     } finally {
       setLoading(false);
     }
   };
 
-  // Simple state filtering - show all states or filter by selected states
+  // Enhanced filtering based on selected area
   const filteredStates = useMemo(() => {
-    if (selectedStates.length === 0) {
-      return allFloodStates; // Show all states when none selected
+    if (!selectedArea) {
+      return allFloodStates; // Show all states when no area selected
     }
-    return allFloodStates.filter(state => selectedStates.includes(state.state));
-  }, [allFloodStates, selectedStates]);
+    
+    if (selectedArea.type === 'state') {
+      return allFloodStates.filter(state => state.state === selectedArea.name);
+    } else {
+      // For districts, show the state containing that district
+      return allFloodStates.filter(state => state.state === selectedArea.state);
+    }
+  }, [allFloodStates, selectedArea]);
 
-  // State selection handler
-  const handleStateSelectionChange = (states) => {
-    setSelectedStates(states);
+  // Area selection handler
+  const handleAreaSelection = async (area) => {
+    setSelectedArea(area);
+    
+    if (area) {
+      try {
+        const summary = await EnhancedFloodDataService.getAreaSummary(area.name, area.type);
+        setAreaSummary(summary);
+      } catch (error) {
+        console.error('Error loading area summary:', error);
+      }
+    } else {
+      setAreaSummary(null);
+    }
   };
 
 
   /**
-   * Handle state marker tap
+   * Handle state marker tap - load detailed events for the state
    */
-  const handleStateTap = (state) => {
-    setSelectedState(state);
+  const handleStateTap = async (state) => {
+    setSelectedStateData(state);
+    
+    // Load detailed events for this state
+    try {
+      const summary = await EnhancedFloodDataService.getAreaSummary(state.state, 'state');
+      setAreaSummary(summary);
+    } catch (error) {
+      console.error('Error loading state details:', error);
+    }
+    
     setShowModal(true);
   };
 
@@ -181,23 +201,24 @@ export default function FloodHotspotsCSV({ navigation }) {
           ))}
         </MapView>
 
-        {/* Floating Search Bar */}
+        {/* Enhanced Floating Search Bar */}
         <View style={styles.floatingSearchContainer}>
-          <StateSelector
-            selectedStates={selectedStates}
-            onSelectionChange={handleStateSelectionChange}
-            availableStates={availableStateNames}
-            style={styles.floatingStateSelector}
-            placeholder={`Search from ${availableStateNames.length} states with flood data...`}
+          <AreaSearchSelector
+            selectedArea={selectedArea}
+            onAreaSelected={handleAreaSelection}
+            style={styles.floatingAreaSelector}
+            placeholder="Search districts or states with flood data..."
           />
         </View>
 
-        {/* Floating Statistics */}
+        {/* Enhanced Floating Statistics */}
         <View style={styles.floatingStatsContainer}>
           <QuickStats
             statistics={statistics}
             filteredCount={filteredStates.length}
             totalCount={allFloodStates.length}
+            selectedArea={selectedArea}
+            areaSummary={areaSummary}
             style={styles.floatingStats}
             isCollapsible={true}
           />
@@ -206,7 +227,7 @@ export default function FloodHotspotsCSV({ navigation }) {
       </View>
 
 
-      {/* State Flood Detail Modal */}
+      {/* Enhanced Flood Detail Modal */}
       <Modal
         visible={showModal}
         animationType="slide"
@@ -215,74 +236,94 @@ export default function FloodHotspotsCSV({ navigation }) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {selectedState && (
+            {selectedStateData && areaSummary && (
               <>
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>
-                    {selectedState.state} Flood History
+                    {selectedStateData.state} Flood Events
                   </Text>
                   <TouchableOpacity onPress={() => setShowModal(false)}>
                     <Ionicons name="close" size={24} color="#666" />
                   </TouchableOpacity>
                 </View>
 
-                <View style={styles.eventDetails}>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Total Flood Events:</Text>
-                    <Text style={styles.detailValue}>{selectedState.totalEvents}</Text>
-                  </View>
-
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Recent Activity (1yr):</Text>
-                    <Text style={styles.detailValue}>{selectedState.recentEvents || 0} events</Text>
-                  </View>
-
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Risk Level:</Text>
-                    <View style={styles.severityIndicator}>
-                      {[1,2,3,4,5].map(i => (
-                        <View 
-                          key={i}
-                          style={[
-                            styles.severityDot,
-                            { backgroundColor: i <= selectedState.severity ? '#F44336' : '#e0e0e0' }
-                          ]} 
-                        />
-                      ))}
-                      <Text style={styles.severityText}>
-                        {selectedState.severity === 5 ? 'Very High' :
-                         selectedState.severity === 4 ? 'High' :
-                         selectedState.severity === 3 ? 'Moderate' :
-                         selectedState.severity === 2 ? 'Low' : 'Very Low'}
-                      </Text>
+                <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
+                  {/* Summary Section */}
+                  <View style={styles.summarySection}>
+                    <Text style={styles.sectionTitle}>Summary</Text>
+                    
+                    <View style={styles.summaryGrid}>
+                      <View style={styles.summaryCard}>
+                        <Text style={styles.summaryNumber}>{areaSummary.totalEvents}</Text>
+                        <Text style={styles.summaryLabel}>Total Events</Text>
+                      </View>
+                      <View style={styles.summaryCard}>
+                        <Text style={styles.summaryNumber}>{areaSummary.recentEvents}</Text>
+                        <Text style={styles.summaryLabel}>Recent (1yr)</Text>
+                      </View>
                     </View>
+
+                    {areaSummary.mostRecentEvent && (
+                      <View style={styles.recentEventCard}>
+                        <Text style={styles.recentEventTitle}>Most Recent Event</Text>
+                        <Text style={styles.recentEventDate}>
+                          📅 {areaSummary.mostRecentEvent.date}
+                        </Text>
+                        <Text style={styles.recentEventLocation}>
+                          📍 {areaSummary.mostRecentEvent.district}, {areaSummary.mostRecentEvent.state}
+                        </Text>
+                      </View>
+                    )}
                   </View>
 
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Days Since Last Flood:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedState.daysSince ? `${selectedState.daysSince} days` : 'N/A'}
-                    </Text>
-                  </View>
+                  {/* Top Causes Section */}
+                  {areaSummary.topCauses.length > 0 && (
+                    <View style={styles.causesSection}>
+                      <Text style={styles.sectionTitle}>Main Flood Causes</Text>
+                      {areaSummary.topCauses.map((item, index) => (
+                        <View key={index} style={styles.causeItem}>
+                          <Text style={styles.causeName}>{item.cause}</Text>
+                          <Text style={styles.causeCount}>{item.count} events</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
 
-                  <View style={styles.detailColumn}>
-                    <Text style={styles.detailLabel}>Yearly Breakdown:</Text>
-                    {selectedState.yearlyEvents && Object.entries(selectedState.yearlyEvents)
-                      .sort((a, b) => b[0] - a[0])
-                      .slice(0, 5)
-                      .map(([year, count]) => (
-                        <Text key={year} style={styles.causeText}>
-                          • {year}: {count} events
+                  {/* River Basins Section */}
+                  {areaSummary.riverBasins.length > 0 && (
+                    <View style={styles.riverBasinsSection}>
+                      <Text style={styles.sectionTitle}>Main River Basins</Text>
+                      {areaSummary.riverBasins.slice(0, 5).map((basin, index) => (
+                        <Text key={index} style={styles.riverBasinItem}>
+                          🌊 {basin}
                         </Text>
                       ))}
-                  </View>
+                    </View>
+                  )}
 
-                  <View style={styles.coordinatesRow}>
-                    <Text style={styles.coordinatesText}>
-                      📍 {selectedState.latitude.toFixed(4)}, {selectedState.longitude.toFixed(4)}
-                    </Text>
-                  </View>
-                </View>
+                  {/* Recent Events List */}
+                  {areaSummary.events && areaSummary.events.length > 0 && (
+                    <View style={styles.eventsSection}>
+                      <Text style={styles.sectionTitle}>
+                        Recent Flood Events ({areaSummary.events.length})
+                      </Text>
+                      {areaSummary.events.map((event, index) => (
+                        <View key={event.id || index} style={styles.eventCard}>
+                          <View style={styles.eventHeader}>
+                            <Text style={styles.eventDate}>{event.date}</Text>
+                            <Text style={styles.eventLocation}>{event.district}</Text>
+                          </View>
+                          <Text style={styles.eventCause}>{event.floodCause}</Text>
+                          {event.riverBasin && (
+                            <Text style={styles.eventRiverBasin}>
+                              🌊 {event.riverBasin}
+                            </Text>
+                          )}
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </ScrollView>
               </>
             )}
           </View>
@@ -357,7 +398,7 @@ const styles = StyleSheet.create({
     right: 16,
     zIndex: 1000,
   },
-  floatingStateSelector: {
+  floatingAreaSelector: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 12,
     elevation: 4,
@@ -414,7 +455,7 @@ const styles = StyleSheet.create({
 
 
 
-  // State Detail Modal
+  // Enhanced Detail Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -425,7 +466,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     margin: 20,
     borderRadius: 20,
-    maxHeight: '80%',
+    maxHeight: '85%',
     minWidth: '90%',
     overflow: 'hidden',
   },
@@ -500,5 +541,144 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     textAlign: 'center',
     fontFamily: 'monospace',
+  },
+
+  // Enhanced Modal Styles
+  modalScrollView: {
+    maxHeight: 600,
+  },
+  
+  // Summary Section
+  summarySection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 12,
+  },
+  summaryGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  summaryNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1976D2',
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+  recentEventCard: {
+    backgroundColor: '#e3f2fd',
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1976D2',
+  },
+  recentEventTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1976D2',
+    marginBottom: 4,
+  },
+  recentEventDate: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 2,
+  },
+  recentEventLocation: {
+    fontSize: 12,
+    color: '#666',
+  },
+  
+  // Causes Section
+  causesSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  causeItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f5',
+  },
+  causeName: {
+    flex: 1,
+    fontSize: 13,
+    color: '#333',
+  },
+  causeCount: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#1976D2',
+  },
+  
+  // River Basins Section
+  riverBasinsSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  riverBasinItem: {
+    fontSize: 13,
+    color: '#333',
+    marginBottom: 6,
+  },
+  
+  // Events Section
+  eventsSection: {
+    padding: 20,
+  },
+  eventCard: {
+    backgroundColor: '#f8fafc',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#1976D2',
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  eventDate: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1976D2',
+  },
+  eventLocation: {
+    fontSize: 12,
+    color: '#666',
+  },
+  eventCause: {
+    fontSize: 13,
+    color: '#333',
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  eventRiverBasin: {
+    fontSize: 11,
+    color: '#666',
+    fontStyle: 'italic',
   },
 });

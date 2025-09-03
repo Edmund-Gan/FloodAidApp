@@ -61,7 +61,9 @@
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
       "Read(D:\\Monash\\FIT5120\\Actual Project\\Machine Learning Model/**)",
-      "Read(D:\\Monash\\FIT5120\\Actual Project\\Machine Learning Model/**)"
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Machine Learning Model/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Bash(rd:*)"
     ],
     "deny": [],
     "ask": []
