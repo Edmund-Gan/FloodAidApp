@@ -48,7 +48,12 @@
       "Bash(npx expo prebuild:*)",
       "Bash(if exist node_modules rmdir /s /q node_modules)",
       "Bash(if exist package-lock.json del package-lock.json)",
-      "Bash(npm cache clean:*)"
+      "Bash(npm cache clean:*)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)",
+      "Bash(del convert_csv.js)",
+      "Read(D:\\Monash\\FIT5120\\Actual Project\\Datasets/**)"
     ],
     "deny": [],
     "ask": []

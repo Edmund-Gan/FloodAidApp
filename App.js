@@ -32,6 +32,7 @@ import devAlertTrigger from './utils/DevAlertTrigger';
 import { STATE_ACCURACY_DATA } from './utils/constants';
 import { RISK_COLORS, getRiskColor, getRiskLevel } from './utils/RiskCalculations';
 import MockDataService from './utils/MockDataService';
+import RealTimeWeatherService from './services/RealTimeWeatherService';
 
 // Import FloodHotspotsScreen for Epic 3 - Using CSV data version
 import FloodHotspotsScreen from './screens/FloodHotspotsCSV';
@@ -54,19 +55,21 @@ const API_BASE_URL = process.env.NODE_ENV === 'development'
 // Generate dynamic risk descriptions based on prediction data
 const getRiskDescription = (prediction, locationInfo) => {
   
-  // Safety check for null prediction
-  if (!prediction || prediction.flood_probability === undefined) {
-    return 'Prediction data unavailable. Please try again.';
+  // Safety check for null prediction or N/A values
+  if (!prediction || prediction.flood_probability === undefined || prediction.flood_probability === null) {
+    return prediction?.is_na ? 
+      'Flood prediction unavailable. Please check your connection and try again.' :
+      'Prediction data unavailable. Please try again.';
   }
   
   const riskLevel = getRiskLevel(prediction.flood_probability);
   const probability = Math.round(prediction.flood_probability * 100);
   
-  // Handle both number (0.756) and string ("76%") confidence formats
-  const confidence = prediction.confidence ? 
+  // Handle both number (0.756) and string ("76%") confidence formats, plus null values
+  const confidence = prediction.confidence !== null && prediction.confidence !== undefined ? 
     (typeof prediction.confidence === 'string' ? 
       Math.round(parseFloat(prediction.confidence.replace('%', '')) || 0) : 
-      Math.round(prediction.confidence * 100)) : 0;
+      Math.round(prediction.confidence * 100)) : null;
       
   const location = locationInfo?.display_name || 'your area';
   
@@ -92,18 +95,19 @@ const getRiskDescription = (prediction, locationInfo) => {
   const descriptions = baseDescriptions[riskLevel] || baseDescriptions['Low'];
   const randomDescription = descriptions[Math.floor(Math.random() * descriptions.length)];
   
-  // Add state-based confidence description if available
+  // Add ML model confidence description
   let confidenceText = '';
-  if (confidence > 0) {
-    // Extract state from locationInfo
-    const userState = locationInfo?.state || 'DEFAULT';
-    const stateData = STATE_ACCURACY_DATA[userState] || STATE_ACCURACY_DATA['DEFAULT'];
+  if (confidence !== null && confidence > 0) {
+    // Use actual ML model confidence (F1 score: 71.25%)
+    const displayConfidence = confidence;
     
-    // Use state-specific accuracy instead of raw ML confidence
-    const stateAccuracy = stateData.accuracy;
-    const primarySources = stateData.sources.slice(0, 3); // Use top 3 sources
+    // Get data sources from prediction metadata  
+    const dataSources = prediction.data_sources || ['GPS', 'Google Maps', 'Open Meteo', 'ML Model'];
+    const primarySources = dataSources.slice(0, 3); // Use top 3 sources
     
-    confidenceText = ` Based on your state, we have ${stateAccuracy}% of accuracy based on historical data from ${primarySources.join(', ')}.`;
+    confidenceText = ` Based on your state, we have ${displayConfidence}% of accuracy based on historical data from ${primarySources.join(', ')}.`;
+  } else if (prediction?.is_na) {
+    confidenceText = ' Prediction confidence unavailable due to API connectivity issues.';
   }
   
   const finalDescription = randomDescription + confidenceText;
@@ -113,7 +117,7 @@ const getRiskDescription = (prediction, locationInfo) => {
 
 
 // Detailed Flood Prediction Modal Component
-function FloodDetailsModal({ prediction, locationInfo, onClose }) {
+function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose }) {
   const [activeTab, setActiveTab] = useState('risk');
 
   if (!prediction || !locationInfo) {
@@ -139,21 +143,29 @@ function FloodDetailsModal({ prediction, locationInfo, onClose }) {
         <Text style={styles.detailSectionTitle}>Risk Breakdown</Text>
         <View style={styles.riskMeter}>
           <View style={[styles.riskMeterFill, { 
-            width: `${prediction.flood_probability * 100}%`,
-            backgroundColor: getRiskColor(prediction.flood_probability)
+            width: `${realTimeWeather?.risk_indicators?.current_risk_score ? 
+                      realTimeWeather.risk_indicators.current_risk_score * 100 :
+                      prediction.flood_probability * 100}%`,
+            backgroundColor: getRiskColor(
+              realTimeWeather?.risk_indicators?.current_risk_score || 
+              prediction.flood_probability
+            )
           }]} />
           <Text style={styles.riskMeterText}>
-            {Math.round(prediction.flood_probability * 100)}% Flood Probability
+            {realTimeWeather?.risk_indicators?.current_risk_score ? 
+              Math.round(realTimeWeather.risk_indicators.current_risk_score * 100) :
+              Math.round(prediction.flood_probability * 100)}% Flood Probability
           </Text>
         </View>
         
         <View style={styles.riskStats}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Risk Level</Text>
-            <Text style={[styles.statValue, { color: getRiskColor(prediction.flood_probability) }]}>
-              {(() => {
-                return prediction.risk_level;
-              })()}
+            <Text style={[styles.statValue, { color: getRiskColor(
+              realTimeWeather?.risk_indicators?.current_risk_score || 
+              prediction.flood_probability
+            ) }]}>
+              {realTimeWeather?.risk_indicators?.risk_level || prediction.risk_level}
             </Text>
           </View>
           <View style={styles.statItem}>
@@ -211,17 +223,26 @@ function FloodDetailsModal({ prediction, locationInfo, onClose }) {
           <View style={styles.weatherDetailItem}>
             <Ionicons name="thermometer-outline" size={24} color="#2196F3" />
             <Text style={styles.weatherDetailLabel}>Temperature</Text>
-            <Text style={styles.weatherDetailValue}>{prediction.weather_summary.current_temp}°C</Text>
+            <Text style={styles.weatherDetailValue}>
+              {realTimeWeather?.weather_summary?.current_temp || 
+               prediction?.weather_summary?.current_temp || '--'}°C
+            </Text>
           </View>
           <View style={styles.weatherDetailItem}>
             <Ionicons name="rainy-outline" size={24} color="#2196F3" />
             <Text style={styles.weatherDetailLabel}>24h Rainfall</Text>
-            <Text style={styles.weatherDetailValue}>{prediction.weather_summary.rainfall_24h}mm</Text>
+            <Text style={styles.weatherDetailValue}>
+              {realTimeWeather?.weather_summary?.rainfall_24h || 
+               prediction?.weather_summary?.rainfall_24h || 0}mm
+            </Text>
           </View>
           <View style={styles.weatherDetailItem}>
             <Ionicons name="speedometer-outline" size={24} color="#2196F3" />
             <Text style={styles.weatherDetailLabel}>Wind Speed</Text>
-            <Text style={styles.weatherDetailValue}>{prediction.weather_summary.wind_speed}km/h</Text>
+            <Text style={styles.weatherDetailValue}>
+              {realTimeWeather?.weather_summary?.wind_speed || 
+               prediction?.weather_summary?.wind_speed || '--'}km/h
+            </Text>
           </View>
         </View>
       </View>
@@ -232,13 +253,15 @@ function FloodDetailsModal({ prediction, locationInfo, onClose }) {
           <View style={styles.trendItem}>
             <Text style={styles.trendLabel}>Consecutive Rain Days</Text>
             <Text style={styles.trendValue}>
-              {prediction.risk_indicators.consecutive_rain_days || 0} days
+              {realTimeWeather?.risk_indicators?.consecutive_rain_days || 
+               prediction?.risk_indicators?.consecutive_rain_days || 0} days
             </Text>
           </View>
           <View style={styles.trendItem}>
             <Text style={styles.trendLabel}>Total Forecast Rain</Text>
             <Text style={styles.trendValue}>
-              {Math.round(prediction.risk_indicators.total_forecast_rain || 0)}mm
+              {Math.round(realTimeWeather?.risk_indicators?.total_forecast_rain || 
+                         prediction?.risk_indicators?.total_forecast_rain || 0)}mm
             </Text>
           </View>
         </View>
@@ -358,6 +381,9 @@ const malaysianLocations = [
 // Use centralized mock data service
 const getMockMLPrediction = () => MockDataService.getMockMLPrediction();
 
+// Initialize real-time weather service
+const realTimeWeatherService = new RealTimeWeatherService();
+
 // Home/Current Risk Screen (Epic 1: AI-Based Prediction)
 function HomeScreen() {
   const [prediction, setPrediction] = useState(null);
@@ -366,11 +392,14 @@ function HomeScreen() {
   const [timeRemaining, setTimeRemaining] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const [locationInfo, setLocationInfo] = useState(null);
   const [error, setError] = useState(null);
+  const [realTimeWeather, setRealTimeWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showDevModal, setShowDevModal] = useState(false);
   const [devLocation, setDevLocation] = useState(null);
   const [useMockData, setUseMockData] = useState(false);
   const [skipGPS, setSkipGPS] = useState(false);
+  const [isGPSRequestActive, setIsGPSRequestActive] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
   const [currentAlert, setCurrentAlert] = useState(null);
@@ -391,6 +420,10 @@ function HomeScreen() {
     return () => {
       clearInterval(interval);
       floodAlertService.stopAllMonitoring();
+      // Cancel any active GPS requests when component unmounts
+      LocationService.cancelAllRequests();
+      // Clear weather service cache on unmount
+      realTimeWeatherService.clearCache();
     };
   }, []);
 
@@ -526,6 +559,11 @@ function HomeScreen() {
         name: locationInfo.display_name || 'Current Location'
       });
     }
+    
+    // Load real-time weather when location info becomes available
+    if (locationInfo && !realTimeWeather && !weatherLoading) {
+      loadRealTimeWeather();
+    }
   }, [locationInfo]);
 
   const loadPredictionWithRetry = async (isManualRetry = false, retryAttempt = 0) => {
@@ -556,11 +594,19 @@ function HomeScreen() {
       if (useMockData) {
         mlPrediction = getMockMLPrediction();
       } else {
-        // Epic 1: Use real GPS location, Google reverse geocoding, Open Meteo weather, and ML model
-        mlPrediction = await Promise.race([
-          FloodPredictionModel.getPredictionWithML(null, null, skipGPS),
-          timeoutPromise
-        ]);
+        // Track GPS request state to prevent race conditions
+        setIsGPSRequestActive(true);
+        console.log(`📍 [${debugId}]: Starting GPS-based prediction (skipGPS: ${skipGPS})`);
+        
+        try {
+          // Epic 1: Use real GPS location, Google reverse geocoding, Open Meteo weather, and ML model
+          mlPrediction = await Promise.race([
+            FloodPredictionModel.getPredictionWithML(null, null, skipGPS),
+            timeoutPromise
+          ]);
+        } finally {
+          setIsGPSRequestActive(false);
+        }
       }
       
       if (!mlPrediction) {
@@ -635,7 +681,33 @@ function HomeScreen() {
   };
 
   // Simple wrapper for initial load and backward compatibility
-  const loadPrediction = () => loadPredictionWithRetry(false, 0);
+  const loadPrediction = async () => {
+    await loadPredictionWithRetry(false, 0);
+    // Load real-time weather data after getting location
+    if (locationInfo) {
+      await loadRealTimeWeather();
+    }
+  };
+
+  const loadRealTimeWeather = async () => {
+    if (!locationInfo) return;
+    
+    setWeatherLoading(true);
+    try {
+      console.log('🌤️ Loading real-time weather data for home page...');
+      const weatherData = await realTimeWeatherService.getHomePageWeatherData(
+        locationInfo.lat, 
+        locationInfo.lon
+      );
+      setRealTimeWeather(weatherData);
+      console.log('✅ Real-time weather data loaded successfully');
+    } catch (error) {
+      console.error('❌ Error loading real-time weather:', error);
+      // Keep existing prediction data if weather fails
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
 
   const updateCountdown = () => {
     if (prediction?.timeframe_hours) {
@@ -829,12 +901,19 @@ function HomeScreen() {
         
         <View style={styles.riskMetrics}>
           <View style={styles.metricItem}>
-            <Text style={styles.metricValue}>{Math.round(prediction.flood_probability * 100)}%</Text>
+            <Text style={styles.metricValue}>
+              {realTimeWeather?.risk_indicators?.current_risk_score ? 
+                Math.round(realTimeWeather.risk_indicators.current_risk_score * 100) + '%' :
+                (prediction.flood_probability !== null ? 
+                  Math.round(prediction.flood_probability * 100) + '%' : 'N/A')}
+            </Text>
             <Text style={styles.metricLabel}>Flood Risk</Text>
           </View>
           <View style={styles.metricDivider} />
           <View style={styles.metricItem}>
-            <Text style={styles.metricValue}>{Math.round(prediction.confidence * 100)}%</Text>
+            <Text style={styles.metricValue}>
+              {prediction.confidence !== null ? Math.round(prediction.confidence * 100) + '%' : 'N/A'}
+            </Text>
             <Text style={styles.metricLabel}>Confidence</Text>
           </View>
         </View>
@@ -868,30 +947,122 @@ function HomeScreen() {
 
       {/* Weather Card */}
       <View style={styles.weatherCard}>
-        <Text style={styles.cardTitle}>Current Weather</Text>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Current Weather</Text>
+          {realTimeWeather && (
+            <View style={styles.dataSourceIndicator}>
+              <View style={styles.liveIndicator} />
+              <Text style={styles.liveText}>Live</Text>
+            </View>
+          )}
+        </View>
         <View style={styles.weatherGrid}>
           <View style={styles.weatherItem}>
             <Ionicons name="thermometer-outline" size={24} color="#2196F3" />
-            <Text style={styles.weatherValue}>{prediction.weather_summary.current_temp}°C</Text>
+            <Text style={styles.weatherValue}>
+              {realTimeWeather?.weather_summary?.current_temp || 
+               prediction?.weather_summary?.current_temp || '--'}°C
+            </Text>
             <Text style={styles.weatherLabel}>Temperature</Text>
           </View>
           <View style={styles.weatherItem}>
             <Ionicons name="water-outline" size={24} color="#2196F3" />
-            <Text style={styles.weatherValue}>{prediction.weather_summary.humidity}%</Text>
+            <Text style={styles.weatherValue}>
+              {realTimeWeather?.humidity?.current || 
+               prediction?.weather_summary?.humidity || '--'}%
+            </Text>
             <Text style={styles.weatherLabel}>Humidity</Text>
           </View>
           <View style={styles.weatherItem}>
             <Ionicons name="rainy-outline" size={24} color="#2196F3" />
-            <Text style={styles.weatherValue}>{prediction.weather_summary.rainfall_24h}mm</Text>
+            <Text style={styles.weatherValue}>
+              {realTimeWeather?.weather_summary?.rainfall_24h || 
+               prediction?.weather_summary?.rainfall_24h || 0}mm
+            </Text>
             <Text style={styles.weatherLabel}>24h Rainfall</Text>
           </View>
           <View style={styles.weatherItem}>
             <Ionicons name="speedometer-outline" size={24} color="#2196F3" />
-            <Text style={styles.weatherValue}>{prediction.weather_summary.wind_speed}km/h</Text>
+            <Text style={styles.weatherValue}>
+              {realTimeWeather?.weather_summary?.wind_speed || 
+               prediction?.weather_summary?.wind_speed || '--'}km/h
+            </Text>
             <Text style={styles.weatherLabel}>Wind Speed</Text>
           </View>
         </View>
       </View>
+
+      {/* Rain Forecast Card */}
+      {realTimeWeather?.rain_forecast && (
+        <View style={styles.forecastCard}>
+          <Text style={styles.cardTitle}>7-Day Rain Forecast</Text>
+          
+          {/* Rain Summary */}
+          <View style={styles.forecastSummary}>
+            <Ionicons name="rainy-outline" size={20} color="#2196F3" />
+            <Text style={styles.forecastSummaryText}>
+              {realTimeWeather?.rain_forecast?.rain_summary || 'No rain forecast available'}
+            </Text>
+          </View>
+
+          {/* Upcoming Rain Days */}
+          {realTimeWeather?.rain_forecast?.upcoming_rain_days?.length > 0 && (
+            <View style={styles.rainDaysList}>
+              {realTimeWeather.rain_forecast.upcoming_rain_days.slice(0, 3).map((rainDay, index) => (
+                <View key={index} style={styles.rainDayItem}>
+                  <Text style={styles.rainDayName}>{rainDay.day_name}</Text>
+                  <View style={styles.rainDayDetails}>
+                    <Text style={styles.rainDayAmount}>{rainDay.precipitation}mm</Text>
+                    <Text style={styles.rainDayIntensity}>{rainDay.intensity}</Text>
+                  </View>
+                  <Text style={styles.rainDayProbability}>{rainDay.probability}%</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Next Rain Info */}
+          {realTimeWeather?.rain_forecast?.next_rain_in_hours !== null && 
+           realTimeWeather?.rain_forecast?.next_rain_in_hours !== undefined && (
+            <View style={styles.nextRainInfo}>
+              <Text style={styles.nextRainText}>
+                Next rain in {Math.round(realTimeWeather.rain_forecast.next_rain_in_hours)} hours
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Fallback Rain Forecast Card when real-time weather unavailable */}
+      {!realTimeWeather?.rain_forecast && prediction?.weather_summary && (
+        <View style={styles.forecastCard}>
+          <Text style={styles.cardTitle}>Weather Forecast (Limited Data)</Text>
+          
+          <View style={styles.forecastSummary}>
+            <Ionicons name="information-circle-outline" size={20} color="#FFA500" />
+            <Text style={styles.forecastSummaryText}>
+              Real-time weather data unavailable. Using prediction data.
+            </Text>
+          </View>
+
+          <View style={styles.weatherDetailGrid}>
+            <View style={styles.weatherDetailItem}>
+              <Ionicons name="thermometer-outline" size={20} color="#666" />
+              <Text style={styles.weatherDetailLabel}>Temperature</Text>
+              <Text style={styles.weatherDetailValue}>
+                {prediction.weather_summary.current_temp || '--'}°C
+              </Text>
+            </View>
+            <View style={styles.weatherDetailItem}>
+              <Ionicons name="water-outline" size={20} color="#666" />
+              <Text style={styles.weatherDetailLabel}>Humidity</Text>
+              <Text style={styles.weatherDetailValue}>
+                {prediction.weather_summary.humidity || '--'}%
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       <TouchableOpacity 
         style={styles.primaryButton}
@@ -923,11 +1094,21 @@ function HomeScreen() {
               {/* Mock Data Toggle */}
               <View style={styles.devToggleSection}>
                 <TouchableOpacity 
-                  style={styles.devToggleButton}
-                  onPress={() => setUseMockData(!useMockData)}
+                  style={[
+                    styles.devToggleButton,
+                    realTimeWeather && styles.devToggleButtonDisabled
+                  ]}
+                  onPress={() => {
+                    if (!realTimeWeather) {
+                      setUseMockData(!useMockData);
+                    }
+                  }}
+                  disabled={!!realTimeWeather}
                 >
                   <View style={styles.devToggleContent}>
-                    <Text style={styles.devToggleText}>Use Mock Data (Bypass API calls)</Text>
+                    <Text style={styles.devToggleText}>
+                      Use Mock Data {realTimeWeather ? '(Real-time data active)' : '(Bypass API calls)'}
+                    </Text>
                     <View style={[styles.devToggleSwitch, useMockData && styles.devToggleSwitchActive]}>
                       <View style={[styles.devToggleThumb, useMockData && styles.devToggleThumbActive]} />
                     </View>
@@ -935,11 +1116,38 @@ function HomeScreen() {
                 </TouchableOpacity>
               </View>
 
+              {/* Real-time Weather Refresh */}
+              {realTimeWeather && (
+                <View style={styles.devToggleSection}>
+                  <TouchableOpacity 
+                    style={[styles.devButton, { width: '100%' }]}
+                    onPress={async () => {
+                      console.log('🔄 Manual weather refresh requested');
+                      realTimeWeatherService.clearCache();
+                      await loadRealTimeWeather();
+                    }}
+                  >
+                    <Text style={styles.devButtonText}>🔄 Refresh Real-time Weather</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
               {/* Skip GPS Toggle */}
               <View style={styles.devToggleSection}>
                 <TouchableOpacity 
-                  style={styles.devToggleButton}
-                  onPress={() => setSkipGPS(!skipGPS)}
+                  style={[
+                    styles.devToggleButton,
+                    isGPSRequestActive && styles.devToggleButtonDisabled
+                  ]}
+                  onPress={() => {
+                    if (!isGPSRequestActive) {
+                      console.log(`🔧 Skip GPS toggle: ${skipGPS} → ${!skipGPS}`);
+                      setSkipGPS(!skipGPS);
+                    } else {
+                      console.log('🚫 Skip GPS toggle disabled during active GPS request');
+                    }
+                  }}
+                  disabled={isGPSRequestActive}
                 >
                   <View style={styles.devToggleContent}>
                     <Text style={styles.devToggleText}>Skip GPS (Use cached/default location)</Text>
@@ -1070,6 +1278,7 @@ function HomeScreen() {
         <FloodDetailsModal 
           prediction={prediction}
           locationInfo={locationInfo}
+          realTimeWeather={realTimeWeather}
           onClose={() => setShowDetailsModal(false)}
         />
       </Modal>
@@ -1701,6 +1910,28 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     elevation: 3,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  dataSourceIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  liveIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+    marginRight: 5,
+  },
+  liveText: {
+    fontSize: 11,
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
   weatherGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -1718,6 +1949,81 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 2,
+  },
+  
+  // Rain Forecast Styles
+  forecastCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginBottom: 15,
+    padding: 15,
+    borderRadius: 15,
+    elevation: 3,
+  },
+  forecastSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+  },
+  forecastSummaryText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#333',
+    flex: 1,
+  },
+  rainDaysList: {
+    marginBottom: 10,
+  },
+  rainDayItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  rainDayName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    flex: 1,
+  },
+  rainDayDetails: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  rainDayAmount: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2196F3',
+  },
+  rainDayIntensity: {
+    fontSize: 11,
+    color: '#666',
+    textTransform: 'capitalize',
+  },
+  rainDayProbability: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'right',
+    minWidth: 40,
+  },
+  nextRainInfo: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    alignItems: 'center',
+  },
+  nextRainText: {
+    fontSize: 13,
+    color: '#666',
+    fontStyle: 'italic',
   },
   
   // Button Styles
@@ -2561,6 +2867,9 @@ const styles = StyleSheet.create({
   },
   devToggleButton: {
     padding: 10,
+  },
+  devToggleButtonDisabled: {
+    opacity: 0.5,
   },
   devToggleContent: {
     flexDirection: 'row',

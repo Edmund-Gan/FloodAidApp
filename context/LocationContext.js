@@ -1,12 +1,13 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Location from 'expo-location';
+import LocationService from '../services/LocationService';
 
 export const LocationContext = createContext();
 
 export const LocationProvider = ({ children }) => {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationPermission, setLocationPermission] = useState(null);
+  const [locationError, setLocationError] = useState(null);
   const [monitoredLocations, setMonitoredLocations] = useState([
     {
       id: 1,
@@ -94,11 +95,21 @@ export const LocationProvider = ({ children }) => {
 
   const requestLocationPermission = async () => {
     try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      setLocationPermission(status);
+      // Use LocationService which handles permissions more robustly
+      const location = await LocationService.getCurrentLocation(false);
       
-      if (status === 'granted') {
-        getCurrentLocation();
+      if (location) {
+        setLocationPermission('granted');
+        setCurrentLocation({
+          latitude: location.lat,
+          longitude: location.lon,
+          accuracy: location.accuracy,
+          timestamp: location.timestamp ? new Date(location.timestamp).toISOString() : new Date().toISOString(),
+          isCached: location.isCached || false,
+          isDefault: location.isDefault || false
+        });
+      } else {
+        setLocationPermission('denied');
       }
     } catch (error) {
       console.log('Error requesting location permission:', error);
@@ -106,25 +117,60 @@ export const LocationProvider = ({ children }) => {
     }
   };
 
-  const getCurrentLocation = async () => {
+  const getCurrentLocation = async (skipGPS = false) => {
     try {
-      if (locationPermission !== 'granted') {
-        console.log('Location permission not granted');
-        return;
-      }
-
-      let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      console.log(`📍 LocationContext: Getting current location (skipGPS: ${skipGPS})`);
       
-      setCurrentLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        accuracy: location.coords.accuracy,
-        timestamp: new Date().toISOString()
-      });
+      // Use LocationService's robust location handling
+      const location = await LocationService.getCurrentLocationWithMalaysiaCheck(skipGPS);
+      
+      if (location) {
+        console.log('📍 LocationContext: Location obtained successfully');
+        setLocationPermission('granted');
+        setCurrentLocation({
+          latitude: location.lat,
+          longitude: location.lon,
+          accuracy: location.accuracy,
+          timestamp: location.timestamp ? new Date(location.timestamp).toISOString() : new Date().toISOString(),
+          isCached: location.isCached || false,
+          isDefault: location.isDefault || false,
+          isRedirected: location.isRedirected || false,
+          debugId: location.debugId
+        });
+        
+        return location;
+      } else {
+        throw new Error('LocationService returned null location');
+      }
     } catch (error) {
-      console.log('Error getting current location:', error);
+      console.error('❌ LocationContext: Error getting current location:', error);
+      
+      // Get user-friendly error message
+      const friendlyError = LocationService.getLocationErrorMessage(error);
+      setLocationError(friendlyError);
+      console.log(`💬 LocationContext: Setting user-friendly error: ${friendlyError.title}`);
+      
+      // Try to get cached location as fallback
+      const cachedLocation = await LocationService.getCachedLocation();
+      if (cachedLocation) {
+        console.log('📍 LocationContext: Using cached location as fallback');
+        setCurrentLocation({
+          latitude: cachedLocation.lat,
+          longitude: cachedLocation.lon,
+          accuracy: cachedLocation.accuracy,
+          timestamp: cachedLocation.cacheTime ? new Date(cachedLocation.cacheTime).toISOString() : new Date().toISOString(),
+          isCached: true,
+          isDefault: cachedLocation.isDefault || false
+        });
+        
+        // Clear error since we have a fallback location
+        setLocationError(null);
+        return cachedLocation;
+      }
+      
+      // No fallback available, keep the error
+      console.error('❌ LocationContext: No fallback location available');
+      throw error;
     }
   };
 
@@ -217,6 +263,7 @@ export const LocationProvider = ({ children }) => {
   const value = {
     currentLocation,
     locationPermission,
+    locationError,
     monitoredLocations,
     addLocation,
     updateLocation,
@@ -227,7 +274,8 @@ export const LocationProvider = ({ children }) => {
     getCurrentLocation,
     requestLocationPermission,
     getLocationById,
-    getHighRiskLocations
+    getHighRiskLocations,
+    clearLocationError: () => setLocationError(null)
   };
 
   return (

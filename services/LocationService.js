@@ -14,20 +14,33 @@ class LocationService {
    * Detect if running in emulator/simulator
    */
   static isEmulator() {
-    // Check for common emulator indicators
+    // Enhanced emulator detection logic
+    const deviceName = Constants.deviceName?.toLowerCase() || '';
+    const modelName = Constants.deviceModelName?.toLowerCase() || '';
+    
     const isEmulator = 
       // Android emulator indicators
-      Constants.deviceName?.toLowerCase().includes('emulator') ||
-      Constants.deviceName?.toLowerCase().includes('simulator') ||
+      deviceName.includes('emulator') ||
+      deviceName.includes('simulator') ||
+      modelName.includes('emulator') ||
+      modelName.includes('simulator') ||
+      modelName.includes('sdk') ||
+      // Specific Android emulator patterns
+      deviceName.includes('generic') ||
+      deviceName.includes('android_x86') ||
       // iOS simulator indicators  
-      Constants.platform?.ios && Constants.isDevice === false ||
+      (Constants.platform?.ios && Constants.isDevice === false) ||
       // Generic indicators
-      !Constants.isDevice;
+      !Constants.isDevice ||
+      // Development environment indicators
+      process.env.NODE_ENV === 'development' && !Constants.isDevice;
     
-    console.log(`🔍 Emulator detection: ${isEmulator ? 'EMULATOR' : 'REAL DEVICE'}`, {
+    console.log(`🔍 Enhanced emulator detection: ${isEmulator ? 'EMULATOR/SIMULATOR' : 'REAL DEVICE'}`, {
       deviceName: Constants.deviceName,
+      modelName: Constants.deviceModelName,
       isDevice: Constants.isDevice,
-      platform: Constants.platform
+      platform: Constants.platform,
+      nodeEnv: process.env.NODE_ENV
     });
     
     return isEmulator;
@@ -45,15 +58,106 @@ class LocationService {
       return;
     }
     
-    for (const [debugId, { progressTimeout }] of this.activeRequests.entries()) {
+    for (const [debugId, { progressTimeout, cancelCallback }] of this.activeRequests.entries()) {
       if (progressTimeout) {
         clearInterval(progressTimeout);
         console.log(`🚫 Cancelled GPS request [${debugId}] - no more progress messages`);
+      }
+      
+      // Call cancel callback if available
+      if (cancelCallback) {
+        try {
+          cancelCallback();
+          console.log(`🚫 Called cancel callback for GPS request [${debugId}]`);
+        } catch (error) {
+          console.warn(`⚠️ Error calling cancel callback for [${debugId}]:`, error);
+        }
       }
     }
     
     this.activeRequests.clear();
     console.log(`✅ All ${activeCount} GPS request(s) cancelled successfully`);
+  }
+
+  /**
+   * Cancel specific GPS request by ID
+   */
+  static cancelRequest(debugId) {
+    const requestData = this.activeRequests.get(debugId);
+    if (!requestData) {
+      console.log(`ℹ️ GPS request [${debugId}] not found in active requests`);
+      return false;
+    }
+    
+    const { progressTimeout, cancelCallback } = requestData;
+    
+    if (progressTimeout) {
+      clearInterval(progressTimeout);
+    }
+    
+    if (cancelCallback) {
+      try {
+        cancelCallback();
+      } catch (error) {
+        console.warn(`⚠️ Error calling cancel callback for [${debugId}]:`, error);
+      }
+    }
+    
+    this.activeRequests.delete(debugId);
+    console.log(`🚫 Cancelled GPS request [${debugId}]`);
+    return true;
+  }
+
+  /**
+   * Get user-friendly error message for GPS failures
+   */
+  static getLocationErrorMessage(error, debugId) {
+    const errorMessage = error?.message?.toLowerCase() || '';
+    
+    // Check for specific error patterns and return user-friendly messages
+    if (errorMessage.includes('timeout')) {
+      return {
+        title: 'GPS Timeout',
+        message: 'Location request took longer than expected. Using cached or default location instead.',
+        suggestion: 'Try moving to an area with better GPS signal or enable "Skip GPS" in developer settings.',
+        isRecoverable: true
+      };
+    }
+    
+    if (errorMessage.includes('permission') || errorMessage.includes('denied')) {
+      return {
+        title: 'Location Permission Required',
+        message: 'FloodAid needs location access to provide accurate flood predictions.',
+        suggestion: 'Please enable location permissions in your device settings.',
+        isRecoverable: true
+      };
+    }
+    
+    if (errorMessage.includes('cancelled')) {
+      return {
+        title: 'Location Request Cancelled',
+        message: 'GPS request was cancelled. Using fallback location.',
+        suggestion: 'This is normal when switching between GPS modes.',
+        isRecoverable: true
+      };
+    }
+    
+    if (errorMessage.includes('unavailable') || errorMessage.includes('disabled')) {
+      return {
+        title: 'Location Services Disabled',
+        message: 'GPS or location services are turned off on your device.',
+        suggestion: 'Please enable location services in your device settings.',
+        isRecoverable: true
+      };
+    }
+    
+    // Generic GPS failure
+    return {
+      title: 'GPS Unavailable',
+      message: 'Unable to determine your exact location. Using fallback location for flood predictions.',
+      suggestion: 'Predictions may be less accurate. Try moving to an open area or restarting the app.',
+      isRecoverable: true
+    };
   }
   
   /**
@@ -64,6 +168,12 @@ class LocationService {
     const isEmulatorDevice = this.isEmulator();
     
     console.log(`📍 LocationService [${debugId}]: ${skipGPS ? 'SKIPPING GPS' : 'Requesting location'} permissions...`);
+    
+    // Cancel any existing requests before starting new one
+    if (this.activeRequests.size > 0) {
+      console.log(`🚫 [${debugId}]: Cancelling ${this.activeRequests.size} existing GPS requests...`);
+      this.cancelAllRequests();
+    }
     
     // Skip GPS if requested - immediately return cached or default location
     if (skipGPS) {
@@ -97,11 +207,11 @@ class LocationService {
       return defaultLocation;
     }
     
-    // GPS configuration with realistic timeouts for better reliability
+    // GPS configuration with increased timeouts for better reliability
     const emulatorConfig = {
-      timeout: isEmulatorDevice ? 10000 : 30000, // 10s for emulator, 30s for device
+      timeout: isEmulatorDevice ? 18000 : 30000, // 18s for emulator (increased), 30s for device
       accuracy: isEmulatorDevice ? Location.Accuracy.Balanced : Location.Accuracy.High,
-      progressInterval: 3000 // Show progress every 3s
+      progressInterval: isEmulatorDevice ? 5000 : 3000 // 5s progress for emulator, 3s for device
     };
     
     console.log(`🔧 GPS Configuration: ${isEmulatorDevice ? 'EMULATOR MODE' : 'DEVICE MODE'}`, emulatorConfig);
@@ -127,8 +237,15 @@ class LocationService {
         console.log(`⏳ [${debugId}]: GPS request still in progress...`);
       }, emulatorConfig.progressInterval);
       
+      // Create cancellation flag
+      let isCancelled = false;
+      const cancelCallback = () => {
+        isCancelled = true;
+        console.log(`🚫 [${debugId}]: GPS request marked as cancelled`);
+      };
+      
       // Track this request for potential cancellation
-      this.activeRequests.set(debugId, { progressTimeout });
+      this.activeRequests.set(debugId, { progressTimeout, cancelCallback });
       
       // Enhanced timeout using Promise.race to ensure cleanup
       const gpsPromise = Location.getCurrentPositionAsync({
@@ -143,6 +260,12 @@ class LocationService {
       });
       
       const location = await Promise.race([gpsPromise, timeoutPromise]);
+      
+      // Check if request was cancelled during GPS acquisition
+      if (isCancelled) {
+        console.log(`🚫 [${debugId}]: GPS request was cancelled, ignoring result`);
+        throw new Error(`GPS request cancelled [${debugId}]`);
+      }
       
       // Clean up tracking
       clearInterval(progressTimeout);
@@ -180,6 +303,10 @@ class LocationService {
       
       console.error(`❌ [${debugId}]: GPS location failed:`, error.message);
       console.error(`❌ [${debugId}]: Error type: ${error.name || 'Unknown'}`);
+      
+      // Get user-friendly error message
+      const friendlyError = this.getLocationErrorMessage(error, debugId);
+      console.log(`💬 [${debugId}]: User-friendly error: ${friendlyError.title} - ${friendlyError.message}`);
       
       // Check if it's a timeout specifically
       if (error.message && error.message.includes('timeout')) {

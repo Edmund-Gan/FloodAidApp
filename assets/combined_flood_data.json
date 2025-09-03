@@ -1,0 +1,9457 @@
+[
+  {
+    "date": "2000-08-28",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2000-09-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-01-13",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-01-14",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-01-15",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-01-17",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-01-18",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-01-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-01-25",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-01-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-01-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-01-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-01-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-02-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-02-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-02-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-02-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-02-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-02-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-02-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-03-05",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-03-06",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-03-07",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-03-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-03-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-03-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-03-14",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-04-03",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-04-03",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-04-09",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-04-09",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-04-14",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-04-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-04-30",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-05-01",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-05-02",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-05-07",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-05-29",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-08-27",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-08-29",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-09-26",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-09-27",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-10-03",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-10-04",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-10-05",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-10-06",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-10-07",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-10-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-10-09",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-10-10",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-10-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-10-16",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-10-17",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-10-18",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-02",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-16",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-17",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-17",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-18",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-18",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-19",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-24",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-25",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-27",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-29",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-11-30",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-15",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-15",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-15",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-16",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-16",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-17",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-17",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-18",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-18",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-19",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-20",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-21",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-22",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-23",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-23",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-23",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-24",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-24",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-25",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-25",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-26",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-27",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-28",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-29",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-29",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-30",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2001-12-30",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-01-07",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-01-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-01-09",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-01-10",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-01-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-01-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-01-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-01-14",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-01-15",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-01-16",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-01-29",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-01-30",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-04-08",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-04-17",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-04-29",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-04-29",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-04-29",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-04-30",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-05-01",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-05-02",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-05-03",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-05-04",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-06-11",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-07-05",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-07-07",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-08-06",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-06",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-08",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-08",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-09",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-09",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-10",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-10",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-11",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-11",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-11",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-11",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-18",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-10-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-08",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-09",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-10",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-19",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-19",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-20",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-21",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-22",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-23",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-24",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-27",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-11-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-09",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-10",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-10",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-10",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-11",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-12",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-13",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-13",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-14",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-15",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-16",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-17",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-17",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-18",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-18",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-19",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-20",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-21",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-21",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-22",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-23",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-24",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2002-12-30",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-13",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-14",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-15",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-16",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-17",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-18",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-19",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-20",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-21",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-22",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-23",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-24",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-25",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-26",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-27",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-28",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-29",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-30",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-01-31",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-02-01",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-03-03",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-03-04",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-03-30",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-04-09",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-05-02",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-05-15",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-06-10",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-06-30",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-08-13",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-08-14",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-08-17",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-09-08",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-09-09",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-09-10",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-09-10",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-09-23",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-09-24",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-09-25",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-09-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-09-27",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-09-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-09-29",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-02",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-02",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-03",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-03",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-03",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-04",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-04",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-04",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-05",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-05",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-05",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-06",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-06",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-06",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-07",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-07",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-07",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-08",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-08",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-08",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-09",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-09",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-09",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-09",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-10",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-10",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-10",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-10",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-11",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-11",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-11",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-12",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-12",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-12",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-13",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-13",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-13",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-14",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-20",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-21",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-21",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-22",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-22",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-23",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-23",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-24",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-24",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-25",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-25",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-26",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-26",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-27",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-29",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-10-30",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-04",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-06",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-08",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-08",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-09",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-10",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-11",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-12",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-13",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-14",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-14",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-15",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-15",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-16",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-16",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-17",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-17",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-18",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-19",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-20",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-21",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-22",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-23",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-24",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-25",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-27",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-29",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-11-30",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-01",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-02",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-03",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-08",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-08",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-09",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-09",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-09",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-09",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-10",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-10",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-10",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-11",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-11",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-11",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-12",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-12",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-12",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-13",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-13",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-13",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-14",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-15",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-16",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-21",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-22",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2003-12-29",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-01-25",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-01-29",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-01-30",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-02-06",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-02-08",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-03-05",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-04-05",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-04-21",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-04-25",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-05-10",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-05-11",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-07-11",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-07-12",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-07-16",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-07-16",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-07-17",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-07-17",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-07-18",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-07-20",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-07-26",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-07-27",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-08-25",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-09-24",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-09-27",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-09-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-09-29",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-09-30",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-10-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-10-29",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-10-30",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-03",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-05",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-05",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-07",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-07",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-08",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-09",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-09",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-09",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-10",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-13",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-14",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-16",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-16",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-17",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-18",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-25",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-11-29",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-07",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-08",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-08",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-08",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-09",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-09",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-10",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-10",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-11",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-11",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-12",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-12",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-13",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-13",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-14",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-14",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-15",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-15",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-16",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-17",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-18",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-19",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-20",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-21",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-22",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2004-12-23",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-02-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-04-03",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-04-03",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-04-04",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-04-04",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-04-04",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-04-22",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-05-31",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-07-15",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-07-17",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-09-15",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-09-16",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-09-17",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-09-18",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-09-27",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-10-13",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-10-16",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-10-19",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-10-20",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-11-03",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-11-04",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-11-19",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-11-22",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-11-23",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-11-24",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-11-30",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-16",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-17",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-17",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-17",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-18",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-18",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-18",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-19",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-19",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-19",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-20",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-20",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-20",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-21",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-21",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-21",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-22",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-22",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-22",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-23",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-23",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-23",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-24",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-24",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-24",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-25",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-25",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-25",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-26",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-27",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-28",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-29",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2005-12-30",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-02",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-03",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-04",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-04",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-05",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-06",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-07",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-09",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-10",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-14",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-15",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-16",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-17",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-18",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-18",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-19",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-20",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-21",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-22",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-23",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-24",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-25",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-26",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-27",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-28",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-29",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-30",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-01-31",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-01",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-02",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-03",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-04",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-05",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-06",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-07",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-09",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-10",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-13",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-13",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-14",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-15",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-16",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-17",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-18",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-19",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-20",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-21",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-22",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-23",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-24",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-25",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-26",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-27",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-27",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-02-28",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-03-01",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-03-01",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-03-02",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-03-02",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-03-03",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-03-03",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-03-21",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-03-30",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-04-06",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-04-08",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-04-09",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-04-19",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-04-20",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-05-04",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-05-04",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-05-10",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-05-15",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-05-20",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-05-26",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-05-30",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-05-31",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-01",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-02",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-03",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-04",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-04",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-05",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-06",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-07",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-08",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-25",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-26",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-27",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-28",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-06-29",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-07-09",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-08-25",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-09-21",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-09-30",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-01",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-02",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-02",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-03",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-03",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-04",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-15",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-20",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-20",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-21",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-21",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-22",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-22",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-23",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-23",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-23",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-24",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-24",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-25",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-25",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-26",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-10-27",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-01",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-02",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-06",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-09",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-11",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-13",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-14",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-15",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-16",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-17",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-18",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-19",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-20",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-21",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-22",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-23",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-24",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-25",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-27",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-29",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-11-30",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-01",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-02",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-03",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-04",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-05",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-06",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-07",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-08",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-12",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-13",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-17",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-17",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-18",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-18",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-18",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-19",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-19",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-19",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-20",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-20",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-20",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-21",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-21",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-21",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-21",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-22",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-22",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-22",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-23",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-23",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-23",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-24",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-24",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-24",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-25",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-25",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-26",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-26",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-26",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-27",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-28",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-29",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-30",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2006-12-31",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-03",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-04",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-05",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-06",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-07",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-07",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-08",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-09",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-09",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-10",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-10",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-11",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-11",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-12",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-12",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-13",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-13",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-14",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-14",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-14",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-15",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-15",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-15",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-20",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-23",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-01-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-02-18",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-03-04",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-03-06",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-03-09",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-04-01",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-04-16",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-04-26",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-05-09",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-05-14",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-06-02",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-06-10",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-06-10",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-06-11",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-06-15",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-06-16",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-06-18",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-06-19",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-07-01",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-07-22",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-07-22",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-07-24",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-07-25",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-07-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-07-27",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-07-27",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-07-30",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-07-30",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-08-09",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-08-15",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-09-04",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-09-07",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-09-08",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-09-14",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-09-14",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-09-15",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-09-16",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-09-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-09-17",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-09-18",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-09-26",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-09-30",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-10-16",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-10-18",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-10-20",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-10-22",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-10-25",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-11-10",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-11-12",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-11-20",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-11-20",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-11-21",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-11-28",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-11-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-07",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-07",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-08",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-08",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-09",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-09",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-10",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-10",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-11",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-11",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-12",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-12",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-13",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-13",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-14",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-14",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-15",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-15",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-16",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-16",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-17",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-17",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-17",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-18",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-18",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-18",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-19",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-19",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-19",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-20",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-20",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-20",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-21",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-21",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-21",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-22",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-22",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-23",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2007-12-25",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-01-03",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-01-04",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-01-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-01-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-01-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-01-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-01-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-01-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-01-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-02-19",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-02-25",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-03-01",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-03-03",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-03-07",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-03-25",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-03-30",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-04-16",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-05-23",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-05-29",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-06-09",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-06-18",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-06-29",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-07-17",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-08-18",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-08-27",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-09-04",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-09-05",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-09-05",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-09-06",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-09-09",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-09-10",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-09-11",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-09-12",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-09-29",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-09-30",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-09",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-11",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-15",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-16",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-17",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-18",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-19",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-19",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-20",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-21",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-22",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-22",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-23",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-23",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-24",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-24",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-25",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-25",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-26",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-27",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-27",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-10-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-11-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-11-11",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-11-16",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-11-19",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-11-25",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-11-28",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-11-28",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-11-29",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-11-29",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-11-30",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-01",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-02",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-03",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-04",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-05",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-06",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-07",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-08",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-08",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-09",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-10",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-11",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-25",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-26",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2008-12-29",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-01",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-03",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-03",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-04",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-04",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-04",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-05",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-06",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-11",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-12",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-14",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-15",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-16",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-24",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-01-31",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-04",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-05",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-06",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-07",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-09",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-10",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-14",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-15",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-16",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-17",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-18",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-19",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-20",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-21",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-22",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-22",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-23",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-23",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-25",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-02-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-01",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-01",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-01",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-02",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-02",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-02",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-02",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-03",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-12",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-14",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-15",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-16",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-17",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-18",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-19",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-20",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-21",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-22",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-29",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-03-30",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-04-07",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-04-08",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-04-09",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-04-10",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-04-12",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-04-13",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-04-14",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-04-15",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-04-16",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-04-17",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-05-14",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-05-22",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-06-11",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-06-11",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-07-11",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-07-11",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-07-12",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-07-27",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-07-29",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-08-28",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-08-29",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-08-29",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-08-30",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-08-31",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-08-31",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-09-18",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-09-18",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-09-21",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-09-22",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-09-23",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-09-27",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-10-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-10-27",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-02",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-03",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-04",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-05",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-06",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-06",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-07",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-07",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-07",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-08",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-08",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-09",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-10",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-11",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-11",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-12",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-12",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-13",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-13",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-14",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-14",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-15",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-15",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-15",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-16",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-17",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-18",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-19",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-20",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-20",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-21",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-21",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-21",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-22",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-22",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-23",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-23",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-23",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-24",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-24",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-25",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-25",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-26",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-26",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-27",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-11-28",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-12-01",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-12-03",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-12-03",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-12-03",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-12-04",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-12-05",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-12-11",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-12-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2009-12-26",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-10",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-15",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-16",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-17",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-18",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-19",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-20",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-20",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-21",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-22",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-23",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-24",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-25",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-25",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-26",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-27",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-28",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-29",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-30",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-01-31",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-02-01",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-02-02",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-02-03",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-02-04",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-02-05",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-03-22",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-03-29",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-04-04",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-04-10",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-04-24",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-06",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-07",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-09",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-10",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-10",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-16",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-18",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-20",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-25",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-05-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-06-02",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-06-05",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-06-06",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-06-07",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-06-22",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-07-06",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-07-21",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-08-02",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-08-12",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-08-14",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-08-16",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-08-17",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-08-19",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-08-26",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-09-09",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-09-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-09-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-09-17",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-09-19",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-09-19",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-09-20",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-09-21",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-09-28",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-09-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-09-29",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-10-22",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-10-30",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-10-31",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-01",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-01",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-02",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-02",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-03",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-03",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-04",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-05",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-06",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-07",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-08",
+    "state": "Perlis",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-14",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-14",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-15",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-11-17",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-12-01",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-12-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-12-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-12-20",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2010-12-30",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-01-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-01-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-01-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-01-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-01-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-01-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-01-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-01-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-01-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-02-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-03-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-03-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-04-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-04-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-04-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-05-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-06-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-06-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-06-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-07-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-10-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-10-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-10-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-10-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-10-31",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-11-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-11-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-11-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-11-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2019-12-31",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-01-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-02-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-02-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-02-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-02-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-02-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-02-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-02-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-02-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-02-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-02-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-03-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-03-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-03-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-03-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-03-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-03-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-03-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-03-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-04-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-04-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-04-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-04-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-04-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-04-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-05-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-05-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-05-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-05-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-06-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-06-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-06-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-06-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-06-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-06-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-06-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-06-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-06-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-07-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-07-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-07-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-07-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-07-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-07-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-07-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-07-31",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-08-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-08-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-08-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-08-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-08-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-09-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-10-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-10-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-10-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-11-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-11-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-11-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-11-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-11-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-11-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-11-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-11-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-11-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-11-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-11-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-12-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-12-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-12-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-12-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-12-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-12-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2020-12-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-01-31",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-02-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-02-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-02-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-02-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-02-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-02-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-02-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-02-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-02-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-02-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-02-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-02-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-03-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-03-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-03-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-03-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-03-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-03-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-03-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-04-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-05-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-05-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-05-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-05-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-05-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-05-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-05-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-05-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-05-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-06-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-06-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-07-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-07-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-07-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-07-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-07-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-07-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-08-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-08-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-08-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-08-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-08-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-09-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-09-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-09-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-09-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-09-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-09-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-10-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-10-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-10-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-10-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-10-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-10-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-10-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-10-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-10-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-10-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-10-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-10-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-11-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-11-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-11-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-11-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-11-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-11-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-11-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-11-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-12-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-12-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-12-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-12-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-12-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-12-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-12-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-12-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-12-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2021-12-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-01-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-02-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-02-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-02-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-02-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-02-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-02-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-02-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-02-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-02-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-02-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-03-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-03-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-03-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-03-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-03-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-03-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-03-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-03-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-04-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-04-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-04-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-05-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-05-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-05-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-06-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-06-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-06-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-06-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-06-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-06-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-07-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-07-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-07-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-08-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-08-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-08-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-08-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-08-31",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-09-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-09-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-09-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-09-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-09-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-09-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-09-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-09-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-10-31",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-11-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-12-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-12-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-12-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-12-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-12-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-12-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-12-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-12-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-12-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2022-12-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-01-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-01-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-01-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-01-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-01-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-01-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-01-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-01-31",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-02-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-02-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-02-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-02-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-02-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-02-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-02-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-02-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-02-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-02-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-02-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-02-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-03-31",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-04-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-04-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-04-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-04-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-05-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-05-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-06-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-07-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-07-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-07-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-07-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-07-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-08-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-08-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-08-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-08-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-09-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-10-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-10-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-10-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-10-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-10-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-11-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-11-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-11-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-11-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-11-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-11-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-11-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-11-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-11-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-11-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-11-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2023-12-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-01-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-02-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-03-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-04-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-04-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-04-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-04-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-04-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-04-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2024-04-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-04",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-04",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-05",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-05",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-05",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-06",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-07",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-09",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-10",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-11",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-12",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-13",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-16",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-17",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-17",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-17",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-21",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-22",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-24",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-24",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-24",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-24",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-25",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-25",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-26",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-26",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-27",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-28",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-29",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-29",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-30",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-01-31",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-01",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-03",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-05",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-05",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-06",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-07",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-08",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-10",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-14",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-14",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-15",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-18",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-19",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-19",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-19",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-19",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-20",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-21",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-21",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-22",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-22",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-24",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-25",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-25",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-25",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-26",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-26",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-27",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-02-28",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-02",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-03",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-04",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-05",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-05",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-06",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-06",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-06",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-06",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-06",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-07",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-07",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-07",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-08",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-08",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-09",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-09",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-10",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-11",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-11",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-12",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-13",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-13",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-14",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-14",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-14",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-15",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-16",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-19",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-19",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-20",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-20",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-20",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-21",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-21",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-21",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-23",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-23",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-23",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-23",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-26",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-27",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-27",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-29",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-31",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-31",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-03-31",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-01",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-01",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-02",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-02",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-02",
+    "state": "Terengganu",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-02",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-03",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-03",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-04",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-04",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-05",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-05",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-06",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-07",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-08",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-09",
+    "state": "Kelantan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-11",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-11",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-11",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-11",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-12",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-13",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-13",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-13",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-13",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-14",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-15",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-15",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-16",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-16",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-16",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-17",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-17",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-17",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-18",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-19",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-19",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-20",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-20",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-20",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-20",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-21",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-21",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-21",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-21",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-21",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-22",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-23",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-24",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-24",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-26",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-26",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-28",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-28",
+    "state": "Perak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-28",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-29",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-29",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-29",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-29",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-29",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-30",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-04-30",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-01",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-01",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-02",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-02",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-03",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-04",
+    "state": "Selangor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-04",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-08",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-10",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-12",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-16",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-18",
+    "state": "Melaka",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-18",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-19",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-19",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-20",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-27",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-28",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-29",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-05-29",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-06-06",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-06-15",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-06-16",
+    "state": "Kedah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-06-16",
+    "state": "Pulau Pinang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-06-18",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-06-19",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-06-25",
+    "state": "Negeri Sembilan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-06-27",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-06-30",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-08-03",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-08-04",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-08-04",
+    "state": "Pahang",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-08-04",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-08-05",
+    "state": "Johor",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-08-08",
+    "state": "Sarawak",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-08-09",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-08-12",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-08-13",
+    "state": "Sabah",
+    "is_flood": "True"
+  },
+  {
+    "date": "2025-08-20",
+    "state": "Wilayah Persekutuan",
+    "is_flood": "True"
+  }
+]

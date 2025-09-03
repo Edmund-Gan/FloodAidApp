@@ -1,33 +1,44 @@
 /**
- * FloodHotspotsCSV.js - SVG-based flood visualization using real 2025 flood data
- * Shows actual flood events as interactive points on Malaysia outline
+ * FloodHotspotsCSV.js - Modern flood visualization with Google Maps
+ * Features dual-filter system, state selection, and clean Material Design 3 interface
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
   TouchableOpacity,
   Alert,
   Modal,
   Dimensions,
+  StatusBar
 } from 'react-native';
-import Svg, { Polygon, Circle, Text as SvgText, G } from 'react-native-svg';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 
 import FloodDataCSV from '../services/FloodDataCSV';
+import { MALAYSIA_CENTER, getFloodDensityColor, getMarkerSize } from '../utils/MalaysianStates';
+import { getStateAbbreviation } from '../utils/FilterHelpers';
+
+// Import new components
+import StateSelector from '../components/StateSelector';
+import QuickStats from '../components/QuickStats';
 
 const { width, height } = Dimensions.get('window');
 
 export default function FloodHotspotsCSV({ navigation }) {
-  const [floodEvents, setFloodEvents] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  // Data state
+  const [allFloodStates, setAllFloodStates] = useState([]);
+  const [availableStateNames, setAvailableStateNames] = useState([]);
+  const [selectedState, setSelectedState] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState(null);
-  const [viewMode, setViewMode] = useState('all'); // 'all', 'selangor', 'recent'
+  const [maxEventCount, setMaxEventCount] = useState(1);
+
+  // State selection for basic filtering
+  const [selectedStates, setSelectedStates] = useState([]);
 
   useEffect(() => {
     loadFloodData();
@@ -36,12 +47,24 @@ export default function FloodHotspotsCSV({ navigation }) {
   const loadFloodData = async () => {
     try {
       setLoading(true);
-      const events = await FloodDataCSV.loadFloodData();
+      const states = await FloodDataCSV.loadFloodData();
       const stats = await FloodDataCSV.getFloodStatistics();
       
-      setFloodEvents(events);
+      setAllFloodStates(states);
       setStatistics(stats);
-      console.log(`📊 Loaded ${events.length} flood events for visualization`);
+      
+      // Extract available state names for search functionality
+      const stateNames = states.map(state => state.state).sort();
+      setAvailableStateNames(stateNames);
+      
+      // Calculate max event count for scaling
+      if (states.length > 0) {
+        const maxCount = Math.max(...states.map(state => state.totalEvents));
+        setMaxEventCount(maxCount);
+      }
+      
+      console.log(`📊 Loaded ${states.length} state flood aggregations for visualization`);
+      console.log(`🔍 Available states for search: ${stateNames.join(', ')}`);
     } catch (error) {
       console.error('Error loading flood data:', error);
       Alert.alert('Data Error', 'Unable to load flood event data');
@@ -50,260 +73,140 @@ export default function FloodHotspotsCSV({ navigation }) {
     }
   };
 
-  // Malaysia coordinate bounds for SVG conversion
-  const MALAYSIA_BOUNDS = {
-    minLat: 0.8,    // Southern tip
-    maxLat: 7.5,    // Northern tip
-    minLng: 99.5,   // Western edge
-    maxLng: 119.5   // Eastern edge (Sabah)
-  };
-
-  const SVG_DIMENSIONS = {
-    width: width - 40,
-    height: 300
-  };
-
-  /**
-   * Convert latitude/longitude to SVG coordinates
-   */
-  const coordToSVG = (lat, lng) => {
-    const x = ((lng - MALAYSIA_BOUNDS.minLng) / (MALAYSIA_BOUNDS.maxLng - MALAYSIA_BOUNDS.minLng)) * SVG_DIMENSIONS.width;
-    const y = ((MALAYSIA_BOUNDS.maxLat - lat) / (MALAYSIA_BOUNDS.maxLat - MALAYSIA_BOUNDS.minLat)) * SVG_DIMENSIONS.height;
-    return { x, y };
-  };
-
-  /**
-   * Get color based on flood severity and recency
-   */
-  const getFloodColor = (event) => {
-    // Recent floods (last 30 days) in red spectrum
-    if (event.daysSince <= 30) {
-      switch (event.severity) {
-        case 5: return '#D32F2F'; // Dark red - very severe recent
-        case 4: return '#F44336'; // Red - severe recent  
-        case 3: return '#FF5722'; // Red-orange - moderate recent
-        default: return '#FF7043'; // Light red-orange - minor recent
-      }
+  // Simple state filtering - show all states or filter by selected states
+  const filteredStates = useMemo(() => {
+    if (selectedStates.length === 0) {
+      return allFloodStates; // Show all states when none selected
     }
-    // Older floods in orange-yellow spectrum
-    else if (event.daysSince <= 90) {
-      switch (event.severity) {
-        case 5: return '#FF9800'; // Dark orange
-        case 4: return '#FFA726'; // Orange
-        case 3: return '#FFB74D'; // Light orange
-        default: return '#FFCC02'; // Yellow-orange
-      }
-    }
-    // Very old floods in yellow spectrum
-    else {
-      switch (event.severity) {
-        case 5: return '#FBC02D'; // Dark yellow
-        case 4: return '#FFEB3B'; // Yellow
-        default: return '#FFF176'; // Light yellow
-      }
-    }
+    return allFloodStates.filter(state => selectedStates.includes(state.state));
+  }, [allFloodStates, selectedStates]);
+
+  // State selection handler
+  const handleStateSelectionChange = (states) => {
+    setSelectedStates(states);
   };
 
-  /**
-   * Get flood point size based on severity
-   */
-  const getFloodSize = (severity) => {
-    return Math.max(3, severity + 2); // Size 5-7 pixels
-  };
 
   /**
-   * Filter events based on view mode
+   * Handle state marker tap
    */
-  const getFilteredEvents = () => {
-    switch (viewMode) {
-      case 'selangor':
-        return floodEvents.filter(event => event.state === 'Selangor');
-      case 'recent':
-        return floodEvents.filter(event => event.daysSince <= 30);
-      case 'severe':
-        return floodEvents.filter(event => event.severity >= 4);
-      default:
-        return floodEvents;
-    }
-  };
-
-  /**
-   * Handle flood point tap
-   */
-  const handleFloodTap = (event) => {
-    setSelectedEvent(event);
+  const handleStateTap = (state) => {
+    setSelectedState(state);
     setShowModal(true);
   };
 
   /**
-   * Simplified Malaysia outline (key points only for performance)
+   * Get marker color based on flood count and recency
    */
-  const getMalaysiaOutline = () => {
-    // Simplified Malaysia boundary points
-    const boundaryPoints = [
-      [99.5, 6.5], [100.5, 6.8], [101.5, 6.5], [102.5, 6.2], [103.5, 5.8],
-      [104.2, 4.5], [103.8, 3.5], [103.5, 2.8], [104.0, 2.0], [103.8, 1.5],
-      [103.0, 1.2], [102.0, 1.8], [101.5, 2.5], [100.8, 3.2], [100.2, 4.0],
-      [99.8, 5.0], [99.5, 6.0]
-    ];
-
-    // Add East Malaysia (simplified)
-    const eastMalaysia = [
-      [109.5, 4.5], [110.5, 5.0], [112.0, 4.8], [114.0, 5.2], [116.0, 6.0],
-      [118.0, 5.5], [119.0, 4.8], [118.5, 4.0], [117.0, 3.5], [115.0, 3.8],
-      [113.0, 4.2], [111.0, 4.0], [109.5, 4.2]
-    ];
-
-    const convertToSVG = (points) => 
-      points.map(([lng, lat]) => {
-        const svg = coordToSVG(lat, lng);
-        return `${svg.x},${svg.y}`;
-      }).join(' ');
-
-    return {
-      peninsular: convertToSVG(boundaryPoints),
-      eastMalaysia: convertToSVG(eastMalaysia)
-    };
+  const getMarkerColor = (state) => {
+    if (state.recentEvents > 0) {
+      // Recent flood activity - red spectrum
+      return getFloodDensityColor(state.totalEvents, maxEventCount);
+    } else {
+      // Historical data only - blue spectrum
+      const intensity = state.totalEvents / maxEventCount;
+      if (intensity > 0.8) return '#1565C0'; // Dark blue
+      if (intensity > 0.6) return '#1976D2'; // Blue
+      if (intensity > 0.4) return '#2196F3'; // Light blue
+      if (intensity > 0.2) return '#42A5F5'; // Lighter blue
+      return '#90CAF9'; // Very light blue
+    }
   };
+
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading flood event data...</Text>
+        <StatusBar barStyle="light-content" backgroundColor="#1976D2" />
+        <Text style={styles.loadingText}>Loading flood data...</Text>
       </View>
     );
   }
 
-  const filteredEvents = getFilteredEvents();
-  const outline = getMalaysiaOutline();
-
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Malaysia Flood Events 2025</Text>
-        <Text style={styles.subtitle}>
-          {filteredEvents.length} events • Real data from government sources
-        </Text>
+      <StatusBar barStyle="light-content" backgroundColor="#1976D2" />
+      
+      {/* Modern Header */}
+      <View style={styles.modernHeader}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Malaysia Flood Hotspots</Text>
+          <Text style={styles.headerSubtitle}>Historical Analysis (2000-2025)</Text>
+        </View>
       </View>
 
-      {/* View Mode Filters */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
-        {[
-          { key: 'all', label: 'All Events', count: floodEvents.length },
-          { key: 'recent', label: 'Recent (30d)', count: floodEvents.filter(e => e.daysSince <= 30).length },
-          { key: 'selangor', label: 'Selangor', count: floodEvents.filter(e => e.state === 'Selangor').length },
-          { key: 'severe', label: 'Severe', count: floodEvents.filter(e => e.severity >= 4).length }
-        ].map(filter => (
-          <TouchableOpacity
-            key={filter.key}
-            style={[styles.filterButton, viewMode === filter.key && styles.activeFilterButton]}
-            onPress={() => setViewMode(filter.key)}
-          >
-            <Text style={[styles.filterText, viewMode === filter.key && styles.activeFilterText]}>
-              {filter.label} ({filter.count})
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* SVG Map */}
+      {/* Full Screen Map Container with Floating Overlays */}
       <View style={styles.mapContainer}>
-        <Svg width={SVG_DIMENSIONS.width} height={SVG_DIMENSIONS.height} viewBox={`0 0 ${SVG_DIMENSIONS.width} ${SVG_DIMENSIONS.height}`}>
-          {/* Malaysia outline */}
-          <Polygon
-            points={outline.peninsular}
-            fill="none"
-            stroke="#e0e0e0"
-            strokeWidth="2"
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          initialRegion={{
+            latitude: MALAYSIA_CENTER.latitude,
+            longitude: MALAYSIA_CENTER.longitude,
+            latitudeDelta: 8.0,
+            longitudeDelta: 20.0,
+          }}
+          mapType="terrain"
+          showsUserLocation={false}
+          showsMyLocationButton={false}
+          showsCompass={true}
+          showsScale={true}
+        >
+          {filteredStates.map((state) => (
+            <Marker
+              key={state.id}
+              coordinate={{
+                latitude: state.latitude,
+                longitude: state.longitude,
+              }}
+              onPress={() => handleStateTap(state)}
+              style={styles.markerContainer}
+            >
+              <View style={[
+                styles.customMarker,
+                { 
+                  backgroundColor: getMarkerColor(state),
+                  width: getMarkerSize(state.totalEvents, maxEventCount),
+                  height: getMarkerSize(state.totalEvents, maxEventCount)
+                }
+              ]}>
+                <Text style={[
+                  styles.markerText,
+                  { fontSize: getMarkerSize(state.totalEvents, maxEventCount) > 30 ? 10 : 8 }
+                ]}>
+                  {getStateAbbreviation(state.state)}
+                </Text>
+              </View>
+            </Marker>
+          ))}
+        </MapView>
+
+        {/* Floating Search Bar */}
+        <View style={styles.floatingSearchContainer}>
+          <StateSelector
+            selectedStates={selectedStates}
+            onSelectionChange={handleStateSelectionChange}
+            availableStates={availableStateNames}
+            style={styles.floatingStateSelector}
+            placeholder={`Search from ${availableStateNames.length} states with flood data...`}
           />
-          <Polygon
-            points={outline.eastMalaysia}
-            fill="none"
-            stroke="#e0e0e0"
-            strokeWidth="2"
-          />
-
-          {/* Flood event points */}
-          {filteredEvents.map((event, index) => {
-            const svgPos = coordToSVG(event.latitude, event.longitude);
-            return (
-              <Circle
-                key={`flood-${event.id}-${index}`}
-                cx={svgPos.x}
-                cy={svgPos.y}
-                r={getFloodSize(event.severity)}
-                fill={getFloodColor(event)}
-                stroke="#fff"
-                strokeWidth="1"
-                opacity="0.8"
-                onPress={() => handleFloodTap(event)}
-              />
-            );
-          })}
-
-          {/* Alice's Petaling area highlight (if showing Selangor) */}
-          {viewMode === 'selangor' && (
-            <G>
-              <Circle
-                cx={coordToSVG(3.1073, 101.5951).x}
-                cy={coordToSVG(3.1073, 101.5951).y}
-                r="15"
-                fill="none"
-                stroke="#2196F3"
-                strokeWidth="2"
-                strokeDasharray="5,5"
-                opacity="0.7"
-              />
-              <SvgText
-                x={coordToSVG(3.1073, 101.5951).x}
-                y={coordToSVG(3.1073, 101.5951).y - 20}
-                fontSize="10"
-                fill="#2196F3"
-                textAnchor="middle"
-              >
-                Alice's Area
-              </SvgText>
-            </G>
-          )}
-        </Svg>
-
-        {/* Legend */}
-        <View style={styles.legend}>
-          <Text style={styles.legendTitle}>Legend</Text>
-          <View style={styles.legendRow}>
-            <View style={[styles.legendDot, { backgroundColor: '#D32F2F' }]} />
-            <Text style={styles.legendText}>Recent & Severe</Text>
-            <View style={[styles.legendDot, { backgroundColor: '#FF9800' }]} />
-            <Text style={styles.legendText}>Moderate</Text>
-            <View style={[styles.legendDot, { backgroundColor: '#FFEB3B' }]} />
-            <Text style={styles.legendText}>Minor/Old</Text>
-          </View>
         </View>
+
+        {/* Floating Statistics */}
+        <View style={styles.floatingStatsContainer}>
+          <QuickStats
+            statistics={statistics}
+            filteredCount={filteredStates.length}
+            totalCount={allFloodStates.length}
+            style={styles.floatingStats}
+            isCollapsible={true}
+          />
+        </View>
+
       </View>
 
-      {/* Statistics Panel */}
-      {statistics && (
-        <View style={styles.statsContainer}>
-          <Text style={styles.statsTitle}>Quick Stats</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{statistics.totalEvents}</Text>
-              <Text style={styles.statLabel}>Total Events</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{statistics.recentEvents}</Text>
-              <Text style={styles.statLabel}>Recent (30d)</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{statistics.highestRiskState}</Text>
-              <Text style={styles.statLabel}>Highest Risk</Text>
-            </View>
-          </View>
-        </View>
-      )}
 
-      {/* Flood Event Detail Modal */}
+      {/* State Flood Detail Modal */}
       <Modal
         visible={showModal}
         animationType="slide"
@@ -312,11 +215,11 @@ export default function FloodHotspotsCSV({ navigation }) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {selectedEvent && (
+            {selectedState && (
               <>
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>
-                    {selectedEvent.district}, {selectedEvent.state}
+                    {selectedState.state} Flood History
                   </Text>
                   <TouchableOpacity onPress={() => setShowModal(false)}>
                     <Ionicons name="close" size={24} color="#666" />
@@ -325,49 +228,58 @@ export default function FloodHotspotsCSV({ navigation }) {
 
                 <View style={styles.eventDetails}>
                   <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Date:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedEvent.date.toLocaleDateString()}
-                    </Text>
+                    <Text style={styles.detailLabel}>Total Flood Events:</Text>
+                    <Text style={styles.detailValue}>{selectedState.totalEvents}</Text>
                   </View>
 
                   <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Days Ago:</Text>
-                    <Text style={styles.detailValue}>{selectedEvent.daysSince} days</Text>
+                    <Text style={styles.detailLabel}>Recent Activity (1yr):</Text>
+                    <Text style={styles.detailValue}>{selectedState.recentEvents || 0} events</Text>
                   </View>
 
                   <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Severity:</Text>
+                    <Text style={styles.detailLabel}>Risk Level:</Text>
                     <View style={styles.severityIndicator}>
                       {[1,2,3,4,5].map(i => (
                         <View 
                           key={i}
                           style={[
                             styles.severityDot,
-                            { backgroundColor: i <= selectedEvent.severity ? '#F44336' : '#e0e0e0' }
+                            { backgroundColor: i <= selectedState.severity ? '#F44336' : '#e0e0e0' }
                           ]} 
                         />
                       ))}
+                      <Text style={styles.severityText}>
+                        {selectedState.severity === 5 ? 'Very High' :
+                         selectedState.severity === 4 ? 'High' :
+                         selectedState.severity === 3 ? 'Moderate' :
+                         selectedState.severity === 2 ? 'Low' : 'Very Low'}
+                      </Text>
                     </View>
                   </View>
 
                   <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>River Basin:</Text>
+                    <Text style={styles.detailLabel}>Days Since Last Flood:</Text>
                     <Text style={styles.detailValue}>
-                      {selectedEvent.riverBasin || 'Not specified'}
+                      {selectedState.daysSince ? `${selectedState.daysSince} days` : 'N/A'}
                     </Text>
                   </View>
 
                   <View style={styles.detailColumn}>
-                    <Text style={styles.detailLabel}>Flood Causes:</Text>
-                    {selectedEvent.causes.map((cause, index) => (
-                      <Text key={index} style={styles.causeText}>• {cause}</Text>
-                    ))}
+                    <Text style={styles.detailLabel}>Yearly Breakdown:</Text>
+                    {selectedState.yearlyEvents && Object.entries(selectedState.yearlyEvents)
+                      .sort((a, b) => b[0] - a[0])
+                      .slice(0, 5)
+                      .map(([year, count]) => (
+                        <Text key={year} style={styles.causeText}>
+                          • {year}: {count} events
+                        </Text>
+                      ))}
                   </View>
 
                   <View style={styles.coordinatesRow}>
                     <Text style={styles.coordinatesText}>
-                      📍 {selectedEvent.latitude.toFixed(4)}, {selectedEvent.longitude.toFixed(4)}
+                      📍 {selectedState.latitude.toFixed(4)}, {selectedState.longitude.toFixed(4)}
                     </Text>
                   </View>
                 </View>
@@ -381,198 +293,212 @@ export default function FloodHotspotsCSV({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // Main Container
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingTop: 50,
+    backgroundColor: '#f8fafc',
   },
+  
+  // Loading State
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8fafc',
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
+    color: '#64748b',
+    marginTop: 16,
   },
-  header: {
-    padding: 20,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-  },
-  filterContainer: {
+
+  // Modern Header
+  modernHeader: {
+    backgroundColor: '#1976D2',
+    paddingTop: 44, // Status bar height
+    paddingBottom: 12,
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-  },
-  filterButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  activeFilterButton: {
-    backgroundColor: '#2196F3',
-  },
-  filterText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  activeFilterText: {
-    color: '#fff',
-  },
-  mapContainer: {
-    flex: 1,
-    margin: 20,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    elevation: 2,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
-  legend: {
-    marginTop: 15,
-    padding: 10,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 5,
+  headerContent: {
+    flex: 1,
   },
-  legendTitle: {
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  headerSubtitle: {
     fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  legendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 5,
-  },
-  legendText: {
-    fontSize: 12,
-    color: '#666',
-    marginRight: 15,
-  },
-  statsContainer: {
-    margin: 20,
-    padding: 15,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    elevation: 2,
-  },
-  statsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2196F3',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.8)',
     marginTop: 2,
   },
+
+  // Enhanced Map - Full Screen
+  mapContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  map: {
+    flex: 1,
+    minHeight: 400,
+  },
+
+  // Floating Search Bar
+  floatingSearchContainer: {
+    position: 'absolute',
+    top: 24,
+    left: 16,
+    right: 16,
+    zIndex: 1000,
+  },
+  floatingStateSelector: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 12,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+
+  // Floating Statistics
+  floatingStatsContainer: {
+    position: 'absolute',
+    bottom: 100,
+    right: 16,
+    zIndex: 999,
+  },
+  floatingStats: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 12,
+    minWidth: 140,
+    maxWidth: 180,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  
+  // Enhanced Markers
+  markerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customMarker: {
+    borderRadius: 25,
+    borderWidth: 3,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  markerText: {
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+
+
+
+  // State Detail Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
     backgroundColor: '#fff',
     margin: 20,
-    borderRadius: 10,
+    borderRadius: 20,
     maxHeight: '80%',
     minWidth: '90%',
+    overflow: 'hidden',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: 24,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1e293b',
     flex: 1,
   },
   eventDetails: {
-    padding: 20,
+    padding: 24,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 16,
   },
   detailColumn: {
-    marginBottom: 15,
+    marginBottom: 20,
   },
   detailLabel: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    width: 100,
+    fontWeight: '600',
+    color: '#374151',
+    width: 120,
   },
   detailValue: {
     fontSize: 14,
-    color: '#666',
+    color: '#6b7280',
     flex: 1,
   },
   severityIndicator: {
     flexDirection: 'row',
+    alignItems: 'center',
   },
   severityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 3,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 4,
+  },
+  severityText: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginLeft: 12,
+    fontWeight: '500',
   },
   causeText: {
     fontSize: 14,
-    color: '#666',
-    marginLeft: 10,
-    marginBottom: 2,
+    color: '#6b7280',
+    marginLeft: 12,
+    marginBottom: 4,
+    lineHeight: 20,
   },
   coordinatesRow: {
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: '#e2e8f0',
   },
   coordinatesText: {
     fontSize: 12,
-    color: '#999',
+    color: '#9ca3af',
     textAlign: 'center',
+    fontFamily: 'monospace',
   },
 });
