@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "com.swmansion.gesturehandler.react-native-gesture-handler-merged_res-22:/menu/example_menu.xml",
+        "source": "com.swmansion.gesturehandler.react-native-gesture-handler-core-1.7.0-5:/menu/example_menu.xml"
+    },
+    {
+        "merged": "com.swmansion.gesturehandler.react-native-gesture-handler-merged_res-22:/menu/example_menu2.xml",
+        "source": "com.swmansion.gesturehandler.react-native-gesture-handler-core-1.7.0-5:/menu/example_menu2.xml"
+    }
+]

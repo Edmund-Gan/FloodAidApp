@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "com.swmansion.gesturehandler.react-native-gesture-handler-merged_res-22:/layout-v21/notification_action_tombstone.xml",
+        "source": "com.swmansion.gesturehandler.react-native-gesture-handler-core-1.7.0-5:/layout-v21/notification_action_tombstone.xml"
+    },
+    {
+        "merged": "com.swmansion.gesturehandler.react-native-gesture-handler-merged_res-22:/layout-v21/notification_template_icon_group.xml",
+        "source": "com.swmansion.gesturehandler.react-native-gesture-handler-core-1.7.0-5:/layout-v21/notification_template_icon_group.xml"
+    },
+    {
+        "merged": "com.swmansion.gesturehandler.react-native-gesture-handler-merged_res-22:/layout-v21/notification_action.xml",
+        "source": "com.swmansion.gesturehandler.react-native-gesture-handler-core-1.7.0-5:/layout-v21/notification_action.xml"
+    },
+    {
+        "merged": "com.swmansion.gesturehandler.react-native-gesture-handler-merged_res-22:/layout-v21/notification_template_custom_big.xml",
+        "source": "com.swmansion.gesturehandler.react-native-gesture-handler-core-1.7.0-5:/layout-v21/notification_template_custom_big.xml"
+    }
+]

@@ -14,8 +14,9 @@ import {
   StatusBar,
   RefreshControl
 } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
@@ -45,6 +46,8 @@ import { UserProvider } from './context/UserContext';
 
 const { width, height } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+export const navigationRef = createNavigationContainerRef();
 
 // Google Maps API Key Configuration
 const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.googleMapsApiKey || 
@@ -131,19 +134,21 @@ const getRiskDescription = (prediction, locationInfo) => {
 
 
 // Detailed Flood Prediction Modal Component
-function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose }) {
+function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose, hideHeader }) {
   const [activeTab, setActiveTab] = useState('risk');
 
   if (!prediction || !locationInfo) {
     return (
       <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.modalTitle}>Flood Prediction Details</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        {!hideHeader && (
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Flood Prediction Details</Text>
+            <View style={{ width: 24 }} />
+          </View>
+        )}
         <View style={styles.modalContent}>
           <Text>Loading prediction details...</Text>
         </View>
@@ -376,13 +381,15 @@ function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose 
 
   return (
     <View style={styles.modalContainer}>
-      <View style={styles.modalHeader}>
-        <TouchableOpacity onPress={onClose}>
-          <Ionicons name="close" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.modalTitle}>Flood Prediction Details</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      {!hideHeader && (
+        <View style={styles.modalHeader}>
+          <TouchableOpacity onPress={onClose}>
+            <Ionicons name="close" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.modalTitle}>Flood Prediction Details</Text>
+          <View style={{ width: 24 }} />
+        </View>
+      )}
 
       <View style={styles.modalTabBar}>
         {tabs.map((tab) => (
@@ -1132,7 +1139,16 @@ function HomeScreen() {
 
       <TouchableOpacity 
         style={styles.primaryButton}
-        onPress={() => setShowDetailsModal(true)}
+        onPress={() => {
+          // Navigate to native-stack details screen instead of Modal
+          // Passing current prediction/location/weather as params
+          navigationRef?.current?.navigate?.('FloodDetails', {
+            prediction,
+            locationInfo,
+            realTimeWeather,
+          });
+          setShowDetailsModal(false);
+        }}
       >
         <Text style={styles.primaryButtonText}>View Details</Text>
       </TouchableOpacity>
@@ -1330,19 +1346,7 @@ function HomeScreen() {
         </View>
       </Modal>
 
-      {/* Detailed Flood Prediction Modal */}
-      <Modal
-        visible={showDetailsModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <FloodDetailsModal 
-          prediction={prediction}
-          locationInfo={locationInfo}
-          realTimeWeather={realTimeWeather}
-          onClose={() => setShowDetailsModal(false)}
-        />
-      </Modal>
+      {/* Removed Modal in favor of native-stack screen for swipe back */}
 
       <FloodAlert
         alert={currentAlert}
@@ -1523,41 +1527,63 @@ function PreparednessScreen() {
 }
 
 // Main App Component
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Predictions') {
+            iconName = focused ? 'trending-up' : 'trending-up-outline';
+          } else if (route.name === 'Live Data') {
+            iconName = focused ? 'water' : 'water-outline';
+          } else if (route.name === 'Hotspots') {
+            iconName = focused ? 'location' : 'location-outline';
+          } else if (route.name === 'Locations') {
+            iconName = focused ? 'pin' : 'pin-outline';
+          }
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#2196F3',
+        tabBarInactiveTintColor: 'gray',
+        tabBarStyle: styles.tabBar,
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Predictions" component={PreparednessScreen} />
+      <Tab.Screen name="Live Data" component={LiveDataScreen} />
+      <Tab.Screen name="Hotspots" component={FloodHotspotsScreen} />
+      <Tab.Screen name="Locations" component={LocationsScreen} />
+    </Tab.Navigator>
+  );
+}
+
+function FloodDetailsScreen({ route, navigation }) {
+  const { prediction, locationInfo, realTimeWeather } = route.params || {};
+  return (
+    <FloodDetailsModal
+      prediction={prediction}
+      locationInfo={locationInfo}
+      realTimeWeather={realTimeWeather}
+      onClose={() => navigation.goBack()}
+      hideHeader={true}
+    />
+  );
+}
+
 export default function App() {
   return (
     <UserProvider>
       <LocationProvider>
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
           <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-          <Tab.Navigator
-            screenOptions={({ route }) => ({
-              tabBarIcon: ({ focused, color, size }) => {
-                let iconName;
-                if (route.name === 'Home') {
-                  iconName = focused ? 'home' : 'home-outline';
-                } else if (route.name === 'Predictions') {
-                  iconName = focused ? 'trending-up' : 'trending-up-outline';
-                } else if (route.name === 'Live Data') {
-                  iconName = focused ? 'water' : 'water-outline';
-                } else if (route.name === 'Hotspots') {
-                  iconName = focused ? 'location' : 'location-outline';
-                } else if (route.name === 'Locations') {
-                  iconName = focused ? 'pin' : 'pin-outline';
-                }
-                return <Ionicons name={iconName} size={size} color={color} />;
-              },
-              tabBarActiveTintColor: '#2196F3',
-              tabBarInactiveTintColor: 'gray',
-              tabBarStyle: styles.tabBar,
-              headerShown: false,
-            })}
-          >
-            <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Predictions" component={PreparednessScreen} />
-            <Tab.Screen name="Live Data" component={LiveDataScreen} />
-            <Tab.Screen name="Hotspots" component={FloodHotspotsScreen} />
-            <Tab.Screen name="Locations" component={LocationsScreen} />
-          </Tab.Navigator>
+          <Stack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true, fullScreenGestureEnabled: true }}>
+            <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen name="FloodDetails" component={FloodDetailsScreen} options={{ headerShown: true, title: 'Flood Prediction Details' }} />
+          </Stack.Navigator>
         </NavigationContainer>
       </LocationProvider>
     </UserProvider>

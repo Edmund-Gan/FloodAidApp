@@ -13,6 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons, Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FloodContext } from '../context/FloodContext';
 import { LocationContext } from '../context/LocationContext';
 import { UserContext } from '../context/UserContext';
@@ -42,6 +43,7 @@ export default function ForecastScreen({ navigation }) {
   
   const [refreshing, setRefreshing] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     logFeatureUsage('forecast');
@@ -105,6 +107,7 @@ export default function ForecastScreen({ navigation }) {
 
       <ScrollView 
         style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
