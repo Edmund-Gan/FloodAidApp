@@ -3,7 +3,7 @@
  * Features dual-filter system, state selection, and clean Material Design 3 interface
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -32,6 +32,9 @@ export default function FloodHotspotsCSV({ navigation }) {
   // Enhanced data state
   const [allFloodStates, setAllFloodStates] = useState([]);
   const [selectedArea, setSelectedArea] = useState(null);
+  
+  // Map reference for programmatic control
+  const mapRef = useRef(null);
   const [selectedStateData, setSelectedStateData] = useState(null);
   const [areaSummary, setAreaSummary] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -93,8 +96,38 @@ export default function FloodHotspotsCSV({ navigation }) {
       } catch (error) {
         console.error('Error loading area summary:', error);
       }
+      
+      // Animate map to the selected area
+      if (mapRef.current && area.coordinates) {
+        const { latitude, longitude } = area.coordinates;
+        
+        // Set zoom level based on area type
+        const zoomLevel = area.type === 'district' ? {
+          latitudeDelta: 0.5,
+          longitudeDelta: 0.5
+        } : {
+          latitudeDelta: 2.0,
+          longitudeDelta: 2.0
+        };
+        
+        mapRef.current.animateToRegion({
+          latitude,
+          longitude,
+          ...zoomLevel
+        }, 1000); // 1 second animation
+      }
     } else {
       setAreaSummary(null);
+      
+      // Reset to full Malaysia view when clearing selection
+      if (mapRef.current) {
+        mapRef.current.animateToRegion({
+          latitude: MALAYSIA_CENTER.latitude,
+          longitude: MALAYSIA_CENTER.longitude,
+          latitudeDelta: 8.0,
+          longitudeDelta: 20.0,
+        }, 1000);
+      }
     }
   };
 
@@ -169,6 +202,7 @@ export default function FloodHotspotsCSV({ navigation }) {
       {/* Full Screen Map Container with Floating Overlays */}
       <View style={styles.mapContainer}>
         <MapView
+          ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           initialRegion={{

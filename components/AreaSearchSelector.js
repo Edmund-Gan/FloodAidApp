@@ -42,6 +42,7 @@ const AreaSearchSelector = ({
     performSearch();
   }, [searchQuery]);
 
+
   const loadSearchIndex = async () => {
     try {
       const data = await EnhancedFloodDataService.loadAllFloodData();
@@ -87,9 +88,13 @@ const AreaSearchSelector = ({
     return placeholder;
   };
 
-  const renderSearchResult = (item) => (
+  const renderSearchResult = (item) => {
+    // Ensure we have a unique key and required properties
+    const uniqueKey = `${item.type}-${item.fullName || item.name || Math.random()}`;
+    
+    return (
     <TouchableOpacity
-      key={`${item.type}-${item.fullName}`}
+      key={uniqueKey}
       style={styles.resultItem}
       onPress={() => handleAreaSelect(item)}
     >
@@ -113,7 +118,8 @@ const AreaSearchSelector = ({
         </View>
       </View>
     </TouchableOpacity>
-  );
+    );
+  };
 
   const renderPopularAreas = () => {
     // Show some popular/recent search areas when no query
@@ -301,8 +307,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: height * 0.8,
+    height: height * 0.75,
     paddingTop: 20,
+    flex: 1,
   },
   modalHeader: {
     flexDirection: 'row',

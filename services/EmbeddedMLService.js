@@ -337,6 +337,9 @@ class EmbeddedMLService {
       // Calculate flood probability using enhanced rule-based system
       const prediction = this.calculateFloodProbabilityRuleBased(featureVector, detectedState, targetDate);
       
+      // Calculate feature contributions for this prediction
+      const contributingFactors = this.calculateFeatureContributions(featureVector, 8);
+      
       // Get model metadata
       const monsoonFeatures = this.calculateMonsoonFeatures(targetDate);
       const weatherFeatures = this.extractWeatherFeatures(weatherData, latitude, longitude);
@@ -372,7 +375,8 @@ class EmbeddedMLService {
           version: this.modelConfig.model_version,
           model_type: 'Embedded 31-Feature',
           performance_improvement: this.modelConfig.performance_improvement
-        }
+        },
+        contributing_factors: contributingFactors
       };
       
       // Cache the result
@@ -501,6 +505,421 @@ class EmbeddedMLService {
     const diff = date - start;
     const oneDay = 1000 * 60 * 60 * 24;
     return Math.floor(diff / oneDay);
+  }
+
+  /**
+   * Convert technical ML features into user-friendly explanations
+   * Provides context and actionable information for non-technical users
+   */
+  getUserFriendlyExplanation(featureName, featureValue, contributionScore) {
+    // Get current date for context
+    const now = new Date();
+    const month = now.getMonth() + 1; // 1-12
+    const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    // Convert feature value and contribution to meaningful context
+    const isHighContribution = contributionScore > 0.05;
+    const isMediumContribution = contributionScore > 0.02;
+    
+    switch (featureName) {
+      case 'days_since_monsoon_start':
+        const daysSince = Math.round(Math.abs(featureValue));
+        if (month >= 11 || month <= 3) {
+          return {
+            title: "Active Northeast Monsoon period",
+            description: `Currently day ${daysSince} of monsoon season, the highest risk period for flooding in Malaysia`
+          };
+        } else if (month >= 5 && month <= 9) {
+          return {
+            title: "Southwest Monsoon period", 
+            description: `Day ${daysSince} of current monsoon, bringing moderate flood risk`
+          };
+        } else {
+          return {
+            title: "Inter-monsoon transition",
+            description: `Day ${daysSince} since last monsoon, unstable weather patterns increase flood risk`
+          };
+        }
+      
+      case 'monsoon_season_encoded':
+      case 'monsoon_phase_encoded':
+        if (month >= 11 || month <= 3) {
+          return {
+            title: "Peak flood season active",
+            description: "Northeast Monsoon brings 36% higher flood rates across Malaysia"
+          };
+        } else if (month >= 5 && month <= 9) {
+          return {
+            title: "Southwest Monsoon period",
+            description: "Moderate flood risk with seasonal rainfall patterns"
+          };
+        } else {
+          return {
+            title: "Monsoon transition period",
+            description: "Unpredictable weather patterns with elevated flood risk"
+          };
+        }
+      
+      case 'monsoon_intensity':
+        const intensity = Math.round(Math.abs(featureValue * 100));
+        if (intensity > 30) {
+          return {
+            title: "High monsoon intensity",
+            description: `Current intensity at ${intensity}%, significantly above normal levels`
+          };
+        } else {
+          return {
+            title: "Moderate monsoon activity",
+            description: `Intensity at ${intensity}%, within typical seasonal range`
+          };
+        }
+      
+      case 'precipitation_sum':
+        const precip = Math.round(Math.abs(featureValue));
+        if (precip > 50) {
+          return {
+            title: "Extreme rainfall detected",
+            description: `${precip}mm of total precipitation, well above safe thresholds (>50mm)`
+          };
+        } else if (precip > 30) {
+          return {
+            title: "Heavy rainfall conditions",
+            description: `${precip}mm of precipitation in the forecast period`
+          };
+        } else if (precip > 15) {
+          return {
+            title: "Moderate rainfall expected",
+            description: `${precip}mm of precipitation, contributing to flood risk`
+          };
+        } else {
+          return {
+            title: "Light precipitation",
+            description: `${precip}mm detected, minimal direct impact`
+          };
+        }
+      
+      case 'rain_sum':
+        const rain = Math.round(Math.abs(featureValue));
+        if (rain > 40) {
+          return {
+            title: "Extreme rainfall warning",
+            description: `${rain}mm of rain in 24 hours, exceeding critical flood thresholds`
+          };
+        } else if (rain > 20) {
+          return {
+            title: "Heavy rain conditions",
+            description: `${rain}mm in the last 24 hours, significantly above safe levels`
+          };
+        } else if (rain > 10) {
+          return {
+            title: "Moderate rainfall",
+            description: `${rain}mm recorded, adding to cumulative flood risk`
+          };
+        } else {
+          return {
+            title: "Light rainfall",
+            description: `${rain}mm detected, low direct contribution`
+          };
+        }
+      
+      case 'precipitation_hours':
+        const hours = Math.round(Math.abs(featureValue));
+        if (hours > 12) {
+          return {
+            title: "Extended rainfall period",
+            description: `Rain expected for ${hours} hours, increasing soil saturation and flood risk`
+          };
+        } else if (hours > 8) {
+          return {
+            title: "Prolonged rain conditions",
+            description: `${hours} hours of precipitation, contributing to flood buildup`
+          };
+        } else {
+          return {
+            title: "Short rain period",
+            description: `${hours} hours of precipitation expected`
+          };
+        }
+      
+      case 'wind_speed_max':
+        const windSpeed = Math.round(Math.abs(featureValue));
+        if (windSpeed > 50) {
+          return {
+            title: "Extreme wind conditions",
+            description: `Maximum winds of ${windSpeed} km/h, can worsen flooding by pushing water inland`
+          };
+        } else if (windSpeed > 30) {
+          return {
+            title: "Strong wind activity",
+            description: `Winds up to ${windSpeed} km/h may increase rainfall intensity and flood impact`
+          };
+        } else if (windSpeed > 20) {
+          return {
+            title: "Moderate winds detected",
+            description: `${windSpeed} km/h winds contributing to weather instability`
+          };
+        } else {
+          return {
+            title: "Light wind conditions",
+            description: `${windSpeed} km/h, minimal impact on flood risk`
+          };
+        }
+      
+      case 'wind_gusts_max':
+        const gusts = Math.round(Math.abs(featureValue));
+        if (gusts > 60) {
+          return {
+            title: "Dangerous wind gusts",
+            description: `Up to ${gusts} km/h gusts can cause storm surge and worsen coastal flooding`
+          };
+        } else if (gusts > 40) {
+          return {
+            title: "Strong wind gusts",
+            description: `Gusts reaching ${gusts} km/h may intensify storm conditions`
+          };
+        } else {
+          return {
+            title: "Moderate wind gusts",
+            description: `${gusts} km/h gusts detected`
+          };
+        }
+      
+      case 'wind_direction':
+        const direction = Math.round(Math.abs(featureValue));
+        if (direction >= 45 && direction <= 135) {
+          return {
+            title: "Winds from the northeast",
+            description: "Bringing moisture from the South China Sea, typical of high-risk monsoon patterns"
+          };
+        } else if (direction >= 225 && direction <= 315) {
+          return {
+            title: "Southwest winds active",
+            description: "Bringing moisture from the Indian Ocean during southwest monsoon"
+          };
+        } else {
+          return {
+            title: `Wind direction at ${direction}°`,
+            description: "Current wind patterns affecting regional weather systems"
+          };
+        }
+      
+      case 'river_discharge':
+      case 'river_discharge_mean':
+      case 'river_discharge_median':
+        const discharge = Math.abs(featureValue).toFixed(1);
+        if (discharge > 5.0) {
+          return {
+            title: "High river levels",
+            description: `River discharge at ${discharge} m³/s, well above normal capacity`
+          };
+        } else if (discharge > 3.0) {
+          return {
+            title: "Elevated river flow",
+            description: `Current discharge of ${discharge} m³/s indicates rising water levels`
+          };
+        } else if (discharge > 1.5) {
+          return {
+            title: "Moderate river activity",
+            description: `River flow at ${discharge} m³/s, within manageable levels`
+          };
+        } else {
+          return {
+            title: "Normal river conditions",
+            description: `River discharge at ${discharge} m³/s`
+          };
+        }
+      
+      case 'temp_max':
+        const tempMax = Math.round(Math.abs(featureValue));
+        if (tempMax > 35) {
+          return {
+            title: "Extreme heat conditions",
+            description: `Maximum temperature of ${tempMax}°C increases evaporation and storm intensity`
+          };
+        } else if (tempMax > 32) {
+          return {
+            title: "High temperature",
+            description: `${tempMax}°C maximum temperature contributing to atmospheric instability`
+          };
+        } else {
+          return {
+            title: `Temperature at ${tempMax}°C`,
+            description: "Contributing to current weather patterns"
+          };
+        }
+      
+      case 'temp_min':
+        const tempMin = Math.round(Math.abs(featureValue));
+        return {
+          title: "Minimum temperature",
+          description: `${tempMin}°C overnight temperature affects humidity and condensation patterns`
+        };
+      
+      case 'temp_mean':
+        const tempMean = Math.round(Math.abs(featureValue));
+        return {
+          title: "Average temperature",
+          description: `${tempMean}°C daily average contributing to atmospheric conditions`
+        };
+      
+      case 'elevation':
+        const elev = Math.round(Math.abs(featureValue));
+        if (elev < 10) {
+          return {
+            title: "Very low elevation area",
+            description: `At ${elev}m above sea level, highly vulnerable to flooding`
+          };
+        } else if (elev < 50) {
+          return {
+            title: "Low-lying location",
+            description: `${elev}m elevation increases flood susceptibility`
+          };
+        } else if (elev < 100) {
+          return {
+            title: "Moderate elevation",
+            description: `${elev}m above sea level provides some natural flood protection`
+          };
+        } else {
+          return {
+            title: "Higher elevation",
+            description: `${elev}m elevation reduces direct flood risk`
+          };
+        }
+      
+      case 'latitude':
+        const lat = Math.abs(featureValue).toFixed(2);
+        if (Math.abs(featureValue) > 5.0) {
+          return {
+            title: "Northern Malaysia location",
+            description: `Geographic position (${lat}°N) in high-risk monsoon zone`
+          };
+        } else if (Math.abs(featureValue) > 3.0) {
+          return {
+            title: "Central Malaysia location",
+            description: `Position (${lat}°N) experiences varied flood patterns`
+          };
+        } else {
+          return {
+            title: "Southern Malaysia location",
+            description: `Geographic position (${lat}°N) with different seasonal patterns`
+          };
+        }
+      
+      case 'longitude':
+        const lon = Math.abs(featureValue).toFixed(2);
+        if (Math.abs(featureValue) > 110) {
+          return {
+            title: "East Malaysia location",
+            description: `Position in Borneo (${lon}°E) with unique flood characteristics`
+          };
+        } else if (Math.abs(featureValue) > 103) {
+          return {
+            title: "East coast Peninsula",
+            description: `Location (${lon}°E) directly exposed to Northeast Monsoon`
+          };
+        } else {
+          return {
+            title: "West coast Peninsula",
+            description: `Geographic position (${lon}°E) with different monsoon exposure`
+          };
+        }
+      
+      // Monthly factors
+      case 'is_january': return month === 1 ? { title: "Peak January flood risk", description: "Historically one of the highest flood months in Malaysia" } : { title: "January pattern influence", description: "Historical January weather patterns affecting prediction" };
+      case 'is_february': return month === 2 ? { title: "February monsoon period", description: "Continued Northeast Monsoon brings elevated risk" } : { title: "February pattern influence", description: "February historical patterns in analysis" };
+      case 'is_march': return month === 3 ? { title: "Late monsoon period", description: "March typically sees continued Northeast Monsoon effects" } : { title: "March pattern influence", description: "March seasonal patterns contributing to assessment" };
+      case 'is_april': return month === 4 ? { title: "Inter-monsoon transition", description: "April's unstable weather increases flood unpredictability" } : { title: "April pattern influence", description: "Inter-monsoon transition patterns" };
+      case 'is_may': return month === 5 ? { title: "Southwest Monsoon onset", description: "May marks beginning of Southwest Monsoon season" } : { title: "May pattern influence", description: "Southwest Monsoon onset patterns" };
+      case 'is_june': return month === 6 ? { title: "Southwest Monsoon active", description: "June typically brings moderate rainfall patterns" } : { title: "June pattern influence", description: "Southwest Monsoon patterns" };
+      case 'is_july': return month === 7 ? { title: "Mid-monsoon period", description: "July's Southwest Monsoon brings regional variations" } : { title: "July pattern influence", description: "Mid-monsoon seasonal patterns" };
+      case 'is_august': return month === 8 ? { title: "Southwest Monsoon continues", description: "August maintains seasonal rainfall patterns" } : { title: "August pattern influence", description: "Continued monsoon patterns" };
+      case 'is_september': return month === 9 ? { title: "Late Southwest Monsoon", description: "September often sees intensified rainfall" } : { title: "September pattern influence", description: "Late monsoon intensification patterns" };
+      case 'is_october': return month === 10 ? { title: "Inter-monsoon transition", description: "October's weather transition increases instability" } : { title: "October pattern influence", description: "Monsoon transition patterns" };
+      case 'is_november': return month === 11 ? { title: "Northeast Monsoon onset", description: "November marks start of highest flood risk period" } : { title: "November pattern influence", description: "Northeast Monsoon onset patterns" };
+      case 'is_december': return month === 12 ? { title: "Peak Northeast Monsoon", description: "December historically shows highest flood activity" } : { title: "December pattern influence", description: "Peak monsoon season patterns" };
+      
+      default:
+        // Generic fallback for any unmapped features
+        const readableName = featureName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        if (isHighContribution) {
+          return {
+            title: readableName,
+            description: "Major contributing factor to current flood risk assessment"
+          };
+        } else if (isMediumContribution) {
+          return {
+            title: readableName,
+            description: "Contributing factor in flood risk calculation"
+          };
+        } else {
+          return {
+            title: readableName,
+            description: "Minor influence on flood prediction"
+          };
+        }
+    }
+  }
+
+  /**
+   * Calculate feature contributions for a prediction based on feature importance and values
+   * Embedded version of the Python API's get_feature_contributions method
+   */
+  calculateFeatureContributions(featureVector, topN = 8) {
+    try {
+      if (!this.modelConfig.feature_importance_weights) {
+        console.warn('Feature importance weights not available in config');
+        return [];
+      }
+
+      const featureOrder = this.modelConfig.feature_order;
+      const importanceWeights = this.modelConfig.feature_importance_weights;
+      const readableNames = this.modelConfig.feature_readable_names;
+
+      // Calculate contribution scores (importance * abs(feature_value))
+      const contributions = [];
+      
+      for (let i = 0; i < featureOrder.length && i < featureVector.length; i++) {
+        const featureName = featureOrder[i];
+        const importance = importanceWeights[featureName] || 0;
+        const featureValue = featureVector[i];
+        const contributionScore = importance * Math.abs(featureValue);
+        
+        // Determine impact level based on contribution score percentiles
+        let impactLevel = 'Low';
+        if (contributionScore > 0.05) {
+          impactLevel = 'High';
+        } else if (contributionScore > 0.02) {
+          impactLevel = 'Medium';
+        }
+        
+        // Determine risk direction
+        const riskDirection = featureValue > 0 ? 'Increases' : 'Decreases';
+        
+        // Get user-friendly explanation for this feature
+        const userFriendlyExplanation = this.getUserFriendlyExplanation(featureName, featureValue, contributionScore);
+        
+        contributions.push({
+          feature: userFriendlyExplanation, // Now contains {title, description}
+          technical_name: readableNames[featureName] || featureName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          raw_feature: featureName,
+          importance: Math.round(importance * 10000) / 10000, // Round to 4 decimal places
+          feature_value: Math.round(featureValue * 1000) / 1000, // Round to 3 decimal places
+          contribution_score: Math.round(contributionScore * 10000) / 10000,
+          impact_level: impactLevel,
+          risk_direction: riskDirection,
+          rank: i + 1
+        });
+      }
+      
+      // Sort by contribution score and return top N
+      contributions.sort((a, b) => b.contribution_score - a.contribution_score);
+      return contributions.slice(0, topN);
+      
+    } catch (error) {
+      console.error('Error calculating feature contributions:', error);
+      return [];
+    }
   }
 
   /**

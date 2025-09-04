@@ -24,11 +24,8 @@ class EnhancedFloodDataService {
     }
 
     try {
-      console.log('📊 Loading comprehensive flood data...');
-      
       // Load detailed 2025 flood events
       const detailedFloodData = require('../assets/malaysia_flood_2025_detailed.json');
-      console.log(`📈 Loaded ${detailedFloodData.length} detailed flood events from 2025`);
       
       // Process detailed events for search and display
       this.detailedEvents = this.processDetailedEvents(detailedFloodData);
@@ -50,13 +47,16 @@ class EnhancedFloodDataService {
       
     } catch (error) {
       console.error('❌ Error loading enhanced flood data:', error);
+      console.error('❌ Error details:', error.message);
       console.warn('⚠️ Falling back to basic data');
       
       // Fallback to basic aggregated data
       const fallbackData = this.getFallbackData();
       this.floodEvents = fallbackData;
       this.detailedEvents = [];
-      this.searchIndex = { districts: [], states: [] };
+      
+      // Create a basic search index from fallback data
+      this.searchIndex = this.buildSearchIndexFromFallback(fallbackData);
       
       return {
         aggregated: this.floodEvents,
@@ -245,16 +245,20 @@ class EnhancedFloodDataService {
     const searchItems = [];
 
     detailedEvents.forEach(event => {
-      states.add(event.state);
-      districts.add(`${event.district}, ${event.state}`);
+      const originalState = event.state;
+      const normalizedState = this.normalizeStateName(originalState);
       
-      // Create searchable items
+      states.add(originalState);
+      districts.add(`${event.district}, ${originalState}`);
+      
+      // Create searchable items for districts
       searchItems.push({
         type: 'district',
         name: event.district,
-        fullName: `${event.district}, ${event.state}`,
-        state: event.state,
-        searchText: `${event.district} ${event.state}`.toLowerCase(),
+        fullName: `${event.district}, ${originalState}`,
+        state: originalState,
+        normalizedState: normalizedState,
+        searchText: `${event.district} ${originalState} ${normalizedState}`.toLowerCase(),
         coordinates: {
           latitude: event.latitude,
           longitude: event.longitude
@@ -262,16 +266,24 @@ class EnhancedFloodDataService {
       });
     });
 
-    // Add state-level items
-    Array.from(states).forEach(stateName => {
-      const coordinates = getStateCoordinates(stateName);
+    // Add state-level items with both original and normalized names
+    Array.from(states).forEach(originalStateName => {
+      const normalizedStateName = this.normalizeStateName(originalStateName);
+      
+      // Try to get coordinates using original state name first, then normalized
+      let coordinates = getStateCoordinates(originalStateName);
+      if (!coordinates) {
+        coordinates = getStateCoordinates(normalizedStateName);
+      }
+      
       if (coordinates) {
         searchItems.push({
           type: 'state',
-          name: stateName,
-          fullName: stateName,
-          state: stateName,
-          searchText: stateName.toLowerCase(),
+          name: originalStateName,
+          fullName: originalStateName,
+          state: originalStateName,
+          normalizedState: normalizedStateName,
+          searchText: `${originalStateName} ${normalizedStateName}`.toLowerCase(),
           coordinates
         });
       }
@@ -322,24 +334,42 @@ class EnhancedFloodDataService {
     
     const lowercaseQuery = query.toLowerCase();
     
-    return data.searchIndex.searchItems
-      .filter(item => item.searchText.includes(lowercaseQuery))
-      .slice(0, 10) // Limit results
+    // Enhanced search that looks for matches in all search text
+    const results = data.searchIndex.searchItems
+      .filter(item => {
+        // Check if query matches any part of the search text
+        const searchText = item.searchText || '';
+        return searchText.includes(lowercaseQuery);
+      })
+      .slice(0, 15) // Increased limit for better results
       .sort((a, b) => {
-        // Prioritize exact matches
-        const aExact = a.name.toLowerCase() === lowercaseQuery;
-        const bExact = b.name.toLowerCase() === lowercaseQuery;
+        // Enhanced sorting algorithm
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        // 1. Exact matches first
+        const aExact = aName === lowercaseQuery;
+        const bExact = bName === lowercaseQuery;
         if (aExact && !bExact) return -1;
         if (!aExact && bExact) return 1;
         
-        // Prioritize starts with
-        const aStarts = a.name.toLowerCase().startsWith(lowercaseQuery);
-        const bStarts = b.name.toLowerCase().startsWith(lowercaseQuery);
+        // 2. Starts with query
+        const aStarts = aName.startsWith(lowercaseQuery);
+        const bStarts = bName.startsWith(lowercaseQuery);
         if (aStarts && !bStarts) return -1;
         if (!aStarts && bStarts) return 1;
         
-        return a.name.localeCompare(b.name);
+        // 3. States before districts for same name match
+        if (aName === bName) {
+          if (a.type === 'state' && b.type === 'district') return -1;
+          if (a.type === 'district' && b.type === 'state') return 1;
+        }
+        
+        // 4. Alphabetical order
+        return aName.localeCompare(bName);
       });
+    
+    return results;
   }
 
   /**
@@ -425,6 +455,39 @@ class EnhancedFloodDataService {
       riverBasins: Array.from(riverBasins),
       yearlyBreakdown,
       events: events.slice(0, 20) // Return up to 20 most recent events
+    };
+  }
+
+  /**
+   * Build search index from fallback data
+   */
+  static buildSearchIndexFromFallback(fallbackData) {
+    const searchItems = [];
+    const states = new Set();
+    
+    fallbackData.forEach(stateData => {
+      const stateName = stateData.state;
+      states.add(stateName);
+      
+      // Add state to search items
+      searchItems.push({
+        type: 'state',
+        name: stateName,
+        fullName: stateName,
+        state: stateName,
+        normalizedState: this.normalizeStateName(stateName),
+        searchText: `${stateName} ${this.normalizeStateName(stateName)}`.toLowerCase(),
+        coordinates: {
+          latitude: stateData.latitude,
+          longitude: stateData.longitude
+        }
+      });
+    });
+    
+    return {
+      districts: [],
+      states: Array.from(states).sort(),
+      searchItems: searchItems
     };
   }
 

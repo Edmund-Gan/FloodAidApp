@@ -96,8 +96,8 @@ class FloodPredictionModel {
         throw new Error('Failed to fetch enhanced weather data');
       }
       
-      // Step 3: Calculate flood probability using ML model logic
-      console.log('🧠 Running ML flood prediction model...');
+      // Step 3: Calculate flood probability using optimized ML model logic
+      console.log(`🧠 [${debugId}]: Running optimized ML flood prediction model...`);
       const prediction = await this.calculateFloodProbability(weatherData, state, location);
       
       // Step 4: Calculate flood timeframe and duration
@@ -322,7 +322,8 @@ class FloodPredictionModel {
             weather_summary: embeddedResponse.weather_summary,
             location_info: embeddedResponse.location_info,
             prediction_details: embeddedResponse.prediction_details,
-            api_info: embeddedResponse.api_info
+            api_info: embeddedResponse.api_info,
+            contributing_factors: embeddedResponse.contributing_factors
           }
         };
       } else {
@@ -755,12 +756,62 @@ class FloodPredictionModel {
 
   /**
    * Get enhanced contributing factors for UI display (31-feature model)
+   * Now extracts actual ML feature importance from embedded ML service
    */
   static getEnhancedContributingFactors(weatherData, prediction) {
+    // Check if we have contributing factors from embedded ML service
+    if (prediction.embedded_data?.contributing_factors && prediction.embedded_data.contributing_factors.length > 0) {
+      // Group and prioritize factors for better user experience
+      const factors = prediction.embedded_data.contributing_factors;
+      
+      // Separate high, medium, and low impact factors
+      const highImpactFactors = factors.filter(f => f.impact_level === 'High');
+      const mediumImpactFactors = factors.filter(f => f.impact_level === 'Medium');
+      const lowImpactFactors = factors.filter(f => f.impact_level === 'Low');
+      
+      // Create user-friendly display format
+      const formattedFactors = [];
+      
+      // Show high impact factors first with priority labeling
+      highImpactFactors.slice(0, 3).forEach((factor, index) => {
+        const priorityLabel = index === 0 ? 'Primary factor' : 
+                             index === 1 ? 'Major factor' : 'Contributing factor';
+        
+        // Handle structured feature data (title and description)
+        const featureText = factor.feature?.title && factor.feature?.description 
+          ? `${factor.feature.title} - ${factor.feature.description}`
+          : (typeof factor.feature === 'string' ? factor.feature : 'Unknown factor');
+        
+        formattedFactors.push(`${priorityLabel}: ${featureText}`);
+      });
+      
+      // Add up to 2 medium impact factors
+      mediumImpactFactors.slice(0, 2).forEach(factor => {
+        const featureText = factor.feature?.title && factor.feature?.description 
+          ? `${factor.feature.title} - ${factor.feature.description}`
+          : (typeof factor.feature === 'string' ? factor.feature : 'Unknown factor');
+        
+        formattedFactors.push(`Secondary factor: ${featureText}`);
+      });
+      
+      // Add 1 low impact factor if we have space and not many high/medium factors
+      if (formattedFactors.length < 5 && lowImpactFactors.length > 0) {
+        const factor = lowImpactFactors[0];
+        const featureText = factor.feature?.title && factor.feature?.description 
+          ? `${factor.feature.title} - ${factor.feature.description}`
+          : (typeof factor.feature === 'string' ? factor.feature : 'Unknown factor');
+        
+        formattedFactors.push(`Minor factor: ${featureText}`);
+      }
+      
+      return formattedFactors.slice(0, 5); // Limit to 5 factors for readability
+    }
+    
+    // Fallback to rule-based factors if embedded ML doesn't provide contributing factors
     const factors = [];
-    const features = weatherData.features;
-    const indicators = weatherData.risk_indicators;
-    const monsoonInfo = weatherData.monsoon_info;
+    const features = weatherData?.features || {};
+    const indicators = weatherData?.risk_indicators || {};
+    const monsoonInfo = weatherData?.monsoon_info;
     
     // Enhanced rainfall analysis
     if (features.rain_sum > 20) {
@@ -773,19 +824,6 @@ class FloodPredictionModel {
       factors.push(`Extended precipitation: ${features.precipitation_hours} hours`);
     }
     
-    // Enhanced wind analysis
-    if (features.wind_speed_max > 25) {
-      factors.push(`Strong winds: ${Math.round(features.wind_speed_max)} km/h`);
-    }
-    if (features.wind_gusts_max > 35) {
-      factors.push(`Dangerous gusts: ${Math.round(features.wind_gusts_max)} km/h`);
-    }
-    
-    // River discharge analysis
-    if (features.river_discharge > 3) {
-      factors.push(`Elevated river levels: ${features.river_discharge.toFixed(1)} m³/s`);
-    }
-    
     // Enhanced monsoon analysis
     if (monsoonInfo) {
       if (monsoonInfo.intensity > 0.3) {
@@ -794,25 +832,16 @@ class FloodPredictionModel {
       if (indicators.monsoon_peak_warning) {
         factors.push('Peak monsoon season - elevated flood risk');
       }
-      if (indicators.monsoon_amplified_risk) {
-        factors.push('Monsoon patterns amplifying flood conditions');
-      }
     }
     
-    // Enhanced forecast analysis
-    if (indicators.consecutive_rain_days > 2) {
-      factors.push(`${indicators.consecutive_rain_days} consecutive days of rain forecast`);
-    }
-    if (indicators.total_forecast_rain > 80) {
-      factors.push(`High forecast rainfall: ${Math.round(indicators.total_forecast_rain)}mm expected`);
+    // Enhanced wind analysis
+    if (features.wind_speed_max > 25) {
+      factors.push(`Strong winds: ${Math.round(features.wind_speed_max)} km/h`);
     }
     
-    // Enhanced warning analysis
-    if (indicators.extreme_rain_warning) {
-      factors.push('Extreme rainfall warning active');
-    }
-    if (indicators.high_humidity_warning) {
-      factors.push('High humidity and temperature conditions');
+    // River discharge analysis
+    if (features.river_discharge > 3) {
+      factors.push(`Elevated river levels: ${features.river_discharge.toFixed(1)} m³/s`);
     }
     
     // Model performance indicator
@@ -973,6 +1002,98 @@ class FloodPredictionModel {
         note: 'Using realistic statistical model - more accurate than previous version'
       }
     };
+  }
+
+  /**
+   * Optimized location acquisition with priority handling
+   */
+  static async getOptimizedLocation(lat, lon, skipGPS, debugId) {
+    if (lat && lon) {
+      console.log(`📍 [${debugId}]: Using provided coordinates: ${lat}, ${lon}`);
+      const location = { lat, lon };
+      
+      // Quick Malaysia validation using optimized method
+      if (!LocationService.isLocationInMalaysia(lat, lon)) {
+        console.log(`⚠️ [${debugId}]: Outside Malaysia - finding nearest city...`);
+        const nearestCity = LocationService.findNearestMalaysianLocation(lat, lon);
+        return {
+          lat: nearestCity.lat,
+          lon: nearestCity.lon,
+          originalLocation: { lat, lon },
+          nearestMalaysianLocation: nearestCity,
+          isRedirected: true
+        };
+      }
+      return location;
+    } else {
+      console.log(`📍 [${debugId}]: Getting GPS location with priority: ${skipGPS ? 'skip' : 'normal'}...`);
+      
+      if (LocationService.getCurrentLocationWithMalaysiaCheck) {
+        return await LocationService.getCurrentLocationWithMalaysiaCheck(skipGPS);
+      } else {
+        return await LocationService.getCurrentLocation(skipGPS);
+      }
+    }
+  }
+
+  /**
+   * Get state with optimized fallback strategy
+   */
+  static async getStateWithFallback(lat, lon, debugId) {
+    try {
+      console.log(`🗺️ [${debugId}]: Getting state (offline-first)...`);
+      return await LocationService.getStateFromCoordinates(lat, lon);
+    } catch (error) {
+      console.warn(`⚠️ [${debugId}]: State detection failed:`, error);
+      return 'Selangor'; // Safe fallback
+    }
+  }
+
+  /**
+   * Get display name with caching optimization
+   */
+  static async getDisplayNameWithCache(location, debugId) {
+    try {
+      console.log(`🏷️ [${debugId}]: Getting display name...`);
+      
+      if (location.isRedirected) {
+        return location.nearestMalaysianLocation ? 
+          location.nearestMalaysianLocation.name : 
+          await LocationService.getLocationDisplayName(location.lat, location.lon);
+      } else {
+        return await LocationService.getLocationDisplayName(location.lat, location.lon);
+      }
+    } catch (error) {
+      console.warn(`⚠️ [${debugId}]: Display name failed:`, error);
+      return 'Unknown Location, Malaysia';
+    }
+  }
+
+  /**
+   * Get weather data with enhanced fallback
+   */
+  static async getWeatherDataWithFallback(lat, lon, debugId) {
+    console.log(`🌤️ [${debugId}]: Getting weather data (enhanced API)...`);
+    
+    try {
+      const weatherData = await apiService.getTrainingModelData(lat, lon, 7);
+      if (weatherData) {
+        console.log(`✅ [${debugId}]: Enhanced weather data obtained`);
+        return weatherData;
+      }
+      throw new Error('No weather data returned');
+    } catch (weatherError) {
+      console.warn(`⚠️ [${debugId}]: Enhanced weather API failed, trying fallback:`, weatherError.message);
+      
+      try {
+        const fallbackData = await apiService.getMockTrainingModelData(lat, lon, 7);
+        console.log(`✅ [${debugId}]: Using enhanced mock weather data`);
+        return fallbackData;
+      } catch (mockError) {
+        console.error(`❌ [${debugId}]: All weather sources failed:`, mockError);
+        throw new Error('Failed to fetch weather data from all sources');
+      }
+    }
   }
 }
 

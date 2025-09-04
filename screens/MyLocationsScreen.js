@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { LocationContext } from '../context/LocationContext';
 import { UserContext } from '../context/UserContext';
 import AddressSearchInput from '../components/AddressSearchInput';
@@ -79,6 +80,46 @@ export default function MyLocationsScreen({ navigation }) {
   React.useEffect(() => {
     logFeatureUsage('my_locations');
   }, []);
+
+  // Auto-refresh flood risk data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const refreshStaleLocations = async () => {
+        const now = Date.now();
+        const STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+
+        for (const location of monitoredLocations) {
+          const shouldRefresh = (
+            // No risk data (showing N/A)
+            !location.riskProbability && location.riskProbability !== 0
+          ) || (
+            // Data is stale (older than 5 minutes)
+            location.lastPredictionUpdate && 
+            now - new Date(location.lastPredictionUpdate).getTime() > STALE_THRESHOLD
+          ) || (
+            // Previous error
+            location.riskLevel === 'Error' || location.riskLevel === 'N/A'
+          );
+
+          if (shouldRefresh) {
+            console.log(`Auto-refreshing stale flood risk for: ${location.customLabel || location.name}`);
+            try {
+              await refreshLocationRisk(location.id);
+              // Add small delay between requests to avoid overwhelming the API
+              await new Promise(resolve => setTimeout(resolve, 500));
+            } catch (error) {
+              console.warn(`Failed to auto-refresh location ${location.id}:`, error);
+            }
+          }
+        }
+      };
+
+      // Only refresh if we have locations to check
+      if (monitoredLocations.length > 0) {
+        refreshStaleLocations();
+      }
+    }, [monitoredLocations, refreshLocationRisk])
+  );
 
   const handleAddressSelected = (addressData) => {
     if (addressData.needsMapSelection) {

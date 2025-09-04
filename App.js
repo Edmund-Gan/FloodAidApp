@@ -1011,7 +1011,14 @@ function HomeScreen() {
 
       {/* Contributing Factors / System Status */}
       <View style={styles.factorsCard}>
-        <Text style={styles.cardTitle}>{prediction?.is_na ? 'System Status' : 'Risk Factors'}</Text>
+        <Text style={styles.cardTitle}>
+          {prediction?.is_na ? 'System Status' : 'Contributing Factors'}
+        </Text>
+        {!prediction?.is_na && prediction?.model_info?.embedded && (
+          <Text style={styles.modelBadge}>
+            Enhanced 31-Feature ML Analysis (F1: {(prediction.model_info.f1_score * 100).toFixed(1)}%)
+          </Text>
+        )}
         {prediction?.is_na ? (
           <View style={styles.factorItem}>
             <Ionicons name="information-circle-outline" size={20} color="#666" />
@@ -1020,8 +1027,7 @@ function HomeScreen() {
         ) : (
           prediction.contributing_factors.map((factor, index) => (
             <View key={index} style={styles.factorItem}>
-              <Ionicons name="warning-outline" size={20} color="#FF9800" />
-              <Text style={styles.factorText}>{factor}</Text>
+              <Text style={styles.enhancedFactorText}>{factor}</Text>
             </View>
           ))
         )}
@@ -1987,6 +1993,22 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 14,
     color: '#666',
+  },
+  enhancedFactorText: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 20,
+  },
+  modelBadge: {
+    fontSize: 12,
+    color: '#007AFF',
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+    fontWeight: '500',
   },
   
   // Weather Card

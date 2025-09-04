@@ -2,6 +2,7 @@
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import LocationCache from './LocationCache';
 
 // Google Maps API Key from app configuration
 const GOOGLE_MAPS_API_KEY = 'AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM';
@@ -9,6 +10,18 @@ const GOOGLE_MAPS_API_KEY = 'AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM';
 class LocationService {
   // Static tracking for active GPS requests
   static activeRequests = new Map();
+  
+  // Singleton promise for ongoing location requests
+  static ongoingLocationRequest = null;
+  
+  // Performance metrics
+  static performanceMetrics = {
+    totalRequests: 0,
+    cacheHits: 0,
+    gpsAcquisitions: 0,
+    averageGpsTime: 0,
+    failureRate: 0
+  };
   
   /**
    * Detect if running in emulator/simulator
@@ -172,22 +185,35 @@ class LocationService {
   }
   
   /**
-   * Get user's current GPS location with proper permission handling and optimization
+   * Get user's current GPS location with optimized caching and request deduplication
    */
-  static async getCurrentLocation(skipGPS = false) {
+  static async getCurrentLocation(skipGPS = false, priority = 'normal') {
     const debugId = Date.now();
     const isEmulatorDevice = this.isEmulator();
     
-    console.log(`📍 LocationService [${debugId}]: ${skipGPS ? 'SKIPPING GPS' : 'Requesting location'} permissions...`);
+    this.performanceMetrics.totalRequests++;
+    console.log(`📍 LocationService [${debugId}]: ${skipGPS ? 'SKIPPING GPS' : 'Requesting location'} (priority: ${priority})...`);
     
-    // For non-GPS requests, try cached location first for better performance
+    // Check for ongoing request and return same promise for deduplication
+    if (!skipGPS && this.ongoingLocationRequest && priority !== 'high') {
+      console.log(`⏳ [${debugId}]: Joining ongoing GPS request...`);
+      try {
+        const result = await this.ongoingLocationRequest;
+        return { ...result, debugId, isDeduplicated: true };
+      } catch (error) {
+        console.log(`⚠️ [${debugId}]: Ongoing request failed, starting new one`);
+      }
+    }
+    
+    // Try cached location first with tiered strategy
     if (!skipGPS) {
-      const cachedLocation = await this.getCachedLocation();
-      if (cachedLocation && (Date.now() - cachedLocation.cacheTime) < 30000) { // Use cache if less than 30 seconds old
-        console.log(`⚡ [${debugId}]: Using fresh cached location (${Math.round((Date.now() - cachedLocation.cacheTime)/1000)}s old)`);
+      const cacheType = priority === 'background' ? 'VALID' : 'FRESH';
+      const cachedLocation = await LocationCache.getLocationFromCache(cacheType);
+      if (cachedLocation) {
+        this.performanceMetrics.cacheHits++;
+        console.log(`⚡ [${debugId}]: Using cached location (${Math.round(cachedLocation.cacheAge/1000)}s old)`);
         return {
           ...cachedLocation,
-          isCached: true,
           debugId
         };
       }
@@ -231,14 +257,30 @@ class LocationService {
       return defaultLocation;
     }
     
-    // GPS configuration optimized for reliability and speed
-    const gpsConfig = {
-      timeout: isEmulatorDevice ? 20000 : 45000, // Reduced timeouts: 20s for emulator, 45s for device
-      accuracy: isEmulatorDevice ? Location.Accuracy.Balanced : Location.Accuracy.High,
-      progressInterval: 8000, // Reduced to 8s for better user feedback
-      maximumAge: 30000, // Accept GPS readings up to 30 seconds old
-      enableHighAccuracy: !isEmulatorDevice // Only use high accuracy on real devices
+    // Optimized GPS configuration with tiered timeout strategy
+    const gpsConfigs = {
+      fast: {
+        timeout: isEmulatorDevice ? 3000 : 5000,
+        accuracy: Location.Accuracy.Balanced,
+        maximumAge: 120000, // Accept up to 2 minutes old
+        enableHighAccuracy: false
+      },
+      normal: {
+        timeout: isEmulatorDevice ? 8000 : 15000,
+        accuracy: isEmulatorDevice ? Location.Accuracy.Balanced : Location.Accuracy.High,
+        maximumAge: 60000, // Accept up to 1 minute old
+        enableHighAccuracy: !isEmulatorDevice
+      },
+      thorough: {
+        timeout: isEmulatorDevice ? 15000 : 30000,
+        accuracy: Location.Accuracy.BestForNavigation,
+        maximumAge: 10000, // Only accept recent readings
+        enableHighAccuracy: true
+      }
     };
+    
+    const gpsConfig = gpsConfigs[priority] || gpsConfigs.normal;
+    const progressInterval = 6000; // 6 seconds for progress updates
     
     console.log(`🔧 GPS Configuration: ${isEmulatorDevice ? 'EMULATOR MODE' : 'DEVICE MODE'}`, gpsConfig);
     
@@ -255,31 +297,20 @@ class LocationService {
       
       console.log('✅ Location permission granted');
       
-      // Get current position with emulator-aware configuration
-      console.log(`📡 [${debugId}]: Calling getCurrentPositionAsync() with ${gpsConfig.timeout}ms timeout`);
+      // Create the GPS acquisition promise and store it for deduplication
+      const gpsPromise = this.acquireGPSLocation(debugId, gpsConfig, progressInterval, isEmulatorDevice);
+      if (!skipGPS && priority !== 'background') {
+        this.ongoingLocationRequest = gpsPromise;
+        
+        // Clear the ongoing request when done
+        gpsPromise.finally(() => {
+          if (this.ongoingLocationRequest === gpsPromise) {
+            this.ongoingLocationRequest = null;
+          }
+        });
+      }
       
-      // Add progress tracking for GPS request
-      const progressTimeout = setInterval(() => {
-        console.log(`⏳ [${debugId}]: GPS request still in progress...`);
-      }, gpsConfig.progressInterval);
-      
-      // Create cancellation flag
-      let isCancelled = false;
-      const cancelCallback = () => {
-        isCancelled = true;
-        console.log(`🚫 [${debugId}]: GPS request marked as cancelled`);
-      };
-      
-      // Track this request for potential cancellation
-      this.activeRequests.set(debugId, { progressTimeout, cancelCallback });
-      
-      // Use Expo's built-in timeout mechanism with optimized settings
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: gpsConfig.accuracy,
-        timeout: gpsConfig.timeout,
-        maximumAge: gpsConfig.maximumAge,
-        enableHighAccuracy: gpsConfig.enableHighAccuracy
-      });
+      const location = await gpsPromise;
       
       // Check if request was cancelled during GPS acquisition
       if (isCancelled) {
@@ -302,8 +333,9 @@ class LocationService {
       
       console.log('📍 Current location obtained:', coordinates);
       
-      // Cache the location
-      await this.cacheLocation(coordinates);
+      // Cache the location using optimized cache
+      await LocationCache.cacheLocation(coordinates);
+      this.performanceMetrics.gpsAcquisitions++;
       
       return coordinates;
       
@@ -358,20 +390,27 @@ class LocationService {
       };
       
       // Cache this default location for next time
-      await this.cacheLocation(defaultLocation);
+      await LocationCache.cacheLocation(defaultLocation);
+      this.updatePerformanceMetrics('failure');
       
       return defaultLocation;
     }
   }
 
   /**
-   * Get Malaysian state from coordinates using Google Maps Reverse Geocoding
+   * Get Malaysian state from coordinates using optimized offline-first approach
    */
   static async getStateFromCoordinates(lat, lon) {
     console.log(`🗺️ Getting state for coordinates: ${lat}, ${lon}`);
     
     try {
-      // Check cache first
+      // Try offline detection first (much faster)
+      const offlineState = LocationCache.getStateFromCoordinates(lat, lon);
+      if (offlineState !== 'Selangor') { // Only fallback to API if not default
+        return offlineState;
+      }
+      
+      // For Selangor default, verify with API (but don't block on it)
       const cacheKey = `state_${lat.toFixed(4)}_${lon.toFixed(4)}`;
       const cached = await AsyncStorage.getItem(cacheKey);
       
@@ -379,42 +418,44 @@ class LocationService {
         const parsedCache = JSON.parse(cached);
         const age = Date.now() - parsedCache.timestamp;
         
-        // Cache valid for 24 hours
         if (age < 24 * 60 * 60 * 1000) {
-          console.log('🔄 Using cached state:', parsedCache.state);
+          console.log('🔄 Using cached API state:', parsedCache.state);
           return parsedCache.state;
         }
       }
       
-      // Make API request to Google Maps
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${GOOGLE_MAPS_API_KEY}`;
-      console.log('🚀 Calling Google Maps API...');
+      // Background API verification (non-blocking)
+      this.verifyStateWithAPI(lat, lon, cacheKey).catch(error => {
+        console.warn('Background API verification failed:', error);
+      });
       
-      const response = await fetch(url);
-      const data = await response.json();
+      return offlineState;
       
-      if (data.status !== 'OK') {
-        throw new Error(`Geocoding API error: ${data.status}`);
-      }
-      
-      // Extract Malaysian state from results
+    } catch (error) {
+      console.error('❌ Error getting state:', error);
+      return 'Selangor';
+    }
+  }
+  
+  /**
+   * Background API verification for state detection
+   */
+  static async verifyStateWithAPI(lat, lon, cacheKey) {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${GOOGLE_MAPS_API_KEY}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.status === 'OK') {
       const state = this.extractMalaysianState(data.results);
       
-      console.log('🏛️ State identified:', state);
-      
-      // Cache the result
+      // Cache for future use
       await AsyncStorage.setItem(cacheKey, JSON.stringify({
         state,
         timestamp: Date.now()
       }));
       
-      return state;
-      
-    } catch (error) {
-      console.error('❌ Error getting state from coordinates:', error);
-      
-      // Fallback: try to determine state from coordinates using basic logic
-      return this.getStateFromCoordinatesFallback(lat, lon);
+      console.log('🏛️ Background API verified state:', state);
     }
   }
 
@@ -462,33 +503,10 @@ class LocationService {
   }
 
   /**
-   * Fallback method to determine state from coordinates using basic geographic boundaries
+   * Legacy fallback method - now delegates to LocationCache
    */
   static getStateFromCoordinatesFallback(lat, lon) {
-    console.log('🔄 Using coordinate-based state detection fallback...');
-    
-    // Basic coordinate ranges for Malaysian states (simplified)
-    const stateRanges = {
-      'Selangor': { latMin: 2.8, latMax: 3.8, lonMin: 101.0, lonMax: 102.0 },
-      'Kuala Lumpur': { latMin: 3.0, latMax: 3.3, lonMin: 101.5, lonMax: 101.8 },
-      'Johor': { latMin: 1.2, latMax: 2.8, lonMin: 102.5, lonMax: 104.5 },
-      'Kedah': { latMin: 5.0, latMax: 6.7, lonMin: 100.0, lonMax: 101.0 },
-      'Penang': { latMin: 5.2, latMax: 5.5, lonMin: 100.1, lonMax: 100.5 },
-      'Perak': { latMin: 3.7, latMax: 5.5, lonMin: 100.5, lonMax: 102.0 },
-      'Sabah': { latMin: 4.0, latMax: 7.5, lonMin: 115.0, lonMax: 119.5 },
-      'Sarawak': { latMin: 0.8, latMax: 5.0, lonMin: 109.5, lonMax: 115.5 }
-    };
-    
-    for (const [state, bounds] of Object.entries(stateRanges)) {
-      if (lat >= bounds.latMin && lat <= bounds.latMax && 
-          lon >= bounds.lonMin && lon <= bounds.lonMax) {
-        console.log(`🎯 State detected by coordinates: ${state}`);
-        return state;
-      }
-    }
-    
-    console.log('❓ State could not be determined, defaulting to Selangor');
-    return 'Selangor'; // Default to Selangor (most common test case)
+    return LocationCache.getStateFromCoordinates(lat, lon);
   }
 
   /**
@@ -529,113 +547,38 @@ class LocationService {
   }
 
   /**
-   * Cache location data
+   * Cache location data - delegates to LocationCache
    */
   static async cacheLocation(location) {
-    try {
-      await AsyncStorage.setItem('cached_location', JSON.stringify({
-        ...location,
-        cacheTime: Date.now()
-      }));
-    } catch (error) {
-      console.error('Error caching location:', error);
-    }
+    await LocationCache.cacheLocation(location);
   }
 
   /**
-   * Get cached location
+   * Get cached location - delegates to LocationCache
    */
   static async getCachedLocation() {
-    try {
-      const cached = await AsyncStorage.getItem('cached_location');
-      if (cached) {
-        const location = JSON.parse(cached);
-        const age = Date.now() - location.cacheTime;
-        
-        // Cache valid for 1 hour
-        if (age < 60 * 60 * 1000) {
-          return location;
-        }
-      }
-    } catch (error) {
-      console.error('Error getting cached location:', error);
-    }
-    
-    return null;
+    return await LocationCache.getLocationFromCache('STALE_ACCEPTABLE');
   }
 
   /**
-   * Check if coordinates are within Malaysia boundaries
+   * Check if coordinates are within Malaysia boundaries - optimized version
    */
   static isLocationInMalaysia(lat, lon) {
-    // Malaysian boundaries (approximate)
-    const malaysianBounds = {
-      // Peninsular Malaysia
-      peninsula: {
-        latMin: 1.2, latMax: 6.7,
-        lonMin: 99.5, lonMax: 104.5
-      },
-      // Sabah and Sarawak (East Malaysia)  
-      eastMalaysia: {
-        latMin: 0.8, latMax: 7.5,
-        lonMin: 109.3, lonMax: 119.5
-      }
-    };
-
-    const inPeninsula = (
-      lat >= malaysianBounds.peninsula.latMin && lat <= malaysianBounds.peninsula.latMax &&
-      lon >= malaysianBounds.peninsula.lonMin && lon <= malaysianBounds.peninsula.lonMax
-    );
-
-    const inEastMalaysia = (
-      lat >= malaysianBounds.eastMalaysia.latMin && lat <= malaysianBounds.eastMalaysia.latMax &&
-      lon >= malaysianBounds.eastMalaysia.lonMin && lon <= malaysianBounds.eastMalaysia.lonMax
-    );
-
-    return inPeninsula || inEastMalaysia;
+    return LocationCache.isLocationInMalaysia(lat, lon);
   }
 
   /**
-   * Find nearest Malaysian location using Euclidean distance
+   * Find nearest Malaysian location - now delegates to optimized LocationCache
    */
   static findNearestMalaysianLocation(lat, lon) {
-    const malaysianCities = [
-      { name: 'Kuala Lumpur', lat: 3.1390, lon: 101.6869, state: 'Kuala Lumpur' },
-      { name: 'Puchong, Selangor', lat: 3.0738, lon: 101.5183, state: 'Selangor' },
-      { name: 'Johor Bahru, Johor', lat: 1.4927, lon: 103.7414, state: 'Johor' },
-      { name: 'George Town, Penang', lat: 5.4164, lon: 100.3327, state: 'Penang' },
-      { name: 'Ipoh, Perak', lat: 4.5975, lon: 101.0901, state: 'Perak' },
-      { name: 'Shah Alam, Selangor', lat: 3.0733, lon: 101.5185, state: 'Selangor' },
-      { name: 'Petaling Jaya, Selangor', lat: 3.1073, lon: 101.6421, state: 'Selangor' },
-      { name: 'Kota Kinabalu, Sabah', lat: 5.9804, lon: 116.0735, state: 'Sabah' },
-      { name: 'Kuching, Sarawak', lat: 1.5533, lon: 110.3592, state: 'Sarawak' },
-      { name: 'Malacca City, Malacca', lat: 2.2055, lon: 102.2501, state: 'Malacca' },
-      { name: 'Alor Setar, Kedah', lat: 6.1248, lon: 100.3678, state: 'Kedah' },
-      { name: 'Kuantan, Pahang', lat: 3.8077, lon: 103.3260, state: 'Pahang' }
-    ];
-
-    let nearestCity = malaysianCities[0];
-    let minDistance = this.calculateEuclideanDistance(lat, lon, nearestCity.lat, nearestCity.lon);
-
-    for (const city of malaysianCities) {
-      const distance = this.calculateEuclideanDistance(lat, lon, city.lat, city.lon);
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearestCity = city;
-      }
-    }
-
-    console.log(`🎯 Nearest Malaysian city: ${nearestCity.name} (distance: ${minDistance.toFixed(2)} units)`);
-    return nearestCity;
+    return LocationCache.findNearestMalaysianLocation(lat, lon);
   }
 
   /**
    * Calculate Euclidean distance between two coordinates
    */
   static calculateEuclideanDistance(lat1, lon1, lat2, lon2) {
-    const deltaLat = lat2 - lat1;
-    const deltaLon = lon2 - lon1;
-    return Math.sqrt(deltaLat * deltaLat + deltaLon * deltaLon);
+    return LocationCache.calculateDistance(lat1, lon1, lat2, lon2);
   }
 
   /**
@@ -728,6 +671,43 @@ class LocationService {
       console.error('Error watching location:', error);
       throw error;
     }
+  }
+  
+  /**
+   * Update performance metrics
+   */
+  static updatePerformanceMetrics(result, gpsTime = null) {
+    if (result === 'success' && gpsTime) {
+      const currentAvg = this.performanceMetrics.averageGpsTime;
+      const count = this.performanceMetrics.gpsAcquisitions;
+      this.performanceMetrics.averageGpsTime = 
+        (currentAvg * count + gpsTime) / (count + 1);
+    } else if (result === 'failure') {
+      this.performanceMetrics.failureRate = 
+        (this.performanceMetrics.failureRate * this.performanceMetrics.totalRequests + 1) / 
+        (this.performanceMetrics.totalRequests + 1);
+    }
+  }
+  
+  /**
+   * Get performance statistics
+   */
+  static getPerformanceStats() {
+    const cacheStats = LocationCache.getCacheStats();
+    return {
+      ...this.performanceMetrics,
+      cacheHitRate: this.performanceMetrics.totalRequests > 0 ? 
+        this.performanceMetrics.cacheHits / this.performanceMetrics.totalRequests : 0,
+      ...cacheStats
+    };
+  }
+  
+  /**
+   * Clean up expired data and optimize performance
+   */
+  static optimizePerformance() {
+    LocationCache.cleanExpiredCache();
+    console.log('🚀 LocationService performance optimized');
   }
 }
 
