@@ -168,7 +168,8 @@
       "Bash(del \"D:\\Monash\\FIT5120\\Actual Project\\FloodAidApp\\test-notifications.js\")",
       "Bash(taskkill:*)",
       "Bash(npx kill-port:*)",
-      "Bash(del \"D:\\Monash\\FIT5120\\Actual Project\\FloodAidApp\\test-timeout-fixes.js\")"
+      "Bash(del \"D:\\Monash\\FIT5120\\Actual Project\\FloodAidApp\\test-timeout-fixes.js\")",
+      "Bash(npm start:*)"
     ],
     "deny": [],
     "ask": []

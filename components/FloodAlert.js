@@ -92,7 +92,12 @@ const FloodAlert = ({
           icon: 'warning',
           iconColor: '#FFFFFF',
           textColor: '#FFFFFF',
-          urgencyText: 'IMMEDIATE ACTION REQUIRED'
+          urgencyText: 'IMMEDIATE ACTION REQUIRED',
+          primaryButtonBg: 'rgba(255, 255, 255, 0.95)',
+          primaryButtonText: '#FF4444',
+          secondaryButtonBorder: '#FFFFFF',
+          secondaryButtonText: '#FFFFFF',
+          closeButtonColor: '#FFFFFF'
         };
       case 'urgent':
         return {
@@ -100,7 +105,12 @@ const FloodAlert = ({
           icon: 'alert-circle',
           iconColor: '#FFFFFF',
           textColor: '#FFFFFF',
-          urgencyText: 'URGENT - PREPARE NOW'
+          urgencyText: 'URGENT - PREPARE NOW',
+          primaryButtonBg: 'rgba(255, 255, 255, 0.95)',
+          primaryButtonText: '#FF8800',
+          secondaryButtonBorder: '#FFFFFF',
+          secondaryButtonText: '#FFFFFF',
+          closeButtonColor: '#FFFFFF'
         };
       case 'warning':
         return {
@@ -108,7 +118,12 @@ const FloodAlert = ({
           icon: 'alert',
           iconColor: '#333333',
           textColor: '#333333',
-          urgencyText: 'WARNING - BE PREPARED'
+          urgencyText: 'WARNING - BE PREPARED',
+          primaryButtonBg: 'rgba(51, 51, 51, 0.9)',
+          primaryButtonText: '#FFFFFF',
+          secondaryButtonBorder: '#333333',
+          secondaryButtonText: '#333333',
+          closeButtonColor: '#333333'
         };
       default:
         return {
@@ -116,7 +131,12 @@ const FloodAlert = ({
           icon: 'information-circle',
           iconColor: '#FFFFFF',
           textColor: '#FFFFFF',
-          urgencyText: 'FLOOD ADVISORY'
+          urgencyText: 'FLOOD ADVISORY',
+          primaryButtonBg: 'rgba(255, 255, 255, 0.95)',
+          primaryButtonText: '#2196F3',
+          secondaryButtonBorder: '#FFFFFF',
+          secondaryButtonText: '#FFFFFF',
+          closeButtonColor: '#FFFFFF'
         };
     }
   };
@@ -166,14 +186,12 @@ const FloodAlert = ({
                 </Text>
               </View>
               
-              {alert.severity !== 'immediate' && (
-                <TouchableOpacity 
-                  onPress={handleDismiss}
-                  style={styles.closeButton}
-                >
-                  <Ionicons name="close" size={20} color={config.textColor} />
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity 
+                onPress={handleDismiss}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={20} color={config.closeButtonColor} />
+              </TouchableOpacity>
             </View>
 
             {/* Location */}
@@ -238,21 +256,31 @@ const FloodAlert = ({
             {/* Action Buttons */}
             <View style={styles.buttonContainer}>
               <TouchableOpacity 
-                style={[styles.actionButton, styles.preparationButton]}
+                style={[
+                  styles.actionButton, 
+                  { backgroundColor: config.primaryButtonBg }
+                ]}
                 onPress={handlePreparationGuide}
               >
-                <Ionicons name="list" size={20} color="#FFFFFF" />
-                <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>
+                <Ionicons name="list" size={20} color={config.primaryButtonText} />
+                <Text style={[styles.buttonText, { color: config.primaryButtonText }]}>
                   View Preparation Guide
                 </Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.actionButton, styles.detailsButton]}
+                style={[
+                  styles.actionButton, 
+                  styles.detailsButton,
+                  { 
+                    borderColor: config.secondaryButtonBorder,
+                    borderWidth: 2
+                  }
+                ]}
                 onPress={() => onViewDetails?.(alert)}
               >
-                <Ionicons name="information-circle" size={20} color="#2196F3" />
-                <Text style={[styles.buttonText, { color: '#2196F3' }]}>
+                <Ionicons name="information-circle" size={20} color={config.secondaryButtonText} />
+                <Text style={[styles.buttonText, { color: config.secondaryButtonText }]}>
                   View Details
                 </Text>
               </TouchableOpacity>
@@ -310,7 +338,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   closeButton: {
-    padding: 4,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 36,
+    height: 36,
   },
   locationText: {
     fontSize: 16,
@@ -393,18 +427,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 8,
-    elevation: 2,
+    borderRadius: 10,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
     flex: 1,
-  },
-  preparationButton: {
-    backgroundColor: '#2196F3',
+    minHeight: 48,
   },
   detailsButton: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#2196F3',
     elevation: 0,
+    shadowOpacity: 0,
   },
   buttonText: {
     color: COLORS.TEXT_ON_PRIMARY,

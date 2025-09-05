@@ -23,51 +23,104 @@ class LocationService {
     failureRate: 0
   };
   
+  // Background location watching
+  static backgroundLocationWatcher = null;
+  static backgroundLocationCallbacks = new Set();
+  
   /**
-   * Detect if running in emulator/simulator
-   * Improved detection for Expo Go on real devices
+   * Detect if running in emulator/simulator with improved reliability
    */
-  static isEmulator() {
-    // Enhanced emulator detection logic with Expo Go consideration
-    const deviceName = Constants.deviceName?.toLowerCase() || '';
-    const modelName = Constants.deviceModelName?.toLowerCase() || '';
-    const appOwnership = Constants.appOwnership; // 'expo', 'standalone', or 'guest'
-    
-    // Real device indicators (override emulator detection)
-    const isRealDeviceIndicator = 
-      // If running in Expo Go on a real device, Constants.isDevice should be true
-      (appOwnership === 'expo' && Constants.isDevice === true) ||
-      // Specific real device model patterns
-      (modelName && !modelName.includes('emulator') && !modelName.includes('simulator') && !modelName.includes('sdk'));
-    
-    const isEmulatorIndicator = 
-      // Android emulator indicators
-      deviceName.includes('emulator') ||
-      deviceName.includes('simulator') ||
-      modelName.includes('emulator') ||
-      modelName.includes('simulator') ||
-      modelName.includes('sdk') ||
-      // Specific Android emulator patterns
-      deviceName.includes('generic') ||
-      deviceName.includes('android_x86') ||
-      // iOS simulator indicators  
-      (Constants.platform?.ios && Constants.isDevice === false);
-    
-    // If we have strong real device indicators, override emulator detection
-    const isEmulator = isEmulatorIndicator && !isRealDeviceIndicator;
-    
-    console.log(`🔍 Enhanced emulator detection: ${isEmulator ? 'EMULATOR/SIMULATOR' : 'REAL DEVICE'}`, {
-      deviceName: Constants.deviceName,
-      modelName: Constants.deviceModelName,
-      isDevice: Constants.isDevice,
-      appOwnership: Constants.appOwnership,
-      platform: Constants.platform,
-      isRealDeviceIndicator,
-      isEmulatorIndicator,
-      finalDecision: isEmulator ? 'EMULATOR' : 'REAL_DEVICE'
-    });
-    
-    return isEmulator;
+  static async isEmulator() {
+    try {
+      const deviceName = Constants.deviceName?.toLowerCase() || '';
+      const modelName = Constants.deviceModelName?.toLowerCase() || '';
+      const appOwnership = Constants.appOwnership; // 'expo', 'standalone', or 'guest'
+      const platform = Constants.platform;
+      
+      // Check for manual override from AsyncStorage (for development)
+      const manualOverride = await this.getManualEmulatorOverride();
+      if (manualOverride !== null) {
+        console.log(`🔍 Manual emulator override: ${manualOverride ? 'EMULATOR' : 'REAL_DEVICE'}`);
+        return manualOverride;
+      }
+      
+      // Strong real device indicators
+      const realDeviceIndicators = [
+        // Expo Go on real device with proper device detection
+        appOwnership === 'expo' && Constants.isDevice === true,
+        // Real device model names (not containing emulator keywords)
+        modelName && 
+          !modelName.includes('emulator') && 
+          !modelName.includes('simulator') && 
+          !modelName.includes('sdk') &&
+          !modelName.includes('generic') &&
+          !modelName.includes('android_x86'),
+        // iOS real device
+        platform?.ios && Constants.isDevice === true,
+        // Android real device with proper brand/manufacturer
+        platform?.android && Constants.isDevice === true && 
+          (deviceName.includes('samsung') || deviceName.includes('huawei') || 
+           deviceName.includes('xiaomi') || deviceName.includes('oppo') ||
+           deviceName.includes('vivo') || deviceName.includes('oneplus'))
+      ];
+      
+      // Emulator indicators
+      const emulatorIndicators = [
+        // Generic Android emulator patterns
+        deviceName.includes('emulator'),
+        deviceName.includes('simulator'),
+        deviceName.includes('generic'),
+        deviceName.includes('android_x86'),
+        deviceName.includes('google_sdk'),
+        // Model name patterns
+        modelName.includes('emulator'),
+        modelName.includes('simulator'),
+        modelName.includes('sdk'),
+        // iOS simulator
+        platform?.ios && Constants.isDevice === false,
+        // Android Studio emulator specific
+        deviceName.includes('avd') || modelName.includes('avd')
+      ];
+      
+      const hasRealDeviceIndicator = realDeviceIndicators.some(indicator => indicator);
+      const hasEmulatorIndicator = emulatorIndicators.some(indicator => indicator);
+      
+      // Prioritize real device indicators
+      const isEmulator = hasEmulatorIndicator && !hasRealDeviceIndicator;
+      
+      console.log(`🔍 Improved emulator detection: ${isEmulator ? 'EMULATOR/SIMULATOR' : 'REAL DEVICE'}`, {
+        deviceName: Constants.deviceName,
+        modelName: Constants.deviceModelName,
+        isDevice: Constants.isDevice,
+        appOwnership: Constants.appOwnership,
+        platform: Constants.platform,
+        hasRealDeviceIndicator,
+        hasEmulatorIndicator,
+        finalDecision: isEmulator ? 'EMULATOR' : 'REAL_DEVICE'
+      });
+      
+      return isEmulator;
+      
+    } catch (error) {
+      console.warn('🔍 Emulator detection failed, assuming real device:', error);
+      return false; // Default to real device when detection fails
+    }
+  }
+  
+  /**
+   * Get manual emulator override from developer settings
+   */
+  static async getManualEmulatorOverride() {
+    try {
+      const settings = await AsyncStorage.getItem('locationDebugSettings');
+      if (settings) {
+        const parsed = JSON.parse(settings);
+        return parsed.forceEmulatorMode;
+      }
+    } catch (error) {
+      console.warn('Failed to read manual emulator override:', error);
+    }
+    return null;
   }
   
   /**
@@ -133,63 +186,184 @@ class LocationService {
   }
 
   /**
-   * Get user-friendly error message for GPS failures
+   * Get user-friendly error message for GPS failures with enhanced error handling
    */
   static getLocationErrorMessage(error, debugId) {
     const errorMessage = error?.message?.toLowerCase() || '';
+    const errorCode = error?.code || '';
+    const platform = Constants.platform;
     
-    // Check for specific error patterns and return user-friendly messages
-    if (errorMessage.includes('timeout')) {
+    console.log(`🔍 [${debugId}]: Analyzing error - Message: "${errorMessage}", Code: "${errorCode}"`);
+    
+    // Timeout errors - most common on real devices
+    if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
       return {
         title: 'GPS Timeout',
-        message: 'Location request took longer than expected. Using cached or default location instead.',
-        suggestion: 'Try moving to an area with better GPS signal or enable "Skip GPS" in developer settings.',
-        isRecoverable: true
+        message: 'Location request took longer than expected. This is common indoors or in areas with poor GPS signal.',
+        suggestion: 'Try moving outdoors, restarting location services, or use retry mode in settings.',
+        isRecoverable: true,
+        retryRecommended: true
       };
     }
     
-    if (errorMessage.includes('permission') || errorMessage.includes('denied')) {
+    // Permission errors
+    if (errorMessage.includes('permission') || errorMessage.includes('denied') || 
+        errorMessage.includes('not authorized') || errorCode.includes('PERMISSION')) {
       return {
         title: 'Location Permission Required',
         message: 'FloodAid needs location access to provide accurate flood predictions.',
-        suggestion: 'Please enable location permissions in your device settings.',
-        isRecoverable: true
+        suggestion: platform?.ios ? 
+          'Go to Settings > Privacy & Security > Location Services > FloodAid and select "While Using App".' :
+          'Go to Settings > Apps > FloodAid > Permissions > Location and enable.',
+        isRecoverable: true,
+        retryRecommended: false
       };
     }
     
-    if (errorMessage.includes('cancelled')) {
+    // Request cancelled
+    if (errorMessage.includes('cancelled') || errorMessage.includes('canceled') ||
+        errorMessage.includes('aborted') || errorCode.includes('CANCELLED')) {
       return {
         title: 'Location Request Cancelled',
-        message: 'GPS request was cancelled. Using fallback location.',
-        suggestion: 'This is normal when switching between GPS modes.',
-        isRecoverable: true
+        message: 'GPS request was cancelled, likely due to a newer request starting.',
+        suggestion: 'This is normal. The app will use cached or retry automatically.',
+        isRecoverable: true,
+        retryRecommended: false
       };
     }
     
-    if (errorMessage.includes('unavailable') || errorMessage.includes('disabled')) {
+    // Location services disabled
+    if (errorMessage.includes('unavailable') || errorMessage.includes('disabled') ||
+        errorMessage.includes('service') || errorCode.includes('UNAVAILABLE')) {
       return {
         title: 'Location Services Disabled',
         message: 'GPS or location services are turned off on your device.',
-        suggestion: 'Please enable location services in your device settings.',
-        isRecoverable: true
+        suggestion: platform?.ios ?
+          'Enable Location Services in Settings > Privacy & Security > Location Services.' :
+          'Enable Location in Settings > Location.',
+        isRecoverable: true,
+        retryRecommended: false
       };
     }
     
-    // Generic GPS failure
+    // Network/API related errors
+    if (errorMessage.includes('network') || errorMessage.includes('connection') ||
+        errorMessage.includes('internet') || errorCode.includes('NETWORK')) {
+      return {
+        title: 'Network Error',
+        message: 'Unable to connect to location services due to network issues.',
+        suggestion: 'Check your internet connection and try again.',
+        isRecoverable: true,
+        retryRecommended: true
+      };
+    }
+    
+    // GPS hardware/signal issues
+    if (errorMessage.includes('accuracy') || errorMessage.includes('signal') ||
+        errorMessage.includes('satellite') || errorCode.includes('ACCURACY')) {
+      return {
+        title: 'Poor GPS Signal',
+        message: 'GPS signal is too weak to get accurate location.',
+        suggestion: 'Move to an open area away from buildings and try again.',
+        isRecoverable: true,
+        retryRecommended: true
+      };
+    }
+    
+    // Expo-specific errors
+    if (errorMessage.includes('expo') || errorMessage.includes('unimodule')) {
+      return {
+        title: 'Location Service Error',
+        message: 'There was an issue with the location service module.',
+        suggestion: 'Try restarting the app or updating Expo Go.',
+        isRecoverable: true,
+        retryRecommended: true
+      };
+    }
+    
+    // Generic GPS failure with enhanced context
     return {
       title: 'GPS Unavailable',
       message: 'Unable to determine your exact location. Using fallback location for flood predictions.',
-      suggestion: 'Predictions may be less accurate. Try moving to an open area or restarting the app.',
-      isRecoverable: true
+      suggestion: 'Try moving to an open area, check location permissions, or restart the app. If in emulator, try using a physical device for testing.',
+      isRecoverable: true,
+      retryRecommended: true
     };
   }
   
+  /**
+   * Get user's current GPS location with progressive retry logic
+   */
+  static async getCurrentLocationWithRetry(skipGPS = false, maxRetries = 3) {
+    const priorities = ['fast', 'normal', 'thorough'];
+    const debugId = Date.now();
+    
+    console.log(`📍 LocationService [${debugId}]: Starting GPS with retry logic (maxRetries: ${maxRetries})`);
+    
+    if (skipGPS) {
+      return this.getCurrentLocation(true, 'fast');
+    }
+    
+    for (let attempt = 0; attempt < maxRetries && attempt < priorities.length; attempt++) {
+      const priority = priorities[attempt];
+      console.log(`📍 [${debugId}]: GPS attempt ${attempt + 1}/${maxRetries} with ${priority} priority`);
+      
+      try {
+        const result = await this.getCurrentLocation(false, priority);
+        console.log(`SUCCESS [${debugId}]: GPS succeeded on attempt ${attempt + 1} with ${priority} priority`);
+        return result;
+        
+      } catch (error) {
+        console.log(`RETRY [${debugId}]: GPS attempt ${attempt + 1} failed with ${priority} priority: ${error.message}`);
+        
+        // If this is not the last attempt, continue to next priority level
+        if (attempt < maxRetries - 1 && attempt < priorities.length - 1) {
+          console.log(`RETRY [${debugId}]: Retrying with higher priority level...`);
+          
+          // Wait a short time before retry to allow GPS to stabilize
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+        
+        // Last attempt failed, fall back to cached/default
+        console.log(`FALLBACK [${debugId}]: All GPS attempts failed, using cached/default location`);
+        
+        // Try cached location
+        const cachedLocation = await this.getCachedLocation();
+        if (cachedLocation) {
+          console.log(`FALLBACK [${debugId}]: Using cached location`);
+          return {
+            ...cachedLocation,
+            isCached: true,
+            debugId,
+            fallbackReason: 'GPS retries exhausted'
+          };
+        }
+        
+        // Ultimate fallback
+        console.log(`FALLBACK [${debugId}]: Using default Puchong coordinates`);
+        const defaultLocation = {
+          lat: 3.0738,
+          lon: 101.5183,
+          accuracy: null,
+          timestamp: Date.now(),
+          isDefault: true,
+          debugId,
+          fallbackReason: 'GPS and cache unavailable'
+        };
+        
+        await this.cacheLocation(defaultLocation);
+        return defaultLocation;
+      }
+    }
+  }
+
   /**
    * Get user's current GPS location with optimized caching and request deduplication
    */
   static async getCurrentLocation(skipGPS = false, priority = 'normal') {
     const debugId = Date.now();
-    const isEmulatorDevice = this.isEmulator();
+    const isEmulatorDevice = await this.isEmulator();
     
     this.performanceMetrics.totalRequests++;
     console.log(`📍 LocationService [${debugId}]: ${skipGPS ? 'SKIPPING GPS' : 'Requesting location'} (priority: ${priority})...`);
@@ -219,10 +393,14 @@ class LocationService {
       }
     }
     
-    // Cancel any existing requests before starting new one
-    if (this.activeRequests.size > 0) {
-      console.log(`🚫 [${debugId}]: Cancelling ${this.activeRequests.size} existing GPS requests...`);
+    // Allow concurrent requests but limit high priority ones
+    if (this.activeRequests.size > 0 && priority === 'thorough') {
+      console.log(`🚫 [${debugId}]: Cancelling ${this.activeRequests.size} existing requests for high priority GPS...`);
       this.cancelAllRequests();
+    } else if (this.activeRequests.size >= 3) {
+      console.log(`🚫 [${debugId}]: Too many concurrent GPS requests (${this.activeRequests.size}), cancelling oldest...`);
+      const oldestRequest = this.activeRequests.keys().next().value;
+      this.cancelRequest(oldestRequest);
     }
     
     // Skip GPS if requested - immediately return cached or default location
@@ -257,22 +435,22 @@ class LocationService {
       return defaultLocation;
     }
     
-    // Optimized GPS configuration with tiered timeout strategy
+    // Optimized GPS configuration with extended timeout strategy for better reliability
     const gpsConfigs = {
       fast: {
-        timeout: isEmulatorDevice ? 3000 : 5000,
+        timeout: isEmulatorDevice ? 5000 : 10000,
         accuracy: Location.Accuracy.Balanced,
         maximumAge: 120000, // Accept up to 2 minutes old
         enableHighAccuracy: false
       },
       normal: {
-        timeout: isEmulatorDevice ? 8000 : 15000,
+        timeout: isEmulatorDevice ? 15000 : 30000,
         accuracy: isEmulatorDevice ? Location.Accuracy.Balanced : Location.Accuracy.High,
         maximumAge: 60000, // Accept up to 1 minute old
         enableHighAccuracy: !isEmulatorDevice
       },
       thorough: {
-        timeout: isEmulatorDevice ? 15000 : 30000,
+        timeout: isEmulatorDevice ? 30000 : 45000,
         accuracy: Location.Accuracy.BestForNavigation,
         maximumAge: 10000, // Only accept recent readings
         enableHighAccuracy: true
@@ -687,35 +865,116 @@ class LocationService {
   }
 
   /**
-   * Watch location changes (for real-time updates)
+   * Start background location watching for continuous updates
    */
-  static async watchLocation(callback, options = {}) {
+  static async startBackgroundLocationWatcher(options = {}) {
+    if (this.backgroundLocationWatcher) {
+      console.log('📡 Background location watcher already active');
+      return;
+    }
+    
     try {
+      console.log('📡 Starting background location watcher...');
+      
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        throw new Error('Location permission required for watching');
+        throw new Error('Location permission required for background watching');
       }
-
-      return await Location.watchPositionAsync(
+      
+      const isEmulator = await this.isEmulator();
+      
+      this.backgroundLocationWatcher = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.High,
+          accuracy: isEmulator ? Location.Accuracy.Balanced : Location.Accuracy.High,
           timeInterval: options.interval || 300000, // 5 minutes default
           distanceInterval: options.distance || 100, // 100 meters
+          mayShowUserSettingsDialog: true
         },
         (location) => {
-          callback({
+          const processedLocation = {
             lat: location.coords.latitude,
             lon: location.coords.longitude,
             accuracy: location.coords.accuracy,
-            timestamp: location.timestamp
+            timestamp: location.timestamp,
+            source: 'background_watcher'
+          };
+          
+          console.log('📡 Background location update:', processedLocation);
+          
+          // Cache the location automatically
+          this.cacheLocation(processedLocation);
+          
+          // Notify all callbacks
+          this.backgroundLocationCallbacks.forEach(callback => {
+            try {
+              callback(processedLocation);
+            } catch (error) {
+              console.error('📡 Error in background location callback:', error);
+            }
           });
         }
       );
       
+      console.log('SUCCESS: Background location watcher started');
+      
     } catch (error) {
-      console.error('Error watching location:', error);
+      console.error('ERROR: Failed to start background location watcher:', error);
+      this.backgroundLocationWatcher = null;
       throw error;
     }
+  }
+  
+  /**
+   * Stop background location watching
+   */
+  static async stopBackgroundLocationWatcher() {
+    if (this.backgroundLocationWatcher) {
+      console.log('📡 Stopping background location watcher...');
+      
+      try {
+        await this.backgroundLocationWatcher.remove();
+        this.backgroundLocationWatcher = null;
+        console.log('SUCCESS: Background location watcher stopped');
+      } catch (error) {
+        console.error('ERROR: Failed to stop background location watcher:', error);
+        this.backgroundLocationWatcher = null;
+      }
+    }
+  }
+  
+  /**
+   * Add callback for background location updates
+   */
+  static addBackgroundLocationCallback(callback) {
+    if (typeof callback !== 'function') {
+      throw new Error('Callback must be a function');
+    }
+    this.backgroundLocationCallbacks.add(callback);
+    console.log(`📡 Added background location callback (${this.backgroundLocationCallbacks.size} total)`);
+  }
+  
+  /**
+   * Remove callback from background location updates
+   */
+  static removeBackgroundLocationCallback(callback) {
+    const removed = this.backgroundLocationCallbacks.delete(callback);
+    if (removed) {
+      console.log(`📡 Removed background location callback (${this.backgroundLocationCallbacks.size} remaining)`);
+    }
+    
+    // Stop watcher if no callbacks remain
+    if (this.backgroundLocationCallbacks.size === 0) {
+      this.stopBackgroundLocationWatcher();
+    }
+  }
+  
+  /**
+   * Watch location changes (for real-time updates) - Legacy method
+   */
+  static async watchLocation(callback, options = {}) {
+    console.warn('watchLocation is deprecated, use startBackgroundLocationWatcher instead');
+    this.addBackgroundLocationCallback(callback);
+    return this.startBackgroundLocationWatcher(options);
   }
   
   /**

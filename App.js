@@ -120,7 +120,7 @@ const getRiskDescription = (prediction, locationInfo) => {
     const modelType = prediction.model_info?.model_type || 'ML Model';
     const featuresCount = prediction.model_info?.features_count || 'multiple';
     
-    confidenceText = ` Based on enhanced ${featuresCount}-feature ${modelType}, we have ${displayConfidence}% accuracy from ${primarySources.join(', ')}.`;
+    confidenceText = ` Based on enhanced ${featuresCount}-feature ${modelType}, we have ${displayConfidence}% accuracy.\nData Source: ${primarySources.join(', ')}.`;
     
     // Add monsoon context if available
     if (prediction.weather_summary?.monsoon_season && prediction.weather_summary?.monsoon_season !== 'Unknown') {
@@ -1184,6 +1184,8 @@ function HomeScreen() {
         visible={showDetailsModal}
         animationType="slide"
         presentationStyle="pageSheet"
+        onRequestClose={() => setShowDetailsModal(false)}
+        onDismiss={() => setShowDetailsModal(false)}
       >
         <FloodDetailsModal 
           prediction={prediction}

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Alert, View, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DeveloperMode from './DeveloperMode';
+import LocationDebugSettings from './LocationDebugSettings';
 import { COLORS } from '../utils/constants';
 
 /**
@@ -16,6 +17,7 @@ import { COLORS } from '../utils/constants';
  */
 const DeveloperModeButton = ({ onAlertGenerated }) => {
   const [showDeveloperMode, setShowDeveloperMode] = useState(false);
+  const [showLocationDebug, setShowLocationDebug] = useState(false);
 
   // Only show in development builds
   if (!__DEV__) {
@@ -25,10 +27,11 @@ const DeveloperModeButton = ({ onAlertGenerated }) => {
   const handleOpenDeveloperMode = () => {
     Alert.alert(
       '🛠️ Developer Mode',
-      'This is a testing tool for flood probability alerts. Use carefully as it generates real alerts in the app.',
+      'Choose developer tools to access.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Open Developer Mode', onPress: () => setShowDeveloperMode(true) }
+        { text: 'Alert Generator', onPress: () => setShowDeveloperMode(true) },
+        { text: 'Location Debug', onPress: () => setShowLocationDebug(true) }
       ]
     );
   };
@@ -48,6 +51,16 @@ const DeveloperModeButton = ({ onAlertGenerated }) => {
         onClose={() => setShowDeveloperMode(false)}
         onAlertGenerated={onAlertGenerated}
       />
+
+      <Modal
+        visible={showLocationDebug}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <LocationDebugSettings
+          onClose={() => setShowLocationDebug(false)}
+        />
+      </Modal>
     </>
   );
 };

@@ -168,12 +168,14 @@ export const LocationProvider = ({ children }) => {
     }
   };
 
-  const getCurrentLocation = async (skipGPS = false) => {
+  const getCurrentLocation = async (skipGPS = false, useRetry = true) => {
     try {
-      console.log(`📍 LocationContext: Getting current location (skipGPS: ${skipGPS})`);
+      console.log(`📍 LocationContext: Getting current location (skipGPS: ${skipGPS}, useRetry: ${useRetry})`);
       
-      // Use LocationService's robust location handling
-      const location = await LocationService.getCurrentLocationWithMalaysiaCheck(skipGPS);
+      // Use LocationService's enhanced retry logic or fallback to original method
+      const location = useRetry ? 
+        await LocationService.getCurrentLocationWithRetry(skipGPS, 3) :
+        await LocationService.getCurrentLocationWithMalaysiaCheck(skipGPS);
       
       if (location) {
         console.log('📍 LocationContext: Location obtained successfully');
