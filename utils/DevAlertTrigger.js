@@ -1,4 +1,5 @@
 import floodAlertService from './FloodAlertService';
+import { notificationService } from './NotificationService';
 import { PRECIPITATION_THRESHOLDS, RISK_LEVELS } from './constants';
 
 class DevAlertTrigger {
@@ -6,6 +7,7 @@ class DevAlertTrigger {
     this.isDevelopment = __DEV__ || process.env.NODE_ENV === 'development';
     this.testScenarios = this.createTestScenarios();
     this.testLocations = this.createTestLocations();
+    this.enablePushNotifications = true; // Enable push notifications for dev alerts
   }
 
   /**
@@ -237,10 +239,16 @@ class DevAlertTrigger {
     // Trigger callbacks
     floodAlertService.alertCallbacks.forEach(cb => cb(alert));
 
+    // Send push notification if enabled
+    if (this.enablePushNotifications) {
+      await this.sendDevPushNotification(alert);
+    }
+
     console.log(`✅ Dev Alert Generated:`, {
       severity: alert.severity,
       countdown: alert.countdownDisplay,
-      riskLevel: alert.riskLevel
+      riskLevel: alert.riskLevel,
+      pushNotification: this.enablePushNotifications
     });
 
     return alert;
@@ -394,10 +402,16 @@ class DevAlertTrigger {
       // Trigger callbacks
       floodAlertService.alertCallbacks.forEach(cb => cb(alert));
 
+      // Send push notification if enabled
+      if (this.enablePushNotifications) {
+        await this.sendDevPushNotification(alert);
+      }
+
       console.log(`✅ Probability-based alert generated:`, {
         severity: alert.severity,
         countdown: alert.countdownDisplay,
-        riskLevel: alert.riskLevel
+        riskLevel: alert.riskLevel,
+        pushNotification: this.enablePushNotifications
       });
 
       return alert;
@@ -654,6 +668,84 @@ class DevAlertTrigger {
       { value: 75, label: '75%', description: 'Very High Risk', color: '#FF5722' },
       { value: 90, label: '90%', description: 'Extreme Risk', color: '#F44336' }
     ];
+  }
+
+  /**
+   * Send push notification for development alert
+   * @param {Object} alert - Alert object
+   */
+  async sendDevPushNotification(alert) {
+    try {
+      if (alert.severity === 'immediate') {
+        // Send immediate notification
+        await notificationService.sendImmediateAlert(
+          'DEV: FLOOD ALERT - IMMEDIATE ACTION REQUIRED',
+          `Test alert: Flooding at ${alert.location.name}. This is a development test.`,
+          {
+            type: 'dev_flood_alert',
+            severity: alert.severity,
+            location: alert.location.name,
+            isDevelopmentAlert: true
+          }
+        );
+      } else {
+        // Send scheduled notification
+        await notificationService.scheduleAdvancedFloodAlert({
+          id: alert.id,
+          severity: alert.severity,
+          location: { name: alert.location.name },
+          riskLevel: alert.riskLevel,
+          countdownTime: alert.countdownTime || 0,
+          countdownDisplay: alert.countdownDisplay || 'Monitor conditions'
+        });
+      }
+      
+      console.log(`📱 Push notification sent for dev alert: ${alert.severity} level`);
+    } catch (error) {
+      console.error('Error sending dev push notification:', error);
+    }
+  }
+
+  /**
+   * Send immediate test push notification
+   */
+  async sendTestPushNotification() {
+    if (!this.isDevelopment) return;
+    
+    try {
+      await notificationService.sendImmediateAlert(
+        'TEST: FloodAid Notification System',
+        'This is a test notification to verify push notifications are working on your device.',
+        {
+          type: 'test_notification',
+          isDevelopmentAlert: true,
+          timestamp: new Date().toISOString()
+        }
+      );
+      
+      console.log('📱 Test push notification sent successfully');
+      return true;
+    } catch (error) {
+      console.error('Failed to send test push notification:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Enable/disable push notifications for dev alerts
+   * @param {boolean} enabled - Whether to enable push notifications
+   */
+  setPushNotificationsEnabled(enabled) {
+    this.enablePushNotifications = enabled;
+    console.log(`📱 Dev push notifications ${enabled ? 'enabled' : 'disabled'}`);
+  }
+
+  /**
+   * Get push notification status
+   * @returns {boolean} - Whether push notifications are enabled
+   */
+  isPushNotificationsEnabled() {
+    return this.enablePushNotifications;
   }
 
   /**

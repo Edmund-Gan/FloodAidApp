@@ -15,12 +15,13 @@ import {
   Dimensions,
   StatusBar
 } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polygon, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 
 import EnhancedFloodDataService from '../services/EnhancedFloodDataService';
 import { MALAYSIA_CENTER, getFloodDensityColor, getMarkerSize } from '../utils/MalaysianStates';
 import { getStateAbbreviation } from '../utils/FilterHelpers';
+import GeoJSONService from '../services/GeoJSONService';
 
 // Import new components
 import AreaSearchSelector from '../components/AreaSearchSelector';
@@ -32,6 +33,8 @@ export default function FloodHotspotsCSV({ navigation }) {
   // Enhanced data state
   const [allFloodStates, setAllFloodStates] = useState([]);
   const [selectedArea, setSelectedArea] = useState(null);
+  const [statePolygons, setStatePolygons] = useState({});
+  const [visualizationMode, setVisualizationMode] = useState('markers'); // 'markers' or 'polygons'
   
   // Map reference for programmatic control
   const mapRef = useRef(null);
@@ -61,8 +64,13 @@ export default function FloodHotspotsCSV({ navigation }) {
         setMaxEventCount(maxCount);
       }
       
+      // Load state polygons for polygon visualization mode
+      const polygons = await GeoJSONService.getStatePolygons();
+      setStatePolygons(polygons);
+      
       console.log(`📊 Loaded ${data.aggregated.length} state aggregations and ${data.detailed.length} detailed events`);
       console.log(`🔍 Search index: ${data.searchIndex.districts.length} districts, ${data.searchIndex.states.length} states`);
+      console.log(`🗺️ Loaded ${Object.keys(polygons).length} state polygons`);
     } catch (error) {
       console.error('Error loading enhanced flood data:', error);
       Alert.alert('Data Error', 'Unable to load flood event data');
@@ -93,41 +101,34 @@ export default function FloodHotspotsCSV({ navigation }) {
       try {
         const summary = await EnhancedFloodDataService.getAreaSummary(area.name, area.type);
         setAreaSummary(summary);
+        
+        // Find matching state data from allFloodStates to show modal
+        let stateData;
+        if (area.type === 'state') {
+          // For states, find exact match
+          stateData = allFloodStates.find(state => 
+            state.state === area.name || state.state === area.state
+          );
+        } else {
+          // For districts, find the parent state
+          stateData = allFloodStates.find(state => 
+            state.state === area.state
+          );
+        }
+        
+        if (stateData) {
+          // Set the state data and show modal directly
+          setSelectedStateData(stateData);
+          setShowModal(true);
+        }
+        
       } catch (error) {
         console.error('Error loading area summary:', error);
       }
-      
-      // Animate map to the selected area
-      if (mapRef.current && area.coordinates) {
-        const { latitude, longitude } = area.coordinates;
-        
-        // Set zoom level based on area type
-        const zoomLevel = area.type === 'district' ? {
-          latitudeDelta: 0.5,
-          longitudeDelta: 0.5
-        } : {
-          latitudeDelta: 2.0,
-          longitudeDelta: 2.0
-        };
-        
-        mapRef.current.animateToRegion({
-          latitude,
-          longitude,
-          ...zoomLevel
-        }, 1000); // 1 second animation
-      }
     } else {
       setAreaSummary(null);
-      
-      // Reset to full Malaysia view when clearing selection
-      if (mapRef.current) {
-        mapRef.current.animateToRegion({
-          latitude: MALAYSIA_CENTER.latitude,
-          longitude: MALAYSIA_CENTER.longitude,
-          latitudeDelta: 8.0,
-          longitudeDelta: 20.0,
-        }, 1000);
-      }
+      setSelectedStateData(null);
+      setShowModal(false);
     }
   };
 
@@ -177,6 +178,32 @@ export default function FloodHotspotsCSV({ navigation }) {
     }
   };
 
+  /**
+   * Get polygon fill color with transparency based on flood intensity
+   */
+  const getPolygonFillColor = (state) => {
+    const baseColor = getMarkerColor(state);
+    // Add transparency to the base color (30% opacity)
+    return baseColor + '4D';
+  };
+
+  /**
+   * Get polygon stroke color (slightly darker than fill)
+   */
+  const getPolygonStrokeColor = (state) => {
+    return getMarkerColor(state);
+  };
+
+  /**
+   * Handle polygon tap - same as marker tap
+   */
+  const handlePolygonTap = (stateName) => {
+    const state = allFloodStates.find(s => s.state === stateName);
+    if (state) {
+      handleStateTap(state);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -217,7 +244,8 @@ export default function FloodHotspotsCSV({ navigation }) {
           showsCompass={true}
           showsScale={true}
         >
-          {filteredStates.map((state) => (
+          {/* Render markers or polygons based on visualization mode */}
+          {visualizationMode === 'markers' && filteredStates.map((state) => (
             <Marker
               key={state.id}
               coordinate={{
@@ -244,6 +272,26 @@ export default function FloodHotspotsCSV({ navigation }) {
               </View>
             </Marker>
           ))}
+
+          {/* Render state polygons when in polygon mode */}
+          {visualizationMode === 'polygons' && filteredStates.map((state) => {
+            const statePolygonData = statePolygons[state.state];
+            if (!statePolygonData || !statePolygonData.polygons) {
+              return null;
+            }
+
+            return statePolygonData.polygons.map((polygon, index) => (
+              <Polygon
+                key={`${state.state}-${index}`}
+                coordinates={polygon}
+                fillColor={getPolygonFillColor(state)}
+                strokeColor={getPolygonStrokeColor(state)}
+                strokeWidth={2}
+                tappable={true}
+                onPress={() => handlePolygonTap(state.state)}
+              />
+            ));
+          })}
         </MapView>
 
         {/* Enhanced Floating Search Bar */}
@@ -267,6 +315,49 @@ export default function FloodHotspotsCSV({ navigation }) {
             style={styles.floatingStats}
             isCollapsible={true}
           />
+        </View>
+
+        {/* Visualization Mode Toggle */}
+        <View style={styles.floatingToggleContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.toggleButton,
+              visualizationMode === 'markers' && styles.toggleButtonActive
+            ]}
+            onPress={() => setVisualizationMode('markers')}
+          >
+            <Ionicons 
+              name="location" 
+              size={16} 
+              color={visualizationMode === 'markers' ? '#fff' : '#666'} 
+            />
+            <Text style={[
+              styles.toggleButtonText,
+              visualizationMode === 'markers' && styles.toggleButtonTextActive
+            ]}>
+              Points
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.toggleButton,
+              visualizationMode === 'polygons' && styles.toggleButtonActive
+            ]}
+            onPress={() => setVisualizationMode('polygons')}
+          >
+            <Ionicons 
+              name="map" 
+              size={16} 
+              color={visualizationMode === 'polygons' ? '#fff' : '#666'} 
+            />
+            <Text style={[
+              styles.toggleButtonText,
+              visualizationMode === 'polygons' && styles.toggleButtonTextActive
+            ]}>
+              Areas
+            </Text>
+          </TouchableOpacity>
         </View>
 
       </View>
@@ -470,6 +561,42 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
+  },
+
+  // Visualization Mode Toggle
+  floatingToggleContainer: {
+    position: 'absolute',
+    bottom: 30,
+    right: 16,
+    zIndex: 999,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    overflow: 'hidden',
+  },
+  toggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'transparent',
+  },
+  toggleButtonActive: {
+    backgroundColor: '#1976D2',
+  },
+  toggleButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+    marginLeft: 4,
+  },
+  toggleButtonTextActive: {
+    color: '#fff',
   },
   
   // Enhanced Markers

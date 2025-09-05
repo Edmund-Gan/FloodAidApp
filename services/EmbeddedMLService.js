@@ -876,6 +876,13 @@ class EmbeddedMLService {
       const importanceWeights = this.modelConfig.feature_importance_weights;
       const readableNames = this.modelConfig.feature_readable_names;
 
+      // Extract monsoon season value from feature vector for risk analysis
+      let monsoonSeason = null;
+      const monsoonSeasonIndex = featureOrder.indexOf('monsoon_season');
+      if (monsoonSeasonIndex !== -1 && monsoonSeasonIndex < featureVector.length) {
+        monsoonSeason = featureVector[monsoonSeasonIndex];
+      }
+
       // Calculate contribution scores (importance * abs(feature_value))
       const contributions = [];
       
@@ -885,16 +892,52 @@ class EmbeddedMLService {
         const featureValue = featureVector[i];
         const contributionScore = importance * Math.abs(featureValue);
         
-        // Determine impact level based on contribution score percentiles
+        // Determine impact level based on improved contribution score thresholds
         let impactLevel = 'Low';
-        if (contributionScore > 0.05) {
+        if (contributionScore > 0.1 || importance > 0.05) {
           impactLevel = 'High';
-        } else if (contributionScore > 0.02) {
+        } else if (contributionScore > 0.03 || importance > 0.025) {
           impactLevel = 'Medium';
         }
         
-        // Determine risk direction
-        const riskDirection = featureValue > 0 ? 'Increases' : 'Decreases';
+        // Determine risk direction based on feature type and values with enhanced logic
+        let riskDirection = 'Increases';
+        
+        // Enhanced protective factor identification
+        if (featureName === 'elevation' && featureValue > 30) {
+          riskDirection = 'Decreases'; // Higher elevation reduces flood risk
+        } else if (featureName.startsWith('temp_') && Math.abs(featureValue) < 20) {
+          riskDirection = 'Decreases'; // Very low temperatures indicate stable conditions
+        } else if (featureName === 'wind_direction') {
+          riskDirection = 'Contributes to'; // Wind direction is directional factor
+        } else if (contributionScore < 0.01) {
+          riskDirection = 'Minimal impact on'; // Very low contribution
+        }
+        
+        // Check for inter-monsoon periods (lower risk)
+        else if (featureName.includes('monsoon') && monsoonSeason !== null && monsoonSeason === 2) {
+          riskDirection = 'Decreases'; // Inter-monsoon periods typically have lower flood risk
+        }
+        
+        // Low values of risky factors can be protective
+        else if (featureName === 'rain_sum' && Math.abs(featureValue) < 5) {
+          riskDirection = 'Decreases'; // Very little rain is protective
+        } else if (featureName === 'precipitation_sum' && Math.abs(featureValue) < 10) {
+          riskDirection = 'Decreases'; // Low precipitation is protective
+        } else if (featureName === 'river_discharge' && Math.abs(featureValue) < 1) {
+          riskDirection = 'Decreases'; // Low river discharge is protective
+        } else if (featureName === 'wind_speed_max' && Math.abs(featureValue) < 10) {
+          riskDirection = 'Decreases'; // Calm weather conditions
+        } else if (featureName === 'monsoon_intensity' && Math.abs(featureValue) < 0.1) {
+          riskDirection = 'Decreases'; // Low monsoon intensity
+        }
+        
+        // Override with known high-risk factors when values are significant
+        else if (['rain_sum', 'precipitation_sum', 'precipitation_hours', 'river_discharge', 'monsoon_intensity', 'wind_speed_max', 'wind_gusts_max'].includes(featureName)) {
+          if (Math.abs(featureValue) > 0.1) {
+            riskDirection = 'Increases';
+          }
+        }
         
         // Get user-friendly explanation for this feature
         const userFriendlyExplanation = this.getUserFriendlyExplanation(featureName, featureValue, contributionScore);

@@ -12,7 +12,8 @@ import {
   ActivityIndicator,
   Dimensions,
   StatusBar,
-  RefreshControl
+  RefreshControl,
+  Platform,
 } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -27,6 +28,9 @@ import LocationService from './services/LocationService';
 import GeoJSONService from './services/GeoJSONService';
 import FloodAlert from './components/FloodAlert';
 import FloodAlertDetails from './components/FloodAlertDetails';
+import RiskFactorIndicator from './components/RiskFactorIndicator';
+import FactorDetailModal from './components/FactorDetailModal';
+import CompactRiskFactorIndicator from './components/CompactRiskFactorIndicator';
 import floodAlertService from './utils/FloodAlertService';
 import devAlertTrigger from './utils/DevAlertTrigger';
 import { STATE_ACCURACY_DATA } from './utils/constants';
@@ -34,6 +38,7 @@ import { RISK_COLORS, getRiskColor, getRiskLevel } from './utils/RiskCalculation
 import MockDataService from './utils/MockDataService';
 import RealTimeWeatherService from './services/RealTimeWeatherService';
 import DeveloperModeButton from './components/DeveloperModeButton';
+import { notificationService } from './utils/NotificationService';
 
 // Import FloodHotspotsScreen for Epic 3 - Using CSV data version
 import FloodHotspotsScreen from './screens/FloodHotspotsCSV';
@@ -42,6 +47,7 @@ import FloodHotspotsScreen from './screens/FloodHotspotsCSV';
 import MyLocationsScreen from './screens/MyLocationsScreen';
 import { LocationProvider } from './context/LocationContext';
 import { UserProvider } from './context/UserContext';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
@@ -221,10 +227,15 @@ function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose 
             <Text style={styles.factorDetailText}>AI flood prediction system unavailable</Text>
           </View>
         ) : (
-          prediction.contributing_factors.map((factor, index) => (
+          (prediction.contributing_factors?.structured && prediction.contributing_factors.legacy_text ?
+            prediction.contributing_factors.legacy_text :
+            (Array.isArray(prediction.contributing_factors) ? prediction.contributing_factors : [])
+          ).map((factor, index) => (
             <View key={index} style={styles.factorDetailItem}>
               <Ionicons name="warning-outline" size={20} color="#FF9800" />
-              <Text style={styles.factorDetailText}>{factor}</Text>
+              <Text style={styles.factorDetailText}>
+                {typeof factor === 'string' ? factor : factor?.feature?.title || 'Unknown factor'}
+              </Text>
             </View>
           ))
         )}
@@ -443,7 +454,6 @@ function HomeScreen() {
   const [realTimeWeather, setRealTimeWeather] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showDevModal, setShowDevModal] = useState(false);
   const [devLocation, setDevLocation] = useState(null);
   const [useMockData, setUseMockData] = useState(false);
   const [skipGPS, setSkipGPS] = useState(false);
@@ -458,6 +468,9 @@ function HomeScreen() {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [mlAlertThreshold, setMLAlertThreshold] = useState(60);
   const [enableMLAlerts, setEnableMLAlerts] = useState(true);
+  const [selectedFactor, setSelectedFactor] = useState(null);
+  const [showFactorModal, setShowFactorModal] = useState(false);
+  const insets = useSafeAreaInsets();
 
 
   useEffect(() => {
@@ -598,6 +611,16 @@ function HomeScreen() {
     }
   };
 
+  const handleFactorPress = (factor) => {
+    setSelectedFactor(factor);
+    setShowFactorModal(true);
+  };
+
+  const handleCloseFactorModal = () => {
+    setShowFactorModal(false);
+    setSelectedFactor(null);
+  };
+
   useEffect(() => {
     // Set default selected location to current location when available
     if (locationInfo && !selectedLocation) {
@@ -641,8 +664,8 @@ function HomeScreen() {
       setLoading(true);
       setError(null);
       
-      // Increase timeout based on retry count (30s, 45s, 60s)
-      const timeoutDuration = 30000 + (currentRetry * 15000);
+      // Increase timeout based on retry count (60s, 90s, 120s) - More generous for complex ML pipeline
+      const timeoutDuration = 60000 + (currentRetry * 30000);
       
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
@@ -805,27 +828,6 @@ function HomeScreen() {
 
 
 
-  const handleDevLocationSelect = (location) => {
-    try {
-      // Cancel all active GPS requests to prevent persistent progress messages
-      LocationService.cancelAllRequests();
-      
-      setDevLocation(location);
-      setLocationInfo({
-        lat: location.lat,
-        lon: location.lon,
-        display_name: location.name,
-        state: location.state,
-        isDev: true
-      });
-      setShowDevModal(false);
-      // Reload prediction with new location
-      loadPredictionWithLocation(location.lat, location.lon);
-    } catch (error) {
-      console.error('Error selecting development location:', error);
-      setShowDevModal(false);
-    }
-  };
 
   const loadPredictionWithLocation = async (lat, lon) => {
     
@@ -880,7 +882,10 @@ function HomeScreen() {
   // Handle null prediction data to prevent crashes
   if (!prediction) {
     return (
-      <ScrollView style={styles.container}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 80 }}
+      >
         <View style={styles.header}>
           <View>
             <Text style={styles.appTitle}>FloodAid</Text>
@@ -889,14 +894,6 @@ function HomeScreen() {
                 📍 {locationInfo.display_name} {locationInfo.isDev && '(Dev)'}
               </Text>
             )}
-          </View>
-          <View style={styles.headerButtons}>
-            <TouchableOpacity 
-              style={styles.devButton} 
-              onPress={() => setShowDevModal(true)}
-            >
-              <Ionicons name="location" size={20} color="#666" />
-            </TouchableOpacity>
           </View>
         </View>
         
@@ -926,6 +923,7 @@ function HomeScreen() {
   return (
     <ScrollView 
       style={styles.container}
+      contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 80 }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
@@ -938,14 +936,6 @@ function HomeScreen() {
               📍 {locationInfo.display_name} {locationInfo.isDev && '(Dev)'}
             </Text>
           )}
-        </View>
-        <View style={styles.headerButtons}>
-          {/* Development: Manual Location Selection */}
-          <TouchableOpacity
-            onPress={() => setShowDevModal(true)}
-          >
-            <Ionicons name="settings-outline" size={24} color="#333" />
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -1009,27 +999,75 @@ function HomeScreen() {
       </View>
 
 
-      {/* Contributing Factors / System Status */}
+      {/* Risk Factors - Compact Display */}
       <View style={styles.factorsCard}>
-        <Text style={styles.cardTitle}>
-          {prediction?.is_na ? 'System Status' : 'Contributing Factors'}
-        </Text>
-        {!prediction?.is_na && prediction?.model_info?.embedded && (
-          <Text style={styles.modelBadge}>
-            Enhanced 31-Feature ML Analysis (F1: {(prediction.model_info.f1_score * 100).toFixed(1)}%)
-          </Text>
-        )}
         {prediction?.is_na ? (
-          <View style={styles.factorItem}>
-            <Ionicons name="information-circle-outline" size={20} color="#666" />
-            <Text style={styles.factorText}>AI flood prediction system currently unavailable</Text>
+          <View>
+            <Text style={styles.cardTitle}>System Status</Text>
+            <View style={styles.factorItem}>
+              <Ionicons name="information-circle-outline" size={20} color="#666" />
+              <Text style={styles.factorText}>AI flood prediction system currently unavailable</Text>
+            </View>
           </View>
         ) : (
-          prediction.contributing_factors.map((factor, index) => (
-            <View key={index} style={styles.factorItem}>
-              <Text style={styles.enhancedFactorText}>{factor}</Text>
-            </View>
-          ))
+          <View>
+            <Text style={styles.compactFactorsHeader}>
+              According to our prediction model, these are the key risk factors:
+            </Text>
+            
+            {/* Check if we have structured factors with separated risk/protective factors */}
+            {prediction.contributing_factors?.structured && (
+              prediction.contributing_factors.riskFactors || prediction.contributing_factors.protectiveFactors
+            ) ? (
+              <View>
+                {/* Risk Increasing Factors */}
+                {prediction.contributing_factors.riskFactors?.length > 0 && (
+                  <View style={styles.compactFactorSection}>
+                    <Text style={styles.compactSectionTitle}>Risk Factors:</Text>
+                    <View style={styles.compactFactorsRow}>
+                      {prediction.contributing_factors.riskFactors.map((factor, index) => (
+                        <CompactRiskFactorIndicator
+                          key={factor.raw_feature || `risk-${index}`}
+                          factor={factor}
+                          onPress={handleFactorPress}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
+                
+                {/* Protective Factors */}
+                {prediction.contributing_factors.protectiveFactors?.length > 0 && (
+                  <View style={styles.compactFactorSection}>
+                    <Text style={styles.compactSectionTitle}>Protective:</Text>
+                    <View style={styles.compactFactorsRow}>
+                      {prediction.contributing_factors.protectiveFactors.map((factor, index) => (
+                        <CompactRiskFactorIndicator
+                          key={factor.raw_feature || `protective-${index}`}
+                          factor={factor}
+                          onPress={handleFactorPress}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
+            ) : (
+              /* Fallback to legacy text format */
+              <View>
+                {(prediction.contributing_factors?.legacy_text || 
+                  (Array.isArray(prediction.contributing_factors) ? prediction.contributing_factors : [])
+                ).slice(0, 4).map((factor, index) => (
+                  <View key={index} style={styles.factorItem}>
+                    <Ionicons name="alert-circle-outline" size={16} color="#ff9800" />
+                    <Text style={styles.enhancedFactorText}>
+                      {typeof factor === 'string' ? factor : factor?.feature?.title || 'Unknown factor'}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
         )}
       </View>
 
@@ -1140,195 +1178,6 @@ function HomeScreen() {
       {/* Developer Mode Button - Only visible in development */}
       <DeveloperModeButton onAlertGenerated={handleFloodAlert} />
 
-      {/* Development: Manual Location Selection Modal */}
-      <Modal
-        visible={showDevModal}
-        animationType="slide"
-        transparent={true}
-      >
-        <View style={styles.devModalOverlay}>
-          <View style={styles.devModalContent}>
-            <View style={styles.devModalHeader}>
-              <Text style={styles.devModalTitle}>Location Selection</Text>
-              <TouchableOpacity onPress={() => setShowDevModal(false)}>
-                <Ionicons name="close" size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
-            
-            <ScrollView 
-              style={styles.devModalBody}
-              showsVerticalScrollIndicator={true}
-              contentContainerStyle={styles.devModalContent2}
-            >
-              {/* Mock Data Toggle */}
-              <View style={styles.devToggleSection}>
-                <TouchableOpacity 
-                  style={styles.devToggleButton}
-                  onPress={() => setUseMockData(!useMockData)}
-                >
-                  <View style={styles.devToggleContent}>
-                    <Text style={styles.devToggleText}>
-                      Use Mock Data (Development Only)
-                    </Text>
-                    <View style={[styles.devToggleSwitch, useMockData && styles.devToggleSwitchActive]}>
-                      <View style={[styles.devToggleThumb, useMockData && styles.devToggleThumbActive]} />
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              </View>
-
-              {/* Real-time Weather Refresh */}
-              {realTimeWeather && (
-                <View style={styles.devToggleSection}>
-                  <TouchableOpacity 
-                    style={[styles.devButton, { width: '100%' }]}
-                    onPress={async () => {
-                      console.log('🔄 Manual weather refresh requested');
-                      realTimeWeatherService.clearCache();
-                      await loadRealTimeWeather();
-                    }}
-                  >
-                    <Text style={styles.devButtonText}>🔄 Refresh Real-time Weather</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* Skip GPS Toggle */}
-              <View style={styles.devToggleSection}>
-                <TouchableOpacity 
-                  style={[
-                    styles.devToggleButton,
-                    isGPSRequestActive && styles.devToggleButtonDisabled
-                  ]}
-                  onPress={() => {
-                    if (!isGPSRequestActive) {
-                      console.log(`🔧 Skip GPS toggle: ${skipGPS} → ${!skipGPS}`);
-                      setSkipGPS(!skipGPS);
-                    } else {
-                      console.log('🚫 Skip GPS toggle disabled during active GPS request');
-                    }
-                  }}
-                  disabled={isGPSRequestActive}
-                >
-                  <View style={styles.devToggleContent}>
-                    <Text style={styles.devToggleText}>Skip GPS (Use cached/default location)</Text>
-                    <View style={[styles.devToggleSwitch, skipGPS && styles.devToggleSwitchActive]}>
-                      <View style={[styles.devToggleThumb, skipGPS && styles.devToggleThumbActive]} />
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              </View>
-
-              {/* ML Alerts Toggle */}
-              <View style={styles.devToggleSection}>
-                <TouchableOpacity 
-                  style={styles.devToggleButton}
-                  onPress={handleMLAlertsToggle}
-                >
-                  <View style={styles.devToggleContent}>
-                    <Text style={styles.devToggleText}>Enable ML Alerts (Probability-based)</Text>
-                    <View style={[styles.devToggleSwitch, enableMLAlerts && styles.devToggleSwitchActive]}>
-                      <View style={[styles.devToggleThumb, enableMLAlerts && styles.devToggleThumbActive]} />
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              </View>
-              
-              <Text style={styles.devSectionTitle}>Test Locations</Text>
-              {malaysianLocations.map((location, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.devLocationItem}
-                  onPress={() => handleDevLocationSelect(location)}
-                >
-                  <View style={styles.devLocationInfo}>
-                    <Text style={styles.devLocationName}>{location.name}</Text>
-                    <Text style={styles.devLocationCoords}>
-                      {location.lat.toFixed(4)}, {location.lon.toFixed(4)}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color="#666" />
-                </TouchableOpacity>
-              ))}
-
-              <Text style={styles.devSectionTitle}>ML Alert Testing</Text>
-              
-              {/* ML Alert Threshold Selector */}
-              <View style={styles.devControlSection}>
-                <Text style={styles.devControlLabel}>
-                  Alert Threshold: {mlAlertThreshold}%
-                </Text>
-                <Text style={styles.devSubLabel}>
-                  Trigger alerts when ML predicts flood probability ≥ {mlAlertThreshold}%
-                </Text>
-                <View style={styles.thresholdOptions}>
-                  {[50, 60, 70, 80, 90].map((threshold) => (
-                    <TouchableOpacity
-                      key={threshold}
-                      style={[
-                        styles.thresholdOption,
-                        mlAlertThreshold === threshold && styles.selectedThresholdOption
-                      ]}
-                      onPress={() => handleMLAlertThresholdChange(threshold)}
-                    >
-                      <Text style={[
-                        styles.thresholdOptionText,
-                        mlAlertThreshold === threshold && styles.selectedThresholdText
-                      ]}>
-                        {threshold}%
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* Test ML Alert Button */}
-              <TouchableOpacity
-                style={[styles.testMLAlertButton, !enableMLAlerts && styles.disabledButton]}
-                onPress={triggerTestMLAlert}
-                disabled={!enableMLAlerts}
-              >
-                <Ionicons name="flash" size={20} color={enableMLAlerts ? "#FFF" : "#999"} />
-                <Text style={[styles.testMLAlertButtonText, !enableMLAlerts && styles.disabledButtonText]}>
-                  Test ML Alert at {mlAlertThreshold}%
-                </Text>
-              </TouchableOpacity>
-
-              <Text style={styles.devSectionTitle}>Quick Test Scenarios</Text>
-              {['immediate_heavy_rain', 'urgent_river_rise', 'warning_steady_rain'].map((scenarioKey) => {
-                const scenarios = devAlertTrigger.getAvailableScenarios();
-                const scenario = scenarios.find(s => s.key === scenarioKey);
-                if (!scenario) return null;
-                
-                return (
-                  <TouchableOpacity
-                    key={scenario.key}
-                    style={styles.devLocationItem}
-                    onPress={() => triggerTestAlert(scenario.key)}
-                  >
-                    <View style={styles.devLocationInfo}>
-                      <Text style={styles.devLocationName}>{scenario.name}</Text>
-                      <Text style={styles.devLocationCoords}>{scenario.description}</Text>
-                    </View>
-                    <Ionicons name="play-circle" size={20} color="#2196F3" />
-                  </TouchableOpacity>
-                );
-              })}
-              
-              <TouchableOpacity
-                style={styles.devLocationItem}
-                onPress={() => devAlertTrigger.clearTestAlerts()}
-              >
-                <View style={styles.devLocationInfo}>
-                  <Text style={[styles.devLocationName, {color: '#666'}]}>🧹 Clear All Alerts</Text>
-                  <Text style={styles.devLocationCoords}>Remove all test alerts</Text>
-                </View>
-                <Ionicons name="trash" size={20} color="#666" />
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
 
       {/* Detailed Flood Prediction Modal */}
       <Modal
@@ -1357,6 +1206,12 @@ function HomeScreen() {
         alert={currentAlert}
         visible={showAlertDetails}
         onClose={() => setShowAlertDetails(false)}
+      />
+
+      <FactorDetailModal
+        visible={showFactorModal}
+        factor={selectedFactor}
+        onClose={handleCloseFactorModal}
       />
     </ScrollView>
   );
@@ -1524,13 +1379,21 @@ function PreparednessScreen() {
 
 // Main App Component
 export default function App() {
+  // Initialize notifications when app starts
+  React.useEffect(() => {
+    console.log('Initializing push notifications...');
+    // NotificationService automatically sets up permissions and handlers
+    // No need to explicitly call anything - it's initialized in the constructor
+  }, []);
+
   return (
-    <UserProvider>
-      <LocationProvider>
-        <NavigationContainer>
-          <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-          <Tab.Navigator
-            screenOptions={({ route }) => ({
+    <SafeAreaProvider>
+      <UserProvider>
+        <LocationProvider>
+          <NavigationContainer>
+            <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+            <Tab.Navigator
+              screenOptions={({ route }) => ({
               tabBarIcon: ({ focused, color, size }) => {
                 let iconName;
                 if (route.name === 'Home') {
@@ -1558,9 +1421,10 @@ export default function App() {
             <Tab.Screen name="Hotspots" component={FloodHotspotsScreen} />
             <Tab.Screen name="Locations" component={LocationsScreen} />
           </Tab.Navigator>
-        </NavigationContainer>
-      </LocationProvider>
-    </UserProvider>
+          </NavigationContainer>
+        </LocationProvider>
+      </UserProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -2009,6 +1873,37 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginBottom: 8,
     fontWeight: '500',
+  },
+  factorsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  factorsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -4,
+  },
+  compactFactorsHeader: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  compactFactorSection: {
+    marginBottom: 8,
+  },
+  compactSectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 6,
+  },
+  compactFactorsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
   },
   
   // Weather Card

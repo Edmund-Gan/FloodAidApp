@@ -20,8 +20,8 @@ class GeoJSONService {
         return [];
       }
 
-      // Extract districts from GeoJSON features
-      const districts = malaysiaDistricts.features.slice(0, 20).map(feature => {
+      // Extract districts from GeoJSON features - load all districts for complete coverage
+      const districts = malaysiaDistricts.features.map(feature => {
         const { properties, geometry, id } = feature;
         
         // Calculate bounds and center from coordinates
@@ -145,6 +145,133 @@ class GeoJSONService {
     if (probability <= 0.6) return '#FF9800'; // Orange  
     if (probability <= 0.8) return '#FF5722'; // Red
     return '#D32F2F'; // Dark Red
+  }
+
+  // Create state boundary aggregator - merge district polygons by state
+  static async getStateBoundaries() {
+    try {
+      const districts = await this.loadMalaysianDistricts();
+      const stateBoundaries = {};
+      
+      // Group districts by state
+      districts.forEach(district => {
+        const stateName = district.state;
+        if (!stateBoundaries[stateName]) {
+          stateBoundaries[stateName] = {
+            name: stateName,
+            districts: [],
+            polygons: [],
+            bounds: { north: -90, south: 90, east: -180, west: 180 }
+          };
+        }
+        
+        stateBoundaries[stateName].districts.push(district);
+        
+        // Collect all polygon coordinates for this state
+        if (district.coordinates) {
+          stateBoundaries[stateName].polygons.push(district.coordinates);
+        }
+        
+        // Update state bounds
+        const bounds = stateBoundaries[stateName].bounds;
+        bounds.north = Math.max(bounds.north, district.bounds.north);
+        bounds.south = Math.min(bounds.south, district.bounds.south);
+        bounds.east = Math.max(bounds.east, district.bounds.east);
+        bounds.west = Math.min(bounds.west, district.bounds.west);
+      });
+      
+      // Calculate center points for each state
+      Object.values(stateBoundaries).forEach(state => {
+        const centerLat = (state.bounds.north + state.bounds.south) / 2;
+        const centerLon = (state.bounds.east + state.bounds.west) / 2;
+        state.center = { lat: centerLat, lon: centerLon };
+      });
+      
+      console.log(`✅ Generated ${Object.keys(stateBoundaries).length} state boundaries`);
+      return stateBoundaries;
+      
+    } catch (error) {
+      console.error('❌ Error creating state boundaries:', error);
+      return {};
+    }
+  }
+
+  // Convert district polygon to React Native Maps coordinate format
+  static convertToMapCoordinates(polygonCoordinates) {
+    if (!polygonCoordinates || !Array.isArray(polygonCoordinates)) {
+      return [];
+    }
+    
+    // Handle MultiPolygon or Polygon format
+    let coords = polygonCoordinates;
+    if (polygonCoordinates[0] && Array.isArray(polygonCoordinates[0][0])) {
+      // MultiPolygon - take the first polygon
+      coords = polygonCoordinates[0][0];
+    } else if (Array.isArray(polygonCoordinates[0])) {
+      // Polygon
+      coords = polygonCoordinates[0];
+    }
+    
+    // Convert [longitude, latitude] to {latitude, longitude}
+    return coords.map(coord => ({
+      latitude: coord[1],
+      longitude: coord[0]
+    }));
+  }
+
+  // Simplify polygon coordinates to improve performance
+  static simplifyPolygon(coordinates, tolerance = 0.01) {
+    if (!coordinates || coordinates.length < 3) {
+      return coordinates;
+    }
+    
+    // More aggressive simplification for better performance with many polygons
+    const targetPoints = Math.min(30, Math.max(5, Math.ceil(coordinates.length / 10)));
+    const step = Math.ceil(coordinates.length / targetPoints);
+    
+    const simplified = [];
+    for (let i = 0; i < coordinates.length; i += step) {
+      simplified.push(coordinates[i]);
+    }
+    
+    // Always include the last point to close the polygon
+    if (simplified.length > 0 && simplified[simplified.length - 1] !== coordinates[coordinates.length - 1]) {
+      simplified.push(coordinates[coordinates.length - 1]);
+    }
+    
+    return simplified;
+  }
+
+  // Get state polygon data ready for React Native Maps
+  static async getStatePolygons() {
+    const stateBoundaries = await this.getStateBoundaries();
+    const statePolygons = {};
+    
+    Object.entries(stateBoundaries).forEach(([stateName, stateData]) => {
+      const polygons = [];
+      
+      // Process each district polygon in the state
+      stateData.districts.forEach(district => {
+        if (district.coordinates) {
+          const mapCoords = this.convertToMapCoordinates(district.coordinates);
+          const simplified = this.simplifyPolygon(mapCoords);
+          if (simplified.length > 2) {
+            polygons.push(simplified);
+          }
+        }
+      });
+      
+      statePolygons[stateName] = {
+        name: stateName,
+        polygons: polygons,
+        center: stateData.center,
+        bounds: stateData.bounds,
+        districtCount: stateData.districts.length
+      };
+    });
+    
+    console.log(`✅ Processed ${Object.keys(statePolygons).length} state polygons`);
+    return statePolygons;
   }
 }
 

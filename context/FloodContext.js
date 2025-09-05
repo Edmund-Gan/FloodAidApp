@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { notificationService } from '../utils/NotificationService';
 
 export const FloodContext = createContext();
 
@@ -110,6 +111,72 @@ export const FloodProvider = ({ children }) => {
 
   const [isLoading, setIsLoading] = useState(false);
 
+  // Function to add alert with push notification
+  const addAlertWithNotification = async (alert) => {
+    setAlerts(prevAlerts => [...prevAlerts, alert]);
+    
+    // Trigger push notification based on alert severity
+    if (alert.severity === 'high' && alert.probability >= 70) {
+      await notificationService.scheduleAdvancedFloodAlert({
+        id: alert.id,
+        severity: 'urgent',
+        location: { name: alert.location || currentRisk.location },
+        riskLevel: alert.title,
+        countdownTime: alert.timeframe === '12-24 hours' ? 12 * 60 * 60 * 1000 : 2 * 60 * 60 * 1000,
+        countdownDisplay: alert.timeframe
+      });
+    } else if (alert.severity === 'medium' || alert.probability >= 50) {
+      await notificationService.scheduleAdvancedFloodAlert({
+        id: alert.id,
+        severity: 'warning',
+        location: { name: alert.location || currentRisk.location },
+        riskLevel: alert.title,
+        countdownTime: alert.timeframe === '12-24 hours' ? 12 * 60 * 60 * 1000 : 6 * 60 * 60 * 1000,
+        countdownDisplay: alert.timeframe
+      });
+    } else {
+      await notificationService.scheduleAdvancedFloodAlert({
+        id: alert.id,
+        severity: 'advisory',
+        location: { name: alert.location || currentRisk.location },
+        riskLevel: alert.title,
+        countdownTime: 24 * 60 * 60 * 1000,
+        countdownDisplay: alert.timeframe
+      });
+    }
+  };
+
+  // Function to update risk with notifications for significant changes
+  const updateCurrentRiskWithNotification = async (newRisk) => {
+    const oldRisk = currentRisk;
+    setCurrentRisk(newRisk);
+    
+    // Check if risk level has significantly changed
+    const riskIncrease = newRisk.probability - oldRisk.probability;
+    const oldRiskLevel = getRiskLevelFromProbability(oldRisk.probability);
+    const newRiskLevel = getRiskLevelFromProbability(newRisk.probability);
+    
+    if (riskIncrease >= 0.2 || (oldRiskLevel !== newRiskLevel && newRisk.probability >= 0.6)) {
+      // Send risk increase notification
+      await notificationService.sendFloodAlertUpdate({
+        id: Date.now(),
+        location: { name: newRisk.location },
+        severity: newRisk.probability >= 0.8 ? 'urgent' : 'warning',
+        riskLevel: newRiskLevel + ' Risk',
+        countdownDisplay: `${newRisk.timeToFlood.hours}h ${newRisk.timeToFlood.minutes}m remaining`
+      }, 'condition_worsened');
+    } else if (riskIncrease <= -0.2 && oldRisk.probability >= 0.6) {
+      // Send risk decrease notification
+      await notificationService.sendFloodAlertUpdate({
+        id: Date.now(),
+        location: { name: newRisk.location },
+        severity: 'advisory',
+        riskLevel: newRiskLevel + ' Risk',
+        countdownDisplay: `Conditions improving`
+      }, 'condition_improved');
+    }
+  };
+
   // Countdown timer effect
   useEffect(() => {
     const interval = setInterval(() => {
@@ -143,11 +210,14 @@ export const FloodProvider = ({ children }) => {
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Update data with slight variations to simulate real API response
-    setCurrentRisk(prev => ({
-      ...prev,
-      probability: Math.max(0.1, Math.min(0.9, prev.probability + (Math.random() - 0.5) * 0.1)),
+    const newRisk = {
+      ...currentRisk,
+      probability: Math.max(0.1, Math.min(0.9, currentRisk.probability + (Math.random() - 0.5) * 0.1)),
       lastUpdated: new Date().toISOString()
-    }));
+    };
+    
+    // Use notification-enabled risk update
+    await updateCurrentRiskWithNotification(newRisk);
     
     setWeatherSummary(prev => ({
       ...prev,
@@ -193,7 +263,9 @@ export const FloodProvider = ({ children }) => {
     setWeatherSummary,
     setRiskFactors,
     setHotspots,
-    setAlerts
+    setAlerts,
+    addAlertWithNotification,
+    updateCurrentRiskWithNotification
   };
 
   return (

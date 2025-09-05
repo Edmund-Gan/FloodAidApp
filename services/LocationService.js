@@ -297,8 +297,51 @@ class LocationService {
       
       console.log('✅ Location permission granted');
       
-      // Create the GPS acquisition promise and store it for deduplication
-      const gpsPromise = this.acquireGPSLocation(debugId, gpsConfig, progressInterval, isEmulatorDevice);
+      // Initialize tracking variables for GPS acquisition
+      let isCancelled = false;
+      let progressTimeout = null;
+      
+      // Track this request for potential cancellation
+      this.activeRequests.set(debugId, {
+        progressTimeout: null,
+        cancelCallback: () => {
+          isCancelled = true;
+          if (progressTimeout) {
+            clearInterval(progressTimeout);
+          }
+        }
+      });
+      
+      // Create the GPS acquisition promise
+      const gpsPromise = (async () => {
+        console.log(`📡 [${debugId}]: Starting GPS acquisition with ${gpsConfig.timeout}ms timeout...`);
+        
+        // Set up progress tracking
+        let progressCounter = 0;
+        progressTimeout = setInterval(() => {
+          if (!isCancelled) {
+            progressCounter++;
+            console.log(`📡 [${debugId}]: GPS acquisition in progress... (${progressCounter * progressInterval / 1000}s)`);
+          }
+        }, progressInterval);
+        
+        // Update the tracking data with the timeout reference
+        const requestData = this.activeRequests.get(debugId);
+        if (requestData) {
+          requestData.progressTimeout = progressTimeout;
+        }
+        
+        // Perform the actual GPS location request
+        const locationResult = await Location.getCurrentPositionAsync({
+          accuracy: gpsConfig.accuracy,
+          timeout: gpsConfig.timeout,
+          maximumAge: gpsConfig.maximumAge,
+          enableHighAccuracy: gpsConfig.enableHighAccuracy
+        });
+        
+        return locationResult;
+      })();
+      
       if (!skipGPS && priority !== 'background') {
         this.ongoingLocationRequest = gpsPromise;
         
@@ -319,7 +362,9 @@ class LocationService {
       }
       
       // Clean up tracking
-      clearInterval(progressTimeout);
+      if (progressTimeout) {
+        clearInterval(progressTimeout);
+      }
       this.activeRequests.delete(debugId);
       console.log(`📡 [${debugId}]: getCurrentPositionAsync() completed successfully`);
       console.log(`📡 [${debugId}]: Raw location:`, location.coords);

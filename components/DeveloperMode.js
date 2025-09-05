@@ -30,6 +30,9 @@ const DeveloperMode = ({ visible, onClose, onAlertGenerated }) => {
   const [mlAlertsEnabled, setMlAlertsEnabled] = useState(true);
   const [mlAlertThreshold, setMlAlertThreshold] = useState(60);
   
+  // Push Notification Configuration
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
+  
   // UI State
   const [activeTab, setActiveTab] = useState('probability'); // 'probability', 'scenarios', 'settings'
   const [isGeneratingAlert, setIsGeneratingAlert] = useState(false);
@@ -51,6 +54,9 @@ const DeveloperMode = ({ visible, onClose, onAlertGenerated }) => {
       const mlSettings = floodAlertService.getMLAlertSettings();
       setMlAlertsEnabled(mlSettings.enabled);
       setMlAlertThreshold(mlSettings.thresholdPercent);
+      
+      // Load push notification settings
+      setPushNotificationsEnabled(devAlertTrigger.isPushNotificationsEnabled());
     }
   }, [visible]);
 
@@ -135,6 +141,24 @@ const DeveloperMode = ({ visible, onClose, onAlertGenerated }) => {
     setAlertHistory([]);
     devAlertTrigger.clearTestAlerts();
     Alert.alert('✅ Cleared', 'Alert history cleared and all test alerts stopped');
+  };
+
+  const handlePushNotificationToggle = (enabled) => {
+    setPushNotificationsEnabled(enabled);
+    devAlertTrigger.setPushNotificationsEnabled(enabled);
+  };
+
+  const handleTestPushNotification = async () => {
+    try {
+      const success = await devAlertTrigger.sendTestPushNotification();
+      if (success) {
+        Alert.alert('✅ Test Sent', 'Push notification sent! Check your device notification center.');
+      } else {
+        Alert.alert('❌ Failed', 'Failed to send test notification. Check console for details.');
+      }
+    } catch (error) {
+      Alert.alert('❌ Error', `Error sending test notification: ${error.message}`);
+    }
   };
 
   const getProbabilityColor = (probability) => {
@@ -370,6 +394,39 @@ const DeveloperMode = ({ visible, onClose, onAlertGenerated }) => {
                 
                 <Text style={styles.thresholdDescription}>
                   Alerts will trigger when ML model predicts {mlAlertThreshold}% or higher flood probability
+                </Text>
+              </View>
+
+              {/* Push Notifications Configuration */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>📱 Push Notification Settings</Text>
+                
+                {/* Push Notifications Toggle */}
+                <View style={styles.settingRow}>
+                  <View style={styles.settingInfo}>
+                    <Text style={styles.settingTitle}>🔔 Push Notifications</Text>
+                    <Text style={styles.settingDescription}>
+                      Send actual push notifications to your phone for dev alerts
+                    </Text>
+                  </View>
+                  <Switch
+                    value={pushNotificationsEnabled}
+                    onValueChange={handlePushNotificationToggle}
+                    trackColor={{ false: '#E0E0E0', true: COLORS.PRIMARY }}
+                  />
+                </View>
+
+                {/* Test Push Notification Button */}
+                <TouchableOpacity 
+                  style={styles.testNotificationButton} 
+                  onPress={handleTestPushNotification}
+                >
+                  <Ionicons name="notifications" size={20} color="white" />
+                  <Text style={styles.testNotificationText}>Test Push Notification</Text>
+                </TouchableOpacity>
+                
+                <Text style={styles.notificationHint}>
+                  Test notifications will appear on your device's lock screen and notification center.
                 </Text>
               </View>
 
@@ -828,6 +885,29 @@ const styles = StyleSheet.create({
   pickerItemText: {
     fontSize: 16,
     color: COLORS.TEXT_PRIMARY,
+  },
+  testNotificationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginVertical: 10,
+    justifyContent: 'center',
+  },
+  testNotificationText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  notificationHint: {
+    fontSize: 12,
+    color: COLORS.TEXT_SECONDARY,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 8,
   },
 });
 

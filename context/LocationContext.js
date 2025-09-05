@@ -4,6 +4,7 @@ import LocationService from '../services/LocationService';
 import FloodPredictionModel from '../services/FloodPredictionModel';
 import floodAlertService from '../utils/FloodAlertService';
 import addressValidationService from '../services/AddressValidationService';
+import { notificationService } from '../utils/NotificationService';
 
 export const LocationContext = createContext();
 
@@ -304,7 +305,10 @@ export const LocationProvider = ({ children }) => {
     );
   };
 
-  const updateLocationRisk = (locationId, riskData) => {
+  const updateLocationRisk = async (locationId, riskData) => {
+    const location = getLocationById(locationId);
+    if (!location) return;
+
     const { probability } = riskData;
     let riskLevel, riskColor;
 
@@ -322,6 +326,35 @@ export const LocationProvider = ({ children }) => {
       riskColor = '#44AA44';
     }
 
+    // Check if risk level has significantly changed
+    const oldProbability = location.riskProbability || 0;
+    const riskIncrease = (probability || 0) - oldProbability;
+    const oldRiskLevel = getRiskLevelFromProbability(oldProbability);
+    const newRiskLevel = getRiskLevelFromProbability(probability || 0);
+    
+    // Send notifications if location has notifications enabled
+    if (location.notifications && location.alertsEnabled && probability !== null) {
+      if (riskIncrease >= 0.2 || (oldRiskLevel !== newRiskLevel && probability >= 0.6)) {
+        // Send risk increase notification
+        await notificationService.sendFloodAlertUpdate({
+          id: Date.now(),
+          location: { name: location.customLabel || location.name },
+          severity: probability >= 0.8 ? 'urgent' : 'warning',
+          riskLevel: riskLevel,
+          countdownDisplay: 'Monitor conditions'
+        }, 'condition_worsened');
+      } else if (riskIncrease <= -0.2 && oldProbability >= 0.6) {
+        // Send risk decrease notification
+        await notificationService.sendFloodAlertUpdate({
+          id: Date.now(),
+          location: { name: location.customLabel || location.name },
+          severity: 'advisory',
+          riskLevel: riskLevel,
+          countdownDisplay: 'Conditions improving'
+        }, 'condition_improved');
+      }
+    }
+
     updateLocation(locationId, {
       riskLevel,
       riskProbability: probability,
@@ -330,12 +363,19 @@ export const LocationProvider = ({ children }) => {
     });
   };
 
+  const getRiskLevelFromProbability = (probability) => {
+    if (probability >= 0.8) return 'Very High';
+    if (probability >= 0.6) return 'High';
+    if (probability >= 0.3) return 'Moderate';
+    return 'Low';
+  };
+
   const refreshAllLocationRisks = async () => {
     // Simulate API calls to update risk for all locations
     for (const location of monitoredLocations) {
       // Simulate varying risk levels
       const probability = Math.max(0.1, Math.min(0.9, location.riskProbability + (Math.random() - 0.5) * 0.2));
-      updateLocationRisk(location.id, { probability });
+      await updateLocationRisk(location.id, { probability });
       
       // Add small delay to simulate real API calls
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -395,7 +435,7 @@ export const LocationProvider = ({ children }) => {
         location: location
       }));
       
-      updateLocationRisk(location.id, { isMonitoring: true });
+      await updateLocationRisk(location.id, { isMonitoring: true });
       
     } catch (error) {
       console.error(`Failed to start monitoring for ${location.name}:`, error);
@@ -407,7 +447,7 @@ export const LocationProvider = ({ children }) => {
     }
   };
 
-  const stopLocationMonitoring = (location) => {
+  const stopLocationMonitoring = async (location) => {
     if (!location.coordinates) return;
     
     const locationKey = `${location.coordinates.latitude}_${location.coordinates.longitude}`;
@@ -428,7 +468,7 @@ export const LocationProvider = ({ children }) => {
       return newMap;
     });
     
-    updateLocationRisk(location.id, { isMonitoring: false });
+    await updateLocationRisk(location.id, { isMonitoring: false });
   };
 
   const refreshLocationRisk = async (locationId) => {
@@ -454,7 +494,7 @@ export const LocationProvider = ({ children }) => {
           modelInfo: floodRisk.model_info
         };
         
-        updateLocationRisk(locationId, riskData);
+        await updateLocationRisk(locationId, riskData);
         return riskData;
       } else {
         const naData = {
@@ -464,7 +504,7 @@ export const LocationProvider = ({ children }) => {
           lastPredictionUpdate: new Date().toISOString(),
           error: 'Prediction unavailable'
         };
-        updateLocationRisk(locationId, naData);
+        await updateLocationRisk(locationId, naData);
         return naData;
       }
     } catch (error) {
@@ -476,7 +516,7 @@ export const LocationProvider = ({ children }) => {
         lastPredictionUpdate: new Date().toISOString(),
         error: error.message
       };
-      updateLocationRisk(locationId, errorData);
+      await updateLocationRisk(locationId, errorData);
       return errorData;
     }
   };
