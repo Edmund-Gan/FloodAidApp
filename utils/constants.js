@@ -1,4 +1,5 @@
 // FloodAid App Constants
+import Constants from 'expo-constants';
 
 // Colors
 export const COLORS = {
@@ -155,7 +156,7 @@ export const RIVER_LEVEL_THRESHOLDS = {
 export const API_CONFIG = {
   TIMEOUT: 10000,
   RETRY_ATTEMPTS: 3,
-  GOOGLE_MAPS_API_KEY: 'AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM',
+  GOOGLE_MAPS_API_KEY: Constants.expoConfig?.extra?.googleMapsApiKey || 'fallback-key-not-configured',
 };
 
 // Notification Types
