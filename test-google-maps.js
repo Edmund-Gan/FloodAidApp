@@ -5,7 +5,7 @@
 
 const https = require('https');
 
-const API_KEY = 'AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM';
+const API_KEY = process.env.GOOGLE_MAPS_API_KEY || 'YOUR_TEST_API_KEY_HERE';
 
 // Test 1: Static Maps API (should work if key is valid and billing enabled)
 const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=3.1390,101.6869&zoom=10&size=400x400&key=${API_KEY}`;

@@ -23,7 +23,7 @@
         "NSLocationAlwaysUsageDescription": "FloodAid needs your location to monitor flood risks and send you timely alerts."
       },
       "config": {
-        "googleMapsApiKey": "AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM"
+        "googleMapsApiKey": "YOUR_IOS_GOOGLE_MAPS_API_KEY_HERE"
       }
     },
     "android": {
@@ -41,7 +41,7 @@
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM"
+          "apiKey": "YOUR_ANDROID_GOOGLE_MAPS_API_KEY_HERE"
         }
       }
     },
@@ -61,7 +61,7 @@
     ],
     "extra": {
       "openMeteoApiUrl": "https://api.open-meteo.com/v1",
-      "googleMapsApiKey": "AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM"
+      "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY_HERE"
     }
   }
 }

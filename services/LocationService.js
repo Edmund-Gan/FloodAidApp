@@ -5,7 +5,9 @@ import Constants from 'expo-constants';
 import LocationCache from './LocationCache';
 
 // Google Maps API Key from app configuration
-const GOOGLE_MAPS_API_KEY = 'AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM';
+const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.googleMapsApiKey || 
+                            Constants.manifest?.extra?.googleMapsApiKey ||
+                            'YOUR_API_KEY_HERE';
 
 class LocationService {
   // Static tracking for active GPS requests

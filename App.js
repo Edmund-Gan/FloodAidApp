@@ -55,7 +55,7 @@ const Tab = createBottomTabNavigator();
 // Google Maps API Key Configuration
 const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.googleMapsApiKey || 
                             Constants.manifest?.extra?.googleMapsApiKey ||
-                            'AIzaSyC-0v96Q4G43rh8tuLfzTaACTfVA-oSwGM';
+                            'YOUR_API_KEY_HERE';
 
 
 
