@@ -17,12 +17,13 @@ import { FloodContext } from '../context/FloodContext';
 import { LocationContext } from '../context/LocationContext';
 import { UserContext } from '../context/UserContext';
 import { COLORS } from '../utils/constants';
-import { 
-  formatTimeRemaining, 
-  formatProbability, 
+import {
+  formatTimeRemaining,
+  formatProbability,
   getTimeBasedGradient,
-  formatDateTime 
+  formatDateTime
 } from '../utils/helpers';
+import LocationInputModal from '../components/LocationInputModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -37,7 +38,15 @@ export default function ForecastScreen({ navigation }) {
     getRiskColor 
   } = useContext(FloodContext);
   
-  const { currentLocation, getCurrentLocation } = useContext(LocationContext);
+  const {
+    currentLocation,
+    getCurrentLocation,
+    getLocationSourceName,
+    requestManualLocation,
+    showLocationInput,
+    handleManualLocationSelected,
+    setShowLocationInput
+  } = useContext(LocationContext);
   const { userProfile, logFeatureUsage } = useContext(UserContext);
   
   const [refreshing, setRefreshing] = useState(false);
@@ -126,6 +135,20 @@ export default function ForecastScreen({ navigation }) {
             <View style={styles.titleSection}>
               <Text style={styles.screenTitle}>Forecast</Text>
               <Text style={styles.locationText}>{currentRisk.location}</Text>
+
+              {/* Location Source and Manual Input */}
+              <View style={styles.locationControls}>
+                <Text style={styles.locationSource}>
+                  Source: {getLocationSourceName()}
+                </Text>
+                <TouchableOpacity
+                  style={styles.manualLocationButton}
+                  onPress={requestManualLocation}
+                >
+                  <Ionicons name="location" size={16} color={COLORS.PRIMARY} />
+                  <Text style={styles.manualLocationText}>Set Location</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Main Forecast Card */}
@@ -318,6 +341,13 @@ export default function ForecastScreen({ navigation }) {
           </View>
         </LinearGradient>
       </ScrollView>
+
+      {/* Manual Location Input Modal */}
+      <LocationInputModal
+        visible={showLocationInput}
+        onClose={() => setShowLocationInput(false)}
+        onLocationSelected={handleManualLocationSelected}
+      />
     </View>
   );
 }
@@ -373,6 +403,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'rgba(255,255,255,0.8)',
     textAlign: 'center',
+  },
+  locationControls: {
+    marginTop: 15,
+    alignItems: 'center',
+  },
+  locationSource: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    marginBottom: 8,
+  },
+  manualLocationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  manualLocationText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 4,
   },
   forecastCard: {
     borderRadius: 20,

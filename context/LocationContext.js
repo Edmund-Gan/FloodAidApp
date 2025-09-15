@@ -1,6 +1,10 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LocationService from '../services/LocationService';
+import FusedLocationProvider from '../services/FusedLocationProvider';
+import IPGeolocationService from '../services/IPGeolocationService';
+import LocationCache from '../services/LocationCache';
+import ManualLocationService from '../services/ManualLocationService';
 import FloodPredictionModel from '../services/FloodPredictionModel';
 import floodAlertService from '../utils/FloodAlertService';
 import addressValidationService from '../services/AddressValidationService';
@@ -15,6 +19,9 @@ export const LocationProvider = ({ children }) => {
   const [activeAlerts, setActiveAlerts] = useState(new Map());
   const [alertsByLocation, setAlertsByLocation] = useState(new Map());
   const [monitoringStatus, setMonitoringStatus] = useState(new Map());
+  const [locationMode, setLocationMode] = useState('auto'); // 'auto' or 'manual'
+  const [showLocationInput, setShowLocationInput] = useState(false);
+  const [isManualLocationSet, setIsManualLocationSet] = useState(false);
   const [monitoredLocations, setMonitoredLocations] = useState([
     {
       id: 1,
@@ -90,12 +97,38 @@ export const LocationProvider = ({ children }) => {
     }
   ]);
 
-  // Load monitored locations from AsyncStorage on component mount
+  // Load monitored locations and manual preferences on component mount
   useEffect(() => {
     loadMonitoredLocations();
+    loadLocationPreferences();
     requestLocationPermission();
     initializeMultiLocationMonitoring();
   }, []);
+
+  // Load manual location preferences
+  const loadLocationPreferences = async () => {
+    try {
+      const preference = await ManualLocationService.getLocationPreference();
+      if (preference && preference.mode === 'manual' && preference.location) {
+        console.log('📍 Loading manual location preference');
+        setLocationMode('manual');
+        setIsManualLocationSet(true);
+        setCurrentLocation({
+          latitude: preference.location.lat,
+          longitude: preference.location.lon,
+          accuracy: preference.location.accuracy,
+          timestamp: new Date(preference.location.timestamp).toISOString(),
+          source: 'MANUAL_PREFERENCE',
+          address: preference.location.address,
+          isCached: false,
+          isDefault: false,
+          isManual: true
+        });
+      }
+    } catch (error) {
+      console.error('Error loading location preferences:', error);
+    }
+  };
 
   // Save monitored locations to AsyncStorage whenever they change
   useEffect(() => {
@@ -168,15 +201,29 @@ export const LocationProvider = ({ children }) => {
     }
   };
 
-  const getCurrentLocation = async (skipGPS = false, useRetry = true) => {
+  const getCurrentLocation = async (skipGPS = false, priority = 'balanced') => {
     try {
-      console.log(`📍 LocationContext: Getting current location (skipGPS: ${skipGPS}, useRetry: ${useRetry})`);
-      
-      // Use LocationService's enhanced retry logic or fallback to original method
-      const location = useRetry ? 
-        await LocationService.getCurrentLocationWithRetry(skipGPS, 3) :
-        await LocationService.getCurrentLocationWithMalaysiaCheck(skipGPS);
-      
+      console.log(`📍 LocationContext: Getting current location (skipGPS: ${skipGPS}, priority: ${priority})`);
+
+      let location;
+
+      if (skipGPS) {
+        // Use immediate location methods only
+        location = await LocationService.getImmediateLocation(Date.now());
+      } else {
+        // Use enhanced hybrid approach based on priority
+        switch (priority) {
+          case 'speed':
+            location = await LocationService.getBestAvailableLocation({ priority: 'speed' });
+            break;
+          case 'accuracy':
+            location = await LocationService.getBestAvailableLocation({ priority: 'accuracy' });
+            break;
+          default:
+            location = await LocationService.getCurrentLocationWithRetry(false);
+        }
+      }
+
       if (location) {
         console.log('📍 LocationContext: Location obtained successfully');
         setLocationPermission('granted');
@@ -188,24 +235,31 @@ export const LocationProvider = ({ children }) => {
           isCached: location.isCached || false,
           isDefault: location.isDefault || false,
           isRedirected: location.isRedirected || false,
+          source: location.source || 'unknown',
+          confidence: location.confidence || null,
           debugId: location.debugId
         });
-        
+
+        // Setup enhancement callback if location might be improved
+        if (!skipGPS && (location.source === 'IP_GEOLOCATION' || location.isCached)) {
+          setupLocationEnhancement(location);
+        }
+
         return location;
       } else {
-        throw new Error('LocationService returned null location');
+        throw new Error('All location methods returned null');
       }
     } catch (error) {
       console.error('❌ LocationContext: Error getting current location:', error);
-      
+
       // Get user-friendly error message
       const friendlyError = LocationService.getLocationErrorMessage(error);
       setLocationError(friendlyError);
       console.log(`💬 LocationContext: Setting user-friendly error: ${friendlyError.title}`);
-      
+
       // Try to get cached location as fallback
-      const cachedLocation = await LocationService.getCachedLocation();
-      if (cachedLocation) {
+      try {
+        const cachedLocation = await LocationService.getCachedLocation();
         console.log('📍 LocationContext: Using cached location as fallback');
         setCurrentLocation({
           latitude: cachedLocation.lat,
@@ -215,16 +269,141 @@ export const LocationProvider = ({ children }) => {
           isCached: true,
           isDefault: cachedLocation.isDefault || false
         });
-        
+
         // Clear error since we have a fallback location
         setLocationError(null);
         return cachedLocation;
+      } catch (cacheError) {
+        console.log('❌ LocationContext: No cached location available either');
       }
-      
-      // No fallback available, keep the error
-      console.error('❌ LocationContext: No fallback location available');
+
+      // No automatic location available - prompt for manual input
+      console.log('📍 LocationContext: Prompting for manual location input');
+      setShowLocationInput(true);
       throw error;
     }
+  };
+
+  // Setup progressive location enhancement
+  const setupLocationEnhancement = (initialLocation) => {
+    console.log('🔄 LocationContext: Setting up location enhancement...');
+
+    const enhancementCallback = (enhancedLocation) => {
+      console.log('📍 LocationContext: Received location enhancement:', {
+        source: enhancedLocation.source,
+        accuracy: enhancedLocation.accuracy,
+        confidence: enhancedLocation.confidence
+      });
+
+      // Update current location with enhanced data
+      setCurrentLocation(prevLocation => {
+        // Only update if this is actually better
+        if (!prevLocation || enhancedLocation.confidence > (prevLocation.confidence || 0)) {
+          return {
+            latitude: enhancedLocation.lat,
+            longitude: enhancedLocation.lon,
+            accuracy: enhancedLocation.accuracy,
+            timestamp: enhancedLocation.timestamp ? new Date(enhancedLocation.timestamp).toISOString() : new Date().toISOString(),
+            isCached: enhancedLocation.isCached || false,
+            isDefault: enhancedLocation.isDefault || false,
+            isRedirected: enhancedLocation.isRedirected || false,
+            source: enhancedLocation.source || 'enhanced',
+            confidence: enhancedLocation.confidence || null,
+            debugId: enhancedLocation.debugId,
+            isEnhanced: true
+          };
+        }
+        return prevLocation;
+      });
+    };
+
+    // Add to cache enhancement callbacks
+    LocationCache.addEnhancementCallback(enhancementCallback);
+
+    // Clean up callback after 2 minutes
+    setTimeout(() => {
+      LocationCache.removeEnhancementCallback(enhancementCallback);
+      console.log('🔄 LocationContext: Enhancement callback cleaned up');
+    }, 120000);
+  };
+
+  // Handle manual location input
+  const handleManualLocationSelected = async (manualLocation) => {
+    try {
+      console.log('📍 LocationContext: Manual location selected:', manualLocation.address);
+
+      // Set the location in context
+      setCurrentLocation({
+        latitude: manualLocation.lat,
+        longitude: manualLocation.lon,
+        accuracy: manualLocation.accuracy,
+        timestamp: new Date(manualLocation.timestamp).toISOString(),
+        source: manualLocation.source,
+        address: manualLocation.address,
+        isCached: false,
+        isDefault: false,
+        isManual: true
+      });
+
+      // Cache the manual location
+      await LocationCache.cacheLocation(manualLocation);
+
+      // Clear any location errors
+      setLocationError(null);
+      setIsManualLocationSet(true);
+
+      // Hide the location input modal
+      setShowLocationInput(false);
+
+      console.log('✅ LocationContext: Manual location set successfully');
+      return manualLocation;
+
+    } catch (error) {
+      console.error('❌ LocationContext: Error setting manual location:', error);
+      throw error;
+    }
+  };
+
+  // Switch location mode
+  const setLocationModePreference = async (mode) => {
+    try {
+      setLocationMode(mode);
+
+      if (mode === 'manual') {
+        // Show manual location input
+        setShowLocationInput(true);
+      } else {
+        // Switch back to auto mode
+        setIsManualLocationSet(false);
+        await ManualLocationService.clearLocationPreference();
+
+        // Try to get automatic location
+        try {
+          await getCurrentLocation(false, 'balanced');
+        } catch (error) {
+          console.log('Auto location failed, keeping manual mode');
+          setLocationMode('manual');
+        }
+      }
+    } catch (error) {
+      console.error('Error switching location mode:', error);
+    }
+  };
+
+  // Force manual location input
+  const requestManualLocation = () => {
+    setShowLocationInput(true);
+  };
+
+  // Get current location source display name
+  const getLocationSourceName = () => {
+    if (!currentLocation) return 'No Location';
+
+    if (currentLocation.isManual || LocationCache.isManualLocation(currentLocation)) {
+      return LocationCache.getSourceDisplayName(currentLocation.source);
+    }
+
+    return LocationCache.getSourceDisplayName(currentLocation.source) || 'Automatic';
   };
 
   const addLocation = async (newLocation) => {
@@ -624,7 +803,10 @@ export const LocationProvider = ({ children }) => {
     activeAlerts,
     alertsByLocation,
     monitoringStatus,
-    
+    locationMode,
+    showLocationInput,
+    isManualLocationSet,
+
     // Original functions
     addLocation,
     updateLocation,
@@ -637,7 +819,14 @@ export const LocationProvider = ({ children }) => {
     getLocationById,
     getHighRiskLocations,
     clearLocationError: () => setLocationError(null),
-    
+
+    // Manual location functions
+    handleManualLocationSelected,
+    setLocationModePreference,
+    requestManualLocation,
+    getLocationSourceName,
+    setShowLocationInput,
+
     // New multi-location functions
     startLocationMonitoring,
     stopLocationMonitoring,

@@ -9,10 +9,14 @@ class LocationCache {
   // Cache validity periods (in milliseconds)
   static CACHE_PERIODS = {
     ULTRA_FRESH: 5 * 1000,        // 5 seconds - for rapid successive calls
-    FRESH: 2 * 60 * 1000,         // 2 minutes - for normal operations  
+    FRESH: 2 * 60 * 1000,         // 2 minutes - for normal operations
     VALID: 10 * 60 * 1000,        // 10 minutes - for background operations
     STALE_ACCEPTABLE: 30 * 60 * 1000  // 30 minutes - for offline/poor GPS
   };
+
+  // Progressive enhancement tracking
+  static enhancementCallbacks = new Set();
+  static lastEnhancement = null;
 
   // Malaysian state coordinate boundaries (optimized ranges)
   static STATE_BOUNDARIES = {
@@ -116,16 +120,115 @@ class LocationCache {
       timestamp: now
     };
 
+    // Check if this is an enhancement (better accuracy/newer source)
+    const isEnhancement = this.isLocationEnhancement(cacheData);
+
     // Store in memory cache
     this.memoryCache.set('location_current', cacheData);
 
     // Store in AsyncStorage
     try {
       await AsyncStorage.setItem('cached_location', JSON.stringify(cacheData));
-      console.log('📦 Location cached in memory and storage');
+      console.log(`📦 Location cached in memory and storage${isEnhancement ? ' (enhancement)' : ''}`);
+
+      // Notify enhancement callbacks if this is an improvement
+      if (isEnhancement) {
+        this.notifyEnhancementCallbacks(cacheData);
+        this.lastEnhancement = cacheData;
+      }
     } catch (error) {
       console.error('Error caching location:', error);
     }
+  }
+
+  /**
+   * Check if new location is an enhancement over current cached location
+   */
+  static isLocationEnhancement(newLocation) {
+    const current = this.memoryCache.get('location_current');
+    if (!current) return true;
+
+    // Consider it an enhancement if:
+    // 1. Better accuracy (lower accuracy value)
+    // 2. More recent timestamp
+    // 3. Higher confidence source
+    // 4. Fused location with multiple sources
+
+    const sourceWeights = {
+      'MANUAL_SELECTED': 15,     // User-selected locations have highest priority
+      'MANUAL_GEOCODED': 14,     // Geocoded manual addresses
+      'GPS_ACCURATE': 12,
+      'FUSED': 11,
+      'GPS': 10,
+      'MANUAL_SUGGESTION': 8,    // Pre-defined location suggestions
+      'NETWORK': 6,
+      'IP_GEOLOCATION': 4,
+      'MANUAL_REUSED': 3,        // Previously used manual locations
+      'CACHED': 2
+    };
+
+    const currentWeight = sourceWeights[current.source] || 5;
+    const newWeight = sourceWeights[newLocation.source] || 5;
+
+    // Better source type
+    if (newWeight > currentWeight) return true;
+
+    // Same source type but better accuracy
+    if (newWeight === currentWeight) {
+      if (newLocation.accuracy && current.accuracy) {
+        return newLocation.accuracy < current.accuracy;
+      }
+
+      // More recent for same source
+      if (newLocation.timestamp > current.timestamp + 60000) { // 1 minute newer
+        return true;
+      }
+    }
+
+    // Fused location with multiple sources
+    if (newLocation.isFused && newLocation.sourceCount > 1) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Add callback for location enhancements
+   */
+  static addEnhancementCallback(callback) {
+    if (typeof callback !== 'function') {
+      throw new Error('Enhancement callback must be a function');
+    }
+    this.enhancementCallbacks.add(callback);
+    console.log(`📍 Added location enhancement callback (${this.enhancementCallbacks.size} total)`);
+  }
+
+  /**
+   * Remove enhancement callback
+   */
+  static removeEnhancementCallback(callback) {
+    const removed = this.enhancementCallbacks.delete(callback);
+    if (removed) {
+      console.log(`📍 Removed location enhancement callback (${this.enhancementCallbacks.size} remaining)`);
+    }
+  }
+
+  /**
+   * Notify all enhancement callbacks
+   */
+  static notifyEnhancementCallbacks(enhancedLocation) {
+    if (this.enhancementCallbacks.size === 0) return;
+
+    console.log(`📍 Notifying ${this.enhancementCallbacks.size} enhancement callbacks`);
+
+    this.enhancementCallbacks.forEach(callback => {
+      try {
+        callback(enhancedLocation);
+      } catch (error) {
+        console.error('Error in enhancement callback:', error);
+      }
+    });
   }
 
   /**
@@ -248,14 +351,92 @@ class LocationCache {
   }
 
   /**
-   * Clear all caches
+   * Check if location is from manual input
+   */
+  static isManualLocation(location) {
+    if (!location || !location.source) return false;
+
+    const manualSources = [
+      'MANUAL_SELECTED',
+      'MANUAL_GEOCODED',
+      'MANUAL_SUGGESTION',
+      'MANUAL_REUSED'
+    ];
+
+    return manualSources.includes(location.source);
+  }
+
+  /**
+   * Get location source display name
+   */
+  static getSourceDisplayName(source) {
+    const sourceNames = {
+      'MANUAL_SELECTED': 'Manually Selected',
+      'MANUAL_GEOCODED': 'Address Search',
+      'MANUAL_SUGGESTION': 'Quick Select',
+      'MANUAL_REUSED': 'Previous Location',
+      'GPS_ACCURATE': 'High-Accuracy GPS',
+      'GPS': 'GPS',
+      'FUSED': 'Multiple Sources',
+      'NETWORK': 'Network Location',
+      'IP_GEOLOCATION': 'IP Location',
+      'CACHED': 'Cached Location'
+    };
+
+    return sourceNames[source] || 'Unknown Source';
+  }
+
+  /**
+   * Store manual location preference
+   */
+  static async storeManualLocationPreference(location) {
+    try {
+      await AsyncStorage.setItem('manual_location_preference', JSON.stringify({
+        ...location,
+        storedAt: Date.now()
+      }));
+      console.log('💾 Manual location preference stored');
+    } catch (error) {
+      console.error('Error storing manual location preference:', error);
+    }
+  }
+
+  /**
+   * Get manual location preference
+   */
+  static async getManualLocationPreference() {
+    try {
+      const stored = await AsyncStorage.getItem('manual_location_preference');
+      if (stored) {
+        const preference = JSON.parse(stored);
+        // Check if preference is less than 30 days old
+        const age = Date.now() - preference.storedAt;
+        if (age < 30 * 24 * 60 * 60 * 1000) {
+          console.log('📖 Retrieved manual location preference');
+          return preference;
+        } else {
+          console.log('⏰ Manual location preference expired, removing');
+          await AsyncStorage.removeItem('manual_location_preference');
+        }
+      }
+    } catch (error) {
+      console.error('Error retrieving manual location preference:', error);
+    }
+    return null;
+  }
+
+  /**
+   * Clear all caches including manual preferences
    */
   static clearAllCaches() {
     this.memoryCache.clear();
     this.stateCache.clear();
     this.requestCache.clear();
+    this.enhancementCallbacks.clear();
+    this.lastEnhancement = null;
     AsyncStorage.removeItem('cached_location');
-    console.log('🗑️ All caches cleared');
+    AsyncStorage.removeItem('manual_location_preference');
+    console.log('🗑️ All caches and manual preferences cleared');
   }
 }
 

@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git pull:*)",
+      "Bash(git add:*)",
+      "Bash(echo $ANDROID_HOME)",
+      "Read(//Applications/**)",
+      "Read(//Users/edmundgan/Library/Android/sdk/**)",
+      "Bash(echo $PATH)",
+      "Read(//Users/edmundgan/**)",
+      "Bash(~/Library/Android/sdk/emulator/emulator -list-avds)",
+      "Bash(source:*)",
+      "Bash(ls:*)",
+      "Bash(export ANDROID_HOME=$HOME/Library/Android/sdk)",
+      "Bash(export PATH=$PATH:$ANDROID_HOME/platform-tools)",
+      "Bash(export PATH=$PATH:$ANDROID_HOME/emulator)",
+      "Bash(emulator:*)",
+      "Bash(adb:*)",
+      "Bash(npm run android:*)",
+      "Bash(chmod:*)",
+      "Bash(export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator)",
+      "Bash(java:*)",
+      "Bash(/usr/libexec/java_home:*)",
+      "Read(//Library/Java/JavaVirtualMachines/**)",
+      "Bash(echo $JAVA_HOME)",
+      "Bash(brew:*)",
+      "Bash(export JAVA_HOME=\"/opt/homebrew/opt/openjdk@17\")",
+      "Bash(export PATH=\"$JAVA_HOME/bin:$PATH\")",
+      "Bash(ulimit:*)",
+      "Bash(sysctl:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

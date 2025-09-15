@@ -3,6 +3,8 @@ import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import LocationCache from './LocationCache';
+import FusedLocationProvider from './FusedLocationProvider';
+import IPGeolocationService from './IPGeolocationService';
 
 // Google Maps API Key from app configuration
 const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.googleMapsApiKey || 
@@ -286,7 +288,7 @@ class LocationService {
     // Generic GPS failure with enhanced context
     return {
       title: 'GPS Unavailable',
-      message: 'Unable to determine your exact location. Using fallback location for flood predictions.',
+      message: 'Unable to determine your exact location. Please provide your location manually for accurate flood predictions.',
       suggestion: 'Try moving to an open area, check location permissions, or restart the app. If in emulator, try using a physical device for testing.',
       isRecoverable: true,
       retryRecommended: true
@@ -294,74 +296,135 @@ class LocationService {
   }
   
   /**
-   * Get user's current GPS location with progressive retry logic
+   * Get user's current location using hybrid approach with progressive enhancement
    */
   static async getCurrentLocationWithRetry(skipGPS = false, maxRetries = 3) {
-    const priorities = ['fast', 'normal', 'thorough'];
     const debugId = Date.now();
-    
-    console.log(`📍 LocationService [${debugId}]: Starting GPS with retry logic (maxRetries: ${maxRetries})`);
-    
-    if (skipGPS) {
-      return this.getCurrentLocation(true, 'fast');
-    }
-    
-    for (let attempt = 0; attempt < maxRetries && attempt < priorities.length; attempt++) {
-      const priority = priorities[attempt];
-      console.log(`📍 [${debugId}]: GPS attempt ${attempt + 1}/${maxRetries} with ${priority} priority`);
-      
-      try {
-        const result = await this.getCurrentLocation(false, priority);
-        console.log(`SUCCESS [${debugId}]: GPS succeeded on attempt ${attempt + 1} with ${priority} priority`);
-        return result;
-        
-      } catch (error) {
-        console.log(`RETRY [${debugId}]: GPS attempt ${attempt + 1} failed with ${priority} priority: ${error.message}`);
-        
-        // If this is not the last attempt, continue to next priority level
-        if (attempt < maxRetries - 1 && attempt < priorities.length - 1) {
-          console.log(`RETRY [${debugId}]: Retrying with higher priority level...`);
-          
-          // Wait a short time before retry to allow GPS to stabilize
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          continue;
-        }
-        
-        // Last attempt failed, fall back to cached/default
-        console.log(`FALLBACK [${debugId}]: All GPS attempts failed, using cached/default location`);
-        
-        // Try cached location
-        const cachedLocation = await this.getCachedLocation();
-        if (cachedLocation) {
-          console.log(`FALLBACK [${debugId}]: Using cached location`);
-          return {
-            ...cachedLocation,
-            isCached: true,
-            debugId,
-            fallbackReason: 'GPS retries exhausted'
-          };
-        }
-        
-        // Ultimate fallback
-        console.log(`FALLBACK [${debugId}]: Using default Puchong coordinates`);
-        const defaultLocation = {
-          lat: 3.0738,
-          lon: 101.5183,
-          accuracy: null,
-          timestamp: Date.now(),
-          isDefault: true,
-          debugId,
-          fallbackReason: 'GPS and cache unavailable'
-        };
-        
-        await this.cacheLocation(defaultLocation);
-        return defaultLocation;
+    console.log(`📍 LocationService [${debugId}]: Starting hybrid location request (skipGPS: ${skipGPS})`);
+
+    try {
+      if (skipGPS) {
+        // Return immediate location without GPS
+        return await this.getImmediateLocation(debugId);
       }
+
+      // Progressive enhancement strategy:
+      // 1. Return immediate location (IP/cache)
+      // 2. Start GPS in background
+      // 3. Update when GPS available
+
+      const immediateLocation = await this.getImmediateLocation(debugId);
+
+      // Start GPS enhancement in background (don't await)
+      this.enhanceLocationInBackground(immediateLocation, debugId).catch(error => {
+        console.log(`📍 [${debugId}]: Background GPS enhancement failed: ${error.message}`);
+      });
+
+      return immediateLocation;
+
+    } catch (error) {
+      console.error(`❌ [${debugId}]: Hybrid location failed:`, error.message);
+
+      // No more fallbacks - throw error to prompt manual input
+      throw new Error('All automatic location methods failed. Manual location input required.');
+    }
+  }
+
+  /**
+   * Get immediate location using fastest available method
+   */
+  static async getImmediateLocation(debugId) {
+    console.log(`⚡ [${debugId}]: Getting immediate location...`);
+
+    // Try cache first (fastest - < 10ms)
+    const cached = await LocationCache.getLocationFromCache('FRESH');
+    if (cached) {
+      console.log(`⚡ [${debugId}]: Using fresh cached location`);
+      return { ...cached, debugId, source: 'CACHE_IMMEDIATE' };
+    }
+
+    // Try IP geolocation (fast - 1-3s)
+    try {
+      const ipLocation = await IPGeolocationService.getQuickLocation();
+      if (ipLocation && ipLocation.lat && ipLocation.lon) {
+        console.log(`⚡ [${debugId}]: Using quick IP location`);
+
+        // Validate and cache
+        const validatedLocation = await IPGeolocationService.validateLocationInMalaysia(ipLocation);
+        await LocationCache.cacheLocation(validatedLocation);
+
+        return { ...validatedLocation, debugId, source: 'IP_IMMEDIATE' };
+      }
+    } catch (error) {
+      console.log(`⚡ [${debugId}]: Quick IP location failed: ${error.message}`);
+    }
+
+    // Try stale cache (better than nothing)
+    const staleCache = await LocationCache.getLocationFromCache('STALE_ACCEPTABLE');
+    if (staleCache) {
+      console.log(`⚡ [${debugId}]: Using stale cached location`);
+      return { ...staleCache, debugId, source: 'CACHE_STALE' };
+    }
+
+    // Default location
+    console.log(`⚡ [${debugId}]: Using default location`);
+    return {
+      lat: 3.0738,
+      lon: 101.5183,
+      accuracy: null,
+      timestamp: Date.now(),
+      isDefault: true,
+      debugId,
+      source: 'DEFAULT_IMMEDIATE'
+    };
+  }
+
+  /**
+   * Enhance location accuracy in background using GPS/Fused provider
+   */
+  static async enhanceLocationInBackground(immediateLocation, debugId) {
+    console.log(`🔄 [${debugId}]: Starting background location enhancement...`);
+
+    try {
+      // Use FusedLocationProvider for better reliability
+      const enhancedLocation = await FusedLocationProvider.getLocation({
+        priority: 'balanced',
+        timeout: 8000,
+        enableHighAccuracy: false
+      });
+
+      if (enhancedLocation && enhancedLocation.lat && enhancedLocation.lon) {
+        console.log(`✅ [${debugId}]: Background enhancement successful`);
+
+        // Cache the enhanced location
+        await LocationCache.cacheLocation({
+          ...enhancedLocation,
+          timestamp: Date.now(),
+          enhancedFrom: immediateLocation.source
+        });
+
+        // Trigger location update callback if available
+        if (this.backgroundLocationCallbacks.size > 0) {
+          this.backgroundLocationCallbacks.forEach(callback => {
+            try {
+              callback(enhancedLocation);
+            } catch (error) {
+              console.error('Error in background location callback:', error);
+            }
+          });
+        }
+
+        return enhancedLocation;
+      }
+    } catch (error) {
+      console.log(`🔄 [${debugId}]: Background enhancement failed: ${error.message}`);
+      throw error;
     }
   }
 
   /**
    * Get user's current GPS location with optimized caching and request deduplication
+   * @deprecated Use getCurrentLocationWithRetry or manual location input instead
    */
   static async getCurrentLocation(skipGPS = false, priority = 'normal') {
     const debugId = Date.now();
@@ -371,13 +434,15 @@ class LocationService {
     console.log(`📍 LocationService [${debugId}]: ${skipGPS ? 'SKIPPING GPS' : 'Requesting location'} (priority: ${priority})...`);
     
     // Check for ongoing request and return same promise for deduplication
-    if (!skipGPS && this.ongoingLocationRequest && priority !== 'high') {
+    if (!skipGPS && this.ongoingLocationRequest && priority !== 'thorough') {
       console.log(`⏳ [${debugId}]: Joining ongoing GPS request...`);
       try {
         const result = await this.ongoingLocationRequest;
         return { ...result, debugId, isDeduplicated: true };
       } catch (error) {
         console.log(`⚠️ [${debugId}]: Ongoing request failed, starting new one`);
+        // Clear the failed ongoing request
+        this.ongoingLocationRequest = null;
       }
     }
     
@@ -395,14 +460,27 @@ class LocationService {
       }
     }
     
-    // Allow concurrent requests but limit high priority ones
-    if (this.activeRequests.size > 0 && priority === 'thorough') {
-      console.log(`🚫 [${debugId}]: Cancelling ${this.activeRequests.size} existing requests for high priority GPS...`);
-      this.cancelAllRequests();
-    } else if (this.activeRequests.size >= 3) {
-      console.log(`🚫 [${debugId}]: Too many concurrent GPS requests (${this.activeRequests.size}), cancelling oldest...`);
-      const oldestRequest = this.activeRequests.keys().next().value;
-      this.cancelRequest(oldestRequest);
+    // Better request management to prevent duplicates
+    if (this.activeRequests.size > 0) {
+      if (priority === 'thorough') {
+        console.log(`🚫 [${debugId}]: Cancelling ${this.activeRequests.size} existing requests for high priority GPS...`);
+        this.cancelAllRequests();
+      } else if (this.activeRequests.size >= 2) {
+        console.log(`🚫 [${debugId}]: Too many concurrent GPS requests (${this.activeRequests.size}), cancelling oldest...`);
+        const oldestRequest = this.activeRequests.keys().next().value;
+        this.cancelRequest(oldestRequest);
+      } else {
+        // If there's already a request of same or higher priority, wait for it
+        const existingRequests = Array.from(this.activeRequests.keys());
+        if (existingRequests.length > 0) {
+          console.log(`⏳ [${debugId}]: Waiting for existing GPS request to complete...`);
+          // Return cached location instead of starting another GPS request
+          const cachedLocation = await this.getCachedLocation();
+          if (cachedLocation) {
+            return { ...cachedLocation, debugId, isFromWaiting: true };
+          }
+        }
+      }
     }
     
     // Skip GPS if requested - immediately return cached or default location
@@ -421,40 +499,29 @@ class LocationService {
         };
       }
       
-      // Fallback to default Puchong location
-      console.log(`🏠 [${debugId}]: No cached location, using default Puchong coordinates`);
-      const defaultLocation = {
-        lat: 3.0738,
-        lon: 101.5183,
-        accuracy: null,
-        timestamp: Date.now(),
-        isDefault: true,
-        isSkippedGPS: true,
-        debugId
-      };
-      
-      await this.cacheLocation(defaultLocation);
-      return defaultLocation;
+      // No more fallbacks - throw error for manual input
+      console.log(`❌ [${debugId}]: No cached location available, manual input required`);
+      throw new Error('No cached location available. Please provide your location manually.');
     }
     
-    // Optimized GPS configuration with extended timeout strategy for better reliability
+    // Optimized GPS configuration with reduced timeouts for better UX
     const gpsConfigs = {
       fast: {
-        timeout: isEmulatorDevice ? 5000 : 10000,
+        timeout: isEmulatorDevice ? 3000 : 5000,
         accuracy: Location.Accuracy.Balanced,
-        maximumAge: 120000, // Accept up to 2 minutes old
+        maximumAge: 120000,
         enableHighAccuracy: false
       },
       normal: {
-        timeout: isEmulatorDevice ? 15000 : 30000,
+        timeout: isEmulatorDevice ? 5000 : 8000,
         accuracy: isEmulatorDevice ? Location.Accuracy.Balanced : Location.Accuracy.High,
-        maximumAge: 60000, // Accept up to 1 minute old
+        maximumAge: 60000,
         enableHighAccuracy: !isEmulatorDevice
       },
       thorough: {
-        timeout: isEmulatorDevice ? 30000 : 45000,
+        timeout: isEmulatorDevice ? 8000 : 12000,
         accuracy: Location.Accuracy.BestForNavigation,
-        maximumAge: 10000, // Only accept recent readings
+        maximumAge: 10000,
         enableHighAccuracy: true
       }
     };
@@ -496,12 +563,18 @@ class LocationService {
       const gpsPromise = (async () => {
         console.log(`📡 [${debugId}]: Starting GPS acquisition with ${gpsConfig.timeout}ms timeout...`);
         
-        // Set up progress tracking
+        // Set up progress tracking with maximum duration
         let progressCounter = 0;
+        const maxProgressReports = Math.ceil(gpsConfig.timeout / progressInterval);
+
         progressTimeout = setInterval(() => {
-          if (!isCancelled) {
+          if (!isCancelled && progressCounter < maxProgressReports) {
             progressCounter++;
             console.log(`📡 [${debugId}]: GPS acquisition in progress... (${progressCounter * progressInterval / 1000}s)`);
+          } else if (progressCounter >= maxProgressReports) {
+            // Stop progress messages after timeout
+            clearInterval(progressTimeout);
+            progressTimeout = null;
           }
         }, progressInterval);
         
@@ -603,22 +676,11 @@ class LocationService {
       }
       console.log(`❌ [${debugId}]: No cached location available`);
       
-      // Ultimate fallback: Puchong coordinates (Alice Chen's location)
-      console.log(`🏠 [${debugId}]: Using default Puchong coordinates as final fallback`);
-      const defaultLocation = {
-        lat: 3.0738,
-        lon: 101.5183,
-        accuracy: null,
-        timestamp: Date.now(),
-        isDefault: true,
-        debugId
-      };
-      
-      // Cache this default location for next time
-      await LocationCache.cacheLocation(defaultLocation);
+      // No more fallbacks - throw error for manual input
+      console.log(`❌ [${debugId}]: GPS failed and no cache available, manual input required`);
       this.updatePerformanceMetrics('failure');
-      
-      return defaultLocation;
+
+      throw new Error('GPS location acquisition failed and no cached location available. Please provide your location manually.');
     }
   }
 
@@ -811,11 +873,11 @@ class LocationService {
    */
   static async getCurrentLocationWithMalaysiaCheck(skipGPS = false) {
     console.log('📍 LocationService: Getting location with Malaysia validation...');
-    
+
     try {
-      // Get current location
-      const location = await this.getCurrentLocation(skipGPS);
-      
+      // Use new hybrid approach
+      const location = await this.getCurrentLocationWithRetry(skipGPS);
+
       // Check if location is in Malaysia
       if (this.isLocationInMalaysia(location.lat, location.lon)) {
         console.log('✅ Location is within Malaysia boundaries');
@@ -823,10 +885,10 @@ class LocationService {
       }
 
       console.log('⚠️ Location is outside Malaysia, finding nearest Malaysian area...');
-      
+
       // Find nearest Malaysian location
       const nearestCity = this.findNearestMalaysianLocation(location.lat, location.lon);
-      
+
       // Return the nearest Malaysian location with original location info
       return {
         lat: nearestCity.lat,
@@ -846,9 +908,102 @@ class LocationService {
         },
         isRedirected: true
       };
-      
+
     } catch (error) {
       console.error('❌ Error getting Malaysia-validated location:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the most accurate location available using all methods
+   */
+  static async getBestAvailableLocation(options = {}) {
+    const {
+      timeout = 10000,
+      priority = 'balanced', // 'speed', 'balanced', 'accuracy'
+      enableIP = true,
+      enableGPS = true
+    } = options;
+
+    const debugId = Date.now();
+    console.log(`🎯 LocationService [${debugId}]: Getting best available location (priority: ${priority})`);
+
+    try {
+      if (priority === 'speed') {
+        // Speed priority: return first available
+        return await this.getImmediateLocation(debugId);
+      }
+
+      if (priority === 'accuracy') {
+        // Accuracy priority: try GPS first, then fallback
+        if (enableGPS) {
+          try {
+            const gpsLocation = await FusedLocationProvider.getLocation({
+              priority: 'accuracy',
+              timeout: timeout,
+              enableHighAccuracy: true
+            });
+
+            if (gpsLocation && gpsLocation.confidence > 0.7) {
+              console.log(`🎯 [${debugId}]: High-accuracy location acquired`);
+              return { ...gpsLocation, debugId, source: 'GPS_ACCURATE' };
+            }
+          } catch (error) {
+            console.log(`🎯 [${debugId}]: GPS accuracy attempt failed: ${error.message}`);
+          }
+        }
+
+        // Fallback to hybrid approach
+        return await this.getCurrentLocationWithRetry(false);
+      }
+
+      // Balanced priority (default)
+      return await this.getCurrentLocationWithRetry(false);
+
+    } catch (error) {
+      console.error(`❌ [${debugId}]: Best location failed:`, error.message);
+
+      // No more fallbacks - throw error for manual input
+      throw new Error('All location acquisition methods failed. Manual location input required.');
+    }
+  }
+
+  /**
+   * Monitor location changes with progressive updates
+   */
+  static async startProgressiveLocationMonitoring(callback, options = {}) {
+    const {
+      initialCallback = true,
+      enhancementCallback = true,
+      interval = 300000 // 5 minutes
+    } = options;
+
+    console.log('📡 Starting progressive location monitoring...');
+
+    try {
+      // Immediate callback with current best location
+      if (initialCallback) {
+        const immediateLocation = await this.getImmediateLocation(Date.now());
+        callback(immediateLocation, 'immediate');
+
+        // Start enhancement in background
+        if (enhancementCallback) {
+          this.enhanceLocationInBackground(immediateLocation, Date.now())
+            .then(enhanced => {
+              callback(enhanced, 'enhanced');
+            })
+            .catch(error => {
+              console.log('Progressive enhancement failed:', error.message);
+            });
+        }
+      }
+
+      // Start background monitoring
+      return await this.startBackgroundLocationWatcher({ interval });
+
+    } catch (error) {
+      console.error('Failed to start progressive monitoring:', error);
       throw error;
     }
   }
