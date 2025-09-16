@@ -14,6 +14,7 @@ import {
   StatusBar,
   RefreshControl,
   Platform,
+  Image,
 } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -886,15 +887,31 @@ function HomeScreen() {
         style={styles.container}
         contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 80 }}
       >
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.appTitle}>FloodAid</Text>
-            {locationInfo && (
-              <Text style={styles.locationText}>
+        <View>
+          <LinearGradient
+            colors={['#2563EB', '#1D4ED8']}
+            start={{ x: 0.25, y: 0.5 }}
+            end={{ x: 0.75, y: 0.5 }}
+            style={styles.header}
+          >
+            <View style={styles.headerContent}>
+              <Image 
+                source={require('./assets/location-images/icon.png')} 
+                style={styles.headerIcon} 
+              />
+              <View>
+                <Text style={styles.appTitle}>FloodAid</Text>
+                <Text style={styles.headerSubtitle}>AI-Powered Flood Protection</Text>
+              </View>
+            </View>
+          </LinearGradient>
+          {locationInfo && (
+            <View style={styles.locationContainer}>
+              <Text style={styles.locationTextBelow}>
                 📍 {locationInfo.display_name} {locationInfo.isDev && '(Dev)'}
               </Text>
-            )}
-          </View>
+            </View>
+          )}
         </View>
         
         <View style={styles.errorContainer}>
@@ -928,52 +945,151 @@ function HomeScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.appTitle}>FloodAid</Text>
-          {locationInfo && (
-            <Text style={styles.locationText}>
+      <View>
+        <LinearGradient
+          colors={['#2563EB', '#1D4ED8']}
+          start={{ x: 0.25, y: 0.5 }}
+          end={{ x: 0.75, y: 0.5 }}
+          style={styles.header}
+        >
+          <View style={styles.headerContent}>
+            <Image 
+              source={require('./assets/location-images/icon.png')} 
+              style={styles.headerIcon} 
+            />
+            <View style={styles.headerTitleContainer}>
+              <Text style={styles.appTitle}>FloodAid</Text>
+              <Text style={styles.headerSubtitle}>AI-Powered Flood Protection</Text>
+            </View>
+          </View>
+        </LinearGradient>
+        {locationInfo && (
+          <View style={styles.locationContainer}>
+            <Text style={styles.locationTextBelow}>
               📍 {locationInfo.display_name} {locationInfo.isDev && '(Dev)'}
             </Text>
-          )}
-        </View>
+          </View>
+        )}
       </View>
 
 
 
-      {/* Main Risk Card */}
-      <View style={styles.riskCard}>
-        <View style={styles.riskHeader}>
-          <View style={[styles.riskLevelIndicator, { 
-            backgroundColor: prediction?.is_na ? '#9E9E9E' : getRiskColor(prediction.flood_probability) 
-          }]}>
-            <Text style={styles.riskLevelText}>
-              {prediction?.is_na ? 'Weather Data Only' : `${getRiskLevel(prediction.flood_probability)} Risk`}
-            </Text>
-          </View>
+      {/* Enhanced Risk Assessment Card */}
+      <View style={styles.enhancedRiskCard}>
+        {/* Risk Zone Badge */}
+        <View style={[
+          styles.riskZoneBadge,
+          {
+            backgroundColor: prediction?.is_na ? '#f5f5f5' : 
+              (prediction.flood_probability <= 0.6 ? '#e8f5e8' : 
+               prediction.flood_probability <= 0.8 ? '#fff3cd' : '#f8d7da'),
+            borderColor: prediction?.is_na ? '#bdbdbd' : 
+              (prediction.flood_probability <= 0.6 ? '#4CAF50' : 
+               prediction.flood_probability <= 0.8 ? '#ffc107' : '#dc3545')
+          }
+        ]}>
+          <Text style={[
+            styles.riskZoneText,
+            {
+              color: prediction?.is_na ? '#666' : 
+                (prediction.flood_probability <= 0.6 ? '#2e7d32' : 
+                 prediction.flood_probability <= 0.8 ? '#856404' : '#721c24')
+            }
+          ]}>
+            {prediction?.is_na ? 'Unknown Risk Zone' : 
+              (prediction.flood_probability <= 0.6 ? 'Low Risk Zone' : 
+               prediction.flood_probability <= 0.8 ? 'Medium Risk Zone' : 'High Risk Zone')}
+          </Text>
         </View>
-        
-        <View style={styles.riskMetrics}>
-          <View style={styles.metricItem}>
-            <Text style={styles.metricValue}>
+
+        {/* Circular Risk Indicator */}
+        <View style={styles.circularRiskIndicator}>
+          <Svg width={140} height={140} viewBox="0 0 140 140">
+            {/* Background circle */}
+            <SvgCircle
+              cx={70}
+              cy={70}
+              r={55}
+              stroke="#e8f4fd"
+              strokeWidth={12}
+              fill="none"
+            />
+            {/* Progress circle */}
+            <SvgCircle
+              cx={70}
+              cy={70}
+              r={55}
+              stroke={prediction?.is_na ? '#9E9E9E' : getRiskColor(prediction.flood_probability)}
+              strokeWidth={12}
+              fill="none"
+              strokeDasharray={`${2 * Math.PI * 55}`}
+              strokeDashoffset={`${2 * Math.PI * 55 * (1 - (prediction?.is_na ? 0.18 : (prediction.flood_probability || 0)))}`}
+              strokeLinecap="round"
+              transform="rotate(-90 70 70)"
+            />
+            {/* Center text */}
+            <SvgText
+              x={70}
+              y={65}
+              textAnchor="middle"
+              fontSize={24}
+              fontWeight="bold"
+              fill={prediction?.is_na ? '#9E9E9E' : getRiskColor(prediction.flood_probability)}
+            >
               {prediction?.is_na ? 'N/A' : 
                 (prediction.flood_probability !== null ? 
                   Math.round(prediction.flood_probability * 100) + '%' : 'N/A')}
-            </Text>
-            <Text style={styles.metricLabel}>Flood Risk</Text>
-          </View>
-          <View style={styles.metricDivider} />
-          <View style={styles.metricItem}>
-            <Text style={styles.metricValue}>
-              {prediction.confidence !== null ? Math.round(prediction.confidence * 100) + '%' : 'N/A'}
-            </Text>
-            <Text style={styles.metricLabel}>Confidence</Text>
-          </View>
+            </SvgText>
+            <SvgText
+              x={70}
+              y={85}
+              textAnchor="middle"
+              fontSize={14}
+              fill="#666"
+            >
+              Flood Risk
+            </SvgText>
+          </Svg>
         </View>
-        
-        <Text style={styles.riskDescription}>
-          {getRiskDescription(prediction, locationInfo)}
-        </Text>
+
+        {/* Area Status */}
+        <View style={styles.areaStatusContainer}>
+          <View style={[
+            styles.areaStatusBadge,
+            {
+              backgroundColor: prediction?.is_na ? '#f5f5f5' : 
+                (prediction.flood_probability <= 0.6 ? '#e8f5e8' : 
+                 prediction.flood_probability <= 0.8 ? '#fff3cd' : '#f8d7da'),
+              borderColor: prediction?.is_na ? '#bdbdbd' : 
+                (prediction.flood_probability <= 0.6 ? '#4CAF50' : 
+                 prediction.flood_probability <= 0.8 ? '#ffc107' : '#dc3545')
+            }
+          ]}>
+            <Ionicons 
+              name={prediction?.is_na ? 'help-circle' : 
+                (prediction.flood_probability <= 0.6 ? 'shield-checkmark' : 
+                 prediction.flood_probability <= 0.8 ? 'warning' : 'skull')} 
+              size={20} 
+              color={prediction?.is_na ? '#666' : 
+                (prediction.flood_probability <= 0.6 ? '#2e7d32' : 
+                 prediction.flood_probability <= 0.8 ? '#ff6f00' : '#d32f2f')} 
+            />
+            <Text style={[styles.areaStatusText, {
+              color: prediction?.is_na ? '#666' : 
+                (prediction.flood_probability <= 0.6 ? '#2e7d32' : 
+                 prediction.flood_probability <= 0.8 ? '#ff6f00' : '#d32f2f')
+            }]}>
+              Area Status: {prediction?.is_na ? 'Unknown' : 
+                (prediction.flood_probability <= 0.6 ? 'Safe' : 
+                 prediction.flood_probability <= 0.8 ? 'Alert' : 'Danger')}
+            </Text>
+          </View>
+          
+          {/* Data Source */}
+          <Text style={styles.dataSourceText}>
+            Data Source: GPS, Google Maps, Open Meteo Professional
+          </Text>
+        </View>
 
         {/* Show status when ML fails */}
         {prediction?.is_na && (
@@ -999,8 +1115,8 @@ function HomeScreen() {
       </View>
 
 
-      {/* Risk Factors - Compact Display */}
-      <View style={styles.factorsCard}>
+      {/* Risk Assessment - New Layout */}
+      <View style={styles.riskAssessmentCard}>
         {prediction?.is_na ? (
           <View>
             <Text style={styles.cardTitle}>System Status</Text>
@@ -1011,42 +1127,62 @@ function HomeScreen() {
           </View>
         ) : (
           <View>
-            <Text style={styles.compactFactorsHeader}>
-              According to our prediction model, these are the key risk factors:
-            </Text>
+            {/* Header with warning icon */}
+            <View style={styles.riskAssessmentHeader}>
+              <Ionicons name="warning" size={20} color="#FF9500" />
+              <Text style={styles.riskAssessmentTitle}>Risk Assessment</Text>
+            </View>
             
             {/* Check if we have structured factors with separated risk/protective factors */}
             {prediction.contributing_factors?.structured && (
               prediction.contributing_factors.riskFactors || prediction.contributing_factors.protectiveFactors
             ) ? (
               <View>
-                {/* Risk Increasing Factors */}
+                {/* Potential Threats Section */}
                 {prediction.contributing_factors.riskFactors?.length > 0 && (
-                  <View style={styles.compactFactorSection}>
-                    <Text style={styles.compactSectionTitle}>Risk Factors:</Text>
-                    <View style={styles.compactFactorsRow}>
+                  <View>
+                    <View style={styles.threatsSectionHeader}>
+                      <View style={styles.threatsIndicator} />
+                      <Text style={styles.threatsSectionTitle}>Potential Threats:</Text>
+                    </View>
+                    <View style={styles.threatsContainer}>
                       {prediction.contributing_factors.riskFactors.map((factor, index) => (
-                        <CompactRiskFactorIndicator
+                        <TouchableOpacity
                           key={factor.raw_feature || `risk-${index}`}
-                          factor={factor}
-                          onPress={handleFactorPress}
-                        />
+                          style={styles.threatItem}
+                          onPress={() => handleFactorPress(factor)}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="alert-circle" size={16} color="#D32F2F" />
+                          <Text style={styles.threatItemText}>
+                            {factor.feature?.title || factor.technical_name || 'Unknown factor'}
+                          </Text>
+                        </TouchableOpacity>
                       ))}
                     </View>
                   </View>
                 )}
                 
-                {/* Protective Factors */}
+                {/* Safety Features Section */}
                 {prediction.contributing_factors.protectiveFactors?.length > 0 && (
-                  <View style={styles.compactFactorSection}>
-                    <Text style={styles.compactSectionTitle}>Protective:</Text>
-                    <View style={styles.compactFactorsRow}>
+                  <View style={styles.safetySection}>
+                    <View style={styles.safetySectionHeader}>
+                      <View style={styles.safetyIndicator} />
+                      <Text style={styles.safetySectionTitle}>Protective:</Text>
+                    </View>
+                    <View style={styles.safetyContainer}>
                       {prediction.contributing_factors.protectiveFactors.map((factor, index) => (
-                        <CompactRiskFactorIndicator
+                        <TouchableOpacity
                           key={factor.raw_feature || `protective-${index}`}
-                          factor={factor}
-                          onPress={handleFactorPress}
-                        />
+                          style={styles.safetyItem}
+                          onPress={() => handleFactorPress(factor)}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="checkmark-circle" size={16} color="#388E3C" />
+                          <Text style={styles.safetyItemText}>
+                            {factor.feature?.title || factor.technical_name || 'Unknown factor'}
+                          </Text>
+                        </TouchableOpacity>
                       ))}
                     </View>
                   </View>
@@ -1055,16 +1191,22 @@ function HomeScreen() {
             ) : (
               /* Fallback to legacy text format */
               <View>
-                {(prediction.contributing_factors?.legacy_text || 
-                  (Array.isArray(prediction.contributing_factors) ? prediction.contributing_factors : [])
-                ).slice(0, 4).map((factor, index) => (
-                  <View key={index} style={styles.factorItem}>
-                    <Ionicons name="alert-circle-outline" size={16} color="#ff9800" />
-                    <Text style={styles.enhancedFactorText}>
-                      {typeof factor === 'string' ? factor : factor?.feature?.title || 'Unknown factor'}
-                    </Text>
-                  </View>
-                ))}
+                <View style={styles.threatsSectionHeader}>
+                  <View style={styles.threatsIndicator} />
+                  <Text style={styles.threatsSectionTitle}>Potential Threats:</Text>
+                </View>
+                <View style={styles.threatsContainer}>
+                  {(prediction.contributing_factors?.legacy_text || 
+                    (Array.isArray(prediction.contributing_factors) ? prediction.contributing_factors : [])
+                  ).slice(0, 4).map((factor, index) => (
+                    <View key={index} style={styles.threatItem}>
+                      <Ionicons name="alert-circle" size={16} color="#D32F2F" />
+                      <Text style={styles.threatItemText}>
+                        {typeof factor === 'string' ? factor : factor?.feature?.title || 'Unknown factor'}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             )}
           </View>
@@ -1075,12 +1217,6 @@ function HomeScreen() {
       <View style={styles.weatherCard}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Current Weather</Text>
-          {realTimeWeather && (
-            <View style={styles.dataSourceIndicator}>
-              <View style={styles.liveIndicator} />
-              <Text style={styles.liveText}>Live</Text>
-            </View>
-          )}
         </View>
         <View style={styles.weatherGrid}>
           <View style={styles.weatherItem}>
@@ -1434,14 +1570,14 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 10,
+    backgroundColor: '#CFFAFE66',
+    paddingTop: 0,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#CFFAFE66',
   },
   header: {
     flexDirection: 'row',
@@ -1449,22 +1585,63 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: '#fff',
+    height: 76,
     marginBottom: 10,
+    elevation: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    width: 32,
+    height: 32,
+    marginRight: 12,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 2,
+  },
+  locationContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginTop: 8,
+    marginBottom: 16,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    alignSelf: 'center',
+    maxWidth: '90%',
+    minWidth: 200,
+  },
+  locationTextBelow: {
+    fontSize: 14,
+    color: '#374151',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   appTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#333',
+    color: '#fff',
   },
   locationText: {
     fontSize: 12,
-    color: '#666',
+    color: '#fff',
     marginTop: 2,
   },
   sectionTitle: {
@@ -1499,51 +1676,73 @@ const styles = StyleSheet.create({
   },
   
   // Risk Card Styles
-  riskCard: {
+  // Enhanced Risk Assessment Card
+  enhancedRiskCard: {
+    alignItems: 'center',
     marginHorizontal: 20,
     marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  riskZoneBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  riskZoneText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  circularRiskIndicator: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  areaStatusContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  areaStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 25,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  areaStatusText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  dataSourceText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  // Legacy styles for backward compatibility
+  circularRiskContainer: {
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 20,
+    backgroundColor: '#fff',
     borderRadius: 15,
-    overflow: 'hidden',
+    padding: 20,
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    backgroundColor: '#fff',
-    padding: 20,
-  },
-  riskHeader: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  riskLevelIndicator: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  riskMetrics: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  metricItem: {
-    alignItems: 'center',
-  },
-  metricValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  metricLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  metricDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: '#e0e0e0',
   },
   countdownSection: {
     marginTop: 15,
@@ -1835,14 +2034,136 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   
-  // Factors Card
-  factorsCard: {
+  // Risk Assessment Card
+  riskAssessmentCard: {
     backgroundColor: '#fff',
     marginHorizontal: 20,
     marginBottom: 15,
-    padding: 15,
-    borderRadius: 15,
-    elevation: 3,
+    padding: 20,
+    borderRadius: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  riskAssessmentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f5',
+  },
+  riskAssessmentTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#2c3e50',
+    marginLeft: 10,
+    letterSpacing: 0.3,
+  },
+  // Threats Section
+  threatsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  threatsIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#e74c3c',
+    marginRight: 10,
+    shadowColor: '#e74c3c',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+  },
+  threatsSectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2c3e50',
+    letterSpacing: 0.2,
+  },
+  threatsContainer: {
+    marginBottom: 20,
+  },
+  threatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffeaea',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#e74c3c',
+    shadowColor: '#e74c3c',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+  },
+  threatItemText: {
+    fontSize: 14,
+    color: '#2c3e50',
+    marginLeft: 10,
+    flex: 1,
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  // Safety Section
+  safetySection: {
+    marginTop: 4,
+  },
+  safetySectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  safetyIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#27ae60',
+    marginRight: 10,
+    shadowColor: '#27ae60',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+  },
+  safetySectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2c3e50',
+    letterSpacing: 0.2,
+  },
+  safetyContainer: {
+    marginBottom: 8,
+  },
+  safetyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eafaf1',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#27ae60',
+    shadowColor: '#27ae60',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+  },
+  safetyItemText: {
+    fontSize: 14,
+    color: '#2c3e50',
+    marginLeft: 10,
+    flex: 1,
+    fontWeight: '500',
+    lineHeight: 18,
   },
   cardTitle: {
     fontSize: 16,
@@ -1923,22 +2244,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
   },
-  dataSourceIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  liveIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#4CAF50',
-    marginRight: 5,
-  },
-  liveText: {
-    fontSize: 11,
-    color: '#4CAF50',
-    fontWeight: '600',
-  },
+
+
   weatherGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
