@@ -43,6 +43,7 @@ import { notificationService } from './utils/NotificationService';
 
 // Import FloodHotspotsScreen for Epic 3 - Using CSV data version
 import FloodHotspotsScreen from './screens/FloodHotspotsCSV';
+import LiveDataScreen from './screens/LiveDataScreen';
 
 // Import Multi-Location Alerts Components and Context
 import MyLocationsScreen from './screens/MyLocationsScreen';
@@ -1213,94 +1214,7 @@ function HomeScreen() {
         )}
       </View>
 
-      {/* Weather Card */}
-      <View style={styles.weatherCard}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Current Weather</Text>
-        </View>
-        <View style={styles.weatherGrid}>
-          <View style={styles.weatherItem}>
-            <Ionicons name="thermometer-outline" size={24} color="#2196F3" />
-            <Text style={styles.weatherValue}>
-              {realTimeWeather?.weather_summary?.current_temp || 
-               prediction?.weather_summary?.current_temp || '--'}°C
-            </Text>
-            <Text style={styles.weatherLabel}>Temperature</Text>
-          </View>
-          <View style={styles.weatherItem}>
-            <Ionicons name="water-outline" size={24} color="#2196F3" />
-            <Text style={styles.weatherValue}>
-              {realTimeWeather?.humidity?.current || 
-               prediction?.weather_summary?.humidity || '--'}%
-            </Text>
-            <Text style={styles.weatherLabel}>Humidity</Text>
-          </View>
-          <View style={styles.weatherItem}>
-            <Ionicons name="rainy-outline" size={24} color="#2196F3" />
-            <Text style={styles.weatherValue}>
-              {realTimeWeather?.weather_summary?.rainfall_24h_past || 
-               prediction?.weather_summary?.rainfall_24h || 0}mm
-            </Text>
-            <Text style={styles.weatherLabel} numberOfLines={1}>Past 24h</Text>
-          </View>
-          <View style={styles.weatherItem}>
-            <Ionicons name="rainy" size={24} color="#1976D2" />
-            <Text style={styles.weatherValue}>
-              {realTimeWeather?.weather_summary?.rainfall_24h_forecast || 0}mm
-            </Text>
-            <Text style={styles.weatherLabel} numberOfLines={1}>Next 24h</Text>
-          </View>
-          <View style={styles.weatherItem}>
-            <Ionicons name="speedometer-outline" size={24} color="#2196F3" />
-            <Text style={styles.weatherValue}>
-              {realTimeWeather?.weather_summary?.wind_speed || 
-               prediction?.weather_summary?.wind_speed || '--'}km/h
-            </Text>
-            <Text style={styles.weatherLabel}>Wind Speed</Text>
-          </View>
-        </View>
-      </View>
 
-      {/* Rain Forecast Card */}
-      {realTimeWeather?.rain_forecast && (
-        <View style={styles.forecastCard}>
-          <Text style={styles.cardTitle}>7-Day Rain Forecast</Text>
-          
-          {/* Rain Summary */}
-          <View style={styles.forecastSummary}>
-            <Ionicons name="rainy-outline" size={20} color="#2196F3" />
-            <Text style={styles.forecastSummaryText}>
-              {realTimeWeather?.rain_forecast?.rain_summary || 'No rain forecast available'}
-            </Text>
-          </View>
-
-          {/* Upcoming Rain Days */}
-          {realTimeWeather?.rain_forecast?.upcoming_rain_days?.length > 0 && (
-            <View style={styles.rainDaysList}>
-              {realTimeWeather.rain_forecast.upcoming_rain_days.slice(0, 3).map((rainDay, index) => (
-                <View key={index} style={styles.rainDayItem}>
-                  <Text style={styles.rainDayName}>{rainDay.day_name}</Text>
-                  <View style={styles.rainDayDetails}>
-                    <Text style={styles.rainDayAmount}>{rainDay.precipitation}mm</Text>
-                    <Text style={styles.rainDayIntensity}>{rainDay.intensity}</Text>
-                  </View>
-                  <Text style={styles.rainDayProbability}>{rainDay.probability}%</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Next Rain Info */}
-          {realTimeWeather?.rain_forecast?.next_rain_in_hours !== null && 
-           realTimeWeather?.rain_forecast?.next_rain_in_hours !== undefined && (
-            <View style={styles.nextRainInfo}>
-              <Text style={styles.nextRainText}>
-                Next rain in {Math.round(realTimeWeather.rain_forecast.next_rain_in_hours)} hours
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
 
       {/* REMOVED: Fallback Rain Forecast Card - redundant when prediction is N/A, weather data shown in main Weather Card */}
 
@@ -1352,32 +1266,6 @@ function HomeScreen() {
         onClose={handleCloseFactorModal}
       />
     </ScrollView>
-  );
-}
-
-// Live Data Screen
-function LiveDataScreen() {
-  return (
-    <View style={styles.centerContainer}>
-      <View style={styles.header}>
-        <TouchableOpacity>
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Live Data</Text>
-        <View style={{ width: 24 }} />
-      </View>
-      
-      <View style={styles.upcomingFeaturesContainer}>
-        <Ionicons name="analytics-outline" size={64} color="#2196F3" />
-        <Text style={styles.upcomingFeaturesTitle}>Upcoming Features</Text>
-        <Text style={styles.upcomingFeaturesDescription}>
-          Real-time flood monitoring and live data visualization are currently being developed.
-        </Text>
-        <Text style={styles.upcomingFeaturesDescription}>
-          Stay tuned for live rainfall tracking, river level monitoring, and interactive flood risk maps.
-        </Text>
-      </View>
-    </View>
   );
 }
 
@@ -1489,31 +1377,6 @@ function EmergencyScreen() {
   );
 }
 
-// Preparedness Screen
-function PreparednessScreen() {
-  return (
-    <View style={styles.centerContainer}>
-      <View style={styles.header}>
-        <TouchableOpacity>
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Flood Predictions</Text>
-        <View style={{ width: 24 }} />
-      </View>
-      
-      <View style={styles.upcomingFeaturesContainer}>
-        <Ionicons name="construct-outline" size={64} color="#2196F3" />
-        <Text style={styles.upcomingFeaturesTitle}>Upcoming Features</Text>
-        <Text style={styles.upcomingFeaturesDescription}>
-          Advanced flood predictions and preparedness guides are currently being developed.
-        </Text>
-        <Text style={styles.upcomingFeaturesDescription}>
-          Stay tuned for AI-powered flood forecasting, personalized safety recommendations, and emergency preparation checklists.
-        </Text>
-      </View>
-    </View>
-  );
-}
 
 // Main App Component
 export default function App() {
@@ -1536,8 +1399,6 @@ export default function App() {
                 let iconName;
                 if (route.name === 'Home') {
                   iconName = focused ? 'home' : 'home-outline';
-                } else if (route.name === 'Predictions') {
-                  iconName = focused ? 'trending-up' : 'trending-up-outline';
                 } else if (route.name === 'Live Data') {
                   iconName = focused ? 'water' : 'water-outline';
                 } else if (route.name === 'Hotspots') {
@@ -1554,7 +1415,6 @@ export default function App() {
             })}
           >
             <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Predictions" component={PreparednessScreen} />
             <Tab.Screen name="Live Data" component={LiveDataScreen} />
             <Tab.Screen name="Hotspots" component={FloodHotspotsScreen} />
             <Tab.Screen name="Locations" component={LocationsScreen} />
@@ -1654,26 +1514,6 @@ const styles = StyleSheet.create({
   },
   
   // Upcoming Features Styles
-  upcomingFeaturesContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  upcomingFeaturesTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  upcomingFeaturesDescription: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 15,
-    lineHeight: 22,
-  },
   
   // Risk Card Styles
   // Enhanced Risk Assessment Card
@@ -2227,121 +2067,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-  },
-  
-  // Weather Card
-  weatherCard: {
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginBottom: 15,
-    padding: 15,
-    borderRadius: 15,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-
-
-  weatherGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  weatherItem: {
-    alignItems: 'center',
-    flex: 1,
-    maxWidth: '18%',
-    paddingHorizontal: 2,
-  },
-  weatherValue: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginTop: 5,
-  },
-  weatherLabel: {
-    fontSize: 11,
-    color: '#666',
-    marginTop: 2,
-    textAlign: 'center',
-  },
-  
-  // Rain Forecast Styles
-  forecastCard: {
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginBottom: 15,
-    padding: 15,
-    borderRadius: 15,
-    elevation: 3,
-  },
-  forecastSummary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-  },
-  forecastSummaryText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#333',
-    flex: 1,
-  },
-  rainDaysList: {
-    marginBottom: 10,
-  },
-  rainDayItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  rainDayName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    flex: 1,
-  },
-  rainDayDetails: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  rainDayAmount: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2196F3',
-  },
-  rainDayIntensity: {
-    fontSize: 11,
-    color: '#666',
-    textTransform: 'capitalize',
-  },
-  rainDayProbability: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'right',
-    minWidth: 40,
-  },
-  nextRainInfo: {
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    alignItems: 'center',
-  },
-  nextRainText: {
-    fontSize: 13,
-    color: '#666',
-    fontStyle: 'italic',
   },
   
   // Button Styles

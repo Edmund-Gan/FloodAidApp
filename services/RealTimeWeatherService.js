@@ -155,25 +155,24 @@ class RealTimeWeatherService {
     daily.time.slice(0, 7).forEach((dateStr, index) => {
       const rain = daily.precipitation_sum[index] || 0;
       const probability = daily.precipitation_probability_max[index] || 0;
-      
-      if (rain > 1.0 || probability > 30) { // Significant rain or high probability
-        const date = new Date(dateStr);
-        const dayName = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        
-        rainDays.push({
-          date: dateStr,
-          day_name: dayName,
-          precipitation: Math.round(rain * 10) / 10,
-          probability: Math.round(probability),
-          intensity: this.getRainIntensity(rain)
-        });
-      }
+
+      // Show all 7 days regardless of rain amount
+      const date = new Date(dateStr);
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+      rainDays.push({
+        date: dateStr,
+        day_name: dayName,
+        precipitation: Math.round(rain * 10) / 10,
+        probability: Math.round(probability),
+        intensity: rain > 0 ? this.getRainIntensity(rain) : 'No rain'
+      });
     });
 
     return {
       upcoming_rain_days: rainDays,
       next_rain_in_hours: this.calculateHoursToNextRain(daily),
-      total_upcoming_rain: rainDays.reduce((sum, day) => sum + day.precipitation, 0),
+      total_upcoming_rain: rainDays.reduce((sum, day) => sum + (day.precipitation > 0 ? day.precipitation : 0), 0),
       rain_summary: this.generateRainSummary(rainDays)
     };
   }
@@ -265,7 +264,7 @@ class RealTimeWeatherService {
    */
   findNextRainDay(daily) {
     for (let i = 0; i < Math.min(daily.time.length, 7); i++) {
-      if ((daily.precipitation_sum[i] || 0) > 1.0) {
+      if ((daily.precipitation_sum[i] || 0) > 0) { // Changed from 1.0 to 0 to include any rain
         const date = new Date(daily.time[i]);
         return {
           date: daily.time[i],
@@ -308,22 +307,24 @@ class RealTimeWeatherService {
 
   /**
    * Generate human-readable rain summary
-   * @param {Array} rainDays - Array of rain day objects
+   * @param {Array} rainDays - Array of rain day objects (all 7 days)
    * @returns {string} - Rain summary text
    */
   generateRainSummary(rainDays) {
-    if (rainDays.length === 0) {
-      return 'No significant rain expected in the next 7 days';
+    const rainyDays = rainDays.filter(day => day.precipitation > 0);
+
+    if (rainyDays.length === 0) {
+      return 'No rain expected in the next 7 days';
     }
 
-    const dayNames = rainDays.slice(0, 3).map(day => day.day_name);
-    
-    if (rainDays.length === 1) {
+    const dayNames = rainyDays.slice(0, 3).map(day => day.day_name);
+
+    if (rainyDays.length === 1) {
       return `Rain expected on ${dayNames[0]}`;
-    } else if (rainDays.length <= 3) {
+    } else if (rainyDays.length <= 3) {
       return `Rain expected: ${dayNames.join(', ')}`;
     } else {
-      return `Rain expected on ${rainDays.length} days this week`;
+      return `Rain expected on ${rainyDays.length} days this week`;
     }
   }
 

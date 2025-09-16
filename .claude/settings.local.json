@@ -44,7 +44,18 @@
       "Bash(npm install:*)",
       "Bash(node:*)",
       "Bash(expo --version)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(python3.9:*)",
+      "Read(//usr/local/**)",
+      "Bash(pip3 list:*)",
+      "Bash(/usr/bin/python3:*)",
+      "Bash(pip --version)",
+      "Bash(pip3:*)",
+      "Bash(/opt/homebrew/bin/pip3:*)",
+      "Bash(ln:*)",
+      "Bash(exec zsh)",
+      "Bash(alias python)"
     ],
     "deny": [],
     "ask": []
