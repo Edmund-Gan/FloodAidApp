@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { apiService } from './ApiService';
 import LocationService from './LocationService';
 import embeddedMLService from './EmbeddedMLService';
+import modelOverrideService from '../utils/ModelOverrideService';
 
 /**
  * FloodPredictionModel - Integrates with ML training model for flood prediction
@@ -29,10 +30,64 @@ class FloodPredictionModel {
       mlTime: null,
       totalTime: null
     };
-    
+
     console.log(`🤖 FloodPredictionModel [${debugId}]: Starting OPTIMIZED ML-based flood prediction...`);
     console.log(`🚀 [${debugId}]: Timeout fixes active - 60s base timeout, parallel processing, progressive fallback`);
-    
+
+    // Check for developer mode manual override
+    const manualProbability = modelOverrideService.getManualProbability();
+    if (manualProbability !== null) {
+      console.log(`🔧 [${debugId}]: Developer manual override active - returning fixed probability: ${(manualProbability * 100).toFixed(1)}%`);
+
+      // Return mock prediction with manual probability
+      return {
+        location: {
+          lat: lat || 3.1390,
+          lon: lon || 101.6869,
+          state: 'Selangor',
+          display_name: 'Manual Override Location, Malaysia',
+          is_default: false
+        },
+        flood_probability: manualProbability,
+        confidence: 0.95, // High confidence for manual override
+        risk_level: this.getRiskLevel(manualProbability),
+        timeframe_hours: 2,
+        expected_duration_hours: 4,
+        peak_probability: manualProbability,
+        peak_date: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+        contributing_factors: [
+          'Developer Manual Override Active',
+          `Manual Probability: ${(manualProbability * 100).toFixed(1)}%`
+        ],
+        weather_summary: {
+          current_temp: 26,
+          rainfall_24h: 0,
+          precipitation_24h: 0,
+          wind_speed: 10,
+          wind_gusts: 15,
+          river_discharge: 250,
+          monsoon_season: 'Override Mode',
+          monsoon_intensity: 0,
+          pressure_trend: 'N/A'
+        },
+        risk_indicators: {
+          consecutive_rain_days: 0,
+          total_forecast_rain: 0,
+          current_risk_score: manualProbability
+        },
+        model_info: {
+          version: 'developer-override',
+          f1_score: 1.0,
+          improvement: 'Manual Control',
+          features_count: 0,
+          model_used: 'Manual Override',
+          is_embedded: false,
+          is_override: true
+        },
+        prediction_timestamp: new Date().toISOString()
+      };
+    }
+
     try {
       // Step 1: Start location acquisition and weather data fetching in parallel
       console.log(`📍 [${debugId}]: Starting optimized parallel processing...`);
@@ -95,9 +150,13 @@ class FloodPredictionModel {
         console.warn(`⚠️ [${debugId}]: Display name failed, using fallback:`, displayNameResult.reason);
       }
       
+      // Apply developer mode overrides to weather data
+      const modifiedWeatherData = modelOverrideService.applyWeatherDataOverrides(weatherData);
+      const modifiedState = modelOverrideService.applyStateRiskOverride(1.0, state);
+
       // Step 3: Calculate flood probability using optimized ML model logic
       console.log(`🧠 [${debugId}]: Running optimized ML flood prediction model...`);
-      const prediction = await this.calculateFloodProbability(weatherData, state, location);
+      const prediction = await this.calculateFloodProbability(modifiedWeatherData, state, location);
       
       // Step 4: Calculate flood timeframe and duration
       console.log('Calculating flood timeframe...');

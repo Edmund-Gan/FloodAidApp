@@ -1,9 +1,10 @@
 import FloodPredictionModel from '../services/FloodPredictionModel';
 import { notificationService } from './NotificationService';
-import { 
-  PRECIPITATION_THRESHOLDS, 
-  COUNTDOWN_THRESHOLDS, 
-  NOTIFICATION_TYPES, 
+import modelOverrideService from './ModelOverrideService';
+import {
+  PRECIPITATION_THRESHOLDS,
+  COUNTDOWN_THRESHOLDS,
+  NOTIFICATION_TYPES,
   RISK_LEVELS,
   ML_ALERT_THRESHOLDS
 } from './constants';
@@ -61,9 +62,16 @@ class FloodAlertService {
         try {
           mlPrediction = await FloodPredictionModel.getPredictionWithML(location.lat, location.lng);
           const probability = mlPrediction?.flood_probability || 0;
-          shouldTriggerMLAlert = probability >= this.mlAlertThreshold;
-          
-          console.log(`🤖 ML Alert Check: ${Math.round(probability * 100)}% >= ${Math.round(this.mlAlertThreshold * 100)}% = ${shouldTriggerMLAlert}`);
+
+          // Check if developer override is forcing alert generation
+          const manualProbability = modelOverrideService.getManualProbability();
+          if (manualProbability !== null) {
+            shouldTriggerMLAlert = true; // Always trigger when manual override is active
+            console.log(`🔧 Developer Override: Manual probability ${Math.round(manualProbability * 100)}% - forcing alert generation`);
+          } else {
+            shouldTriggerMLAlert = probability >= this.mlAlertThreshold;
+            console.log(`🤖 ML Alert Check: ${Math.round(probability * 100)}% >= ${Math.round(this.mlAlertThreshold * 100)}% = ${shouldTriggerMLAlert}`);
+          }
         } catch (error) {
           console.error('Error getting ML prediction for alerts:', error);
         }

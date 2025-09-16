@@ -15,6 +15,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import floodAlertService from '../utils/FloodAlertService';
 import devAlertTrigger from '../utils/DevAlertTrigger';
+import modelOverrideService from '../utils/ModelOverrideService';
+import DeveloperModeSliders from './DeveloperModeSliders';
+import ModelConfigEditor from './ModelConfigEditor';
 import { COLORS, ML_ALERT_THRESHOLDS } from '../utils/constants';
 
 const { width, height } = Dimensions.get('window');
@@ -32,9 +35,18 @@ const DeveloperMode = ({ visible, onClose, onAlertGenerated }) => {
   
   // Push Notification Configuration
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
-  
+
+  // Model Override Configuration
+  const [manualOverrideEnabled, setManualOverrideEnabled] = useState(false);
+  const [manualFloodRisk, setManualFloodRisk] = useState(50);
+  const [rainfallMultiplier, setRainfallMultiplier] = useState(1.0);
+  const [stateRiskMultiplier, setStateRiskMultiplier] = useState(null);
+  const [monsoonIntensityMultiplier, setMonsoonIntensityMultiplier] = useState(1.0);
+  const [riverDischargeThreshold, setRiverDischargeThreshold] = useState(1.0);
+  const [selectedModelType, setSelectedModelType] = useState('embedded');
+
   // UI State
-  const [activeTab, setActiveTab] = useState('probability'); // 'probability', 'scenarios', 'settings'
+  const [activeTab, setActiveTab] = useState('probability'); // 'probability', 'scenarios', 'settings', 'model_control'
   const [isGeneratingAlert, setIsGeneratingAlert] = useState(false);
   const [alertHistory, setAlertHistory] = useState([]);
   
@@ -57,6 +69,20 @@ const DeveloperMode = ({ visible, onClose, onAlertGenerated }) => {
       
       // Load push notification settings
       setPushNotificationsEnabled(devAlertTrigger.isPushNotificationsEnabled());
+
+      // Load model override settings
+      const overrideStatus = modelOverrideService.getOverrideStatus();
+      setManualOverrideEnabled(overrideStatus.active);
+
+      const allOverrides = modelOverrideService.getAllOverrides();
+      if (allOverrides.manualProbabilityEnabled && allOverrides.manualProbability !== null) {
+        setManualFloodRisk(allOverrides.manualProbability * 100);
+      }
+      setRainfallMultiplier(allOverrides.rainfallMultiplier);
+      setStateRiskMultiplier(allOverrides.stateRiskMultiplier);
+      setMonsoonIntensityMultiplier(allOverrides.monsoonIntensityMultiplier);
+      setRiverDischargeThreshold(allOverrides.riverDischargeThreshold);
+      setSelectedModelType(allOverrides.selectedModel);
     }
   }, [visible]);
 
@@ -161,6 +187,73 @@ const DeveloperMode = ({ visible, onClose, onAlertGenerated }) => {
     }
   };
 
+  // Model Override Handlers
+  const handleManualOverrideToggle = (enabled) => {
+    setManualOverrideEnabled(enabled);
+
+    if (enabled) {
+      modelOverrideService.enableOverrides();
+      modelOverrideService.setManualProbability(manualFloodRisk / 100, true);
+      modelOverrideService.setRainfallMultiplier(rainfallMultiplier);
+      modelOverrideService.setStateRiskMultiplier(stateRiskMultiplier);
+      modelOverrideService.setMonsoonIntensityMultiplier(monsoonIntensityMultiplier);
+      modelOverrideService.setRiverDischargeThreshold(riverDischargeThreshold);
+      modelOverrideService.setModelType(selectedModelType);
+
+      Alert.alert('🔧 Override Enabled', 'Model override system is now active. All predictions will use your custom settings.');
+    } else {
+      modelOverrideService.disableOverrides();
+      Alert.alert('✅ Override Disabled', 'Model override system disabled. Using default predictions.');
+    }
+  };
+
+  const handleFloodRiskChange = (value) => {
+    setManualFloodRisk(value);
+    if (manualOverrideEnabled) {
+      modelOverrideService.setManualProbability(value / 100, true);
+    }
+  };
+
+  const handleRainfallMultiplierChange = (value) => {
+    setRainfallMultiplier(value);
+    if (manualOverrideEnabled) {
+      modelOverrideService.setRainfallMultiplier(value);
+    }
+  };
+
+  const handleStateRiskMultiplierChange = (value) => {
+    const finalValue = Math.abs(value - 1.0) < 0.05 ? null : value; // Set to null if close to 1.0 (default)
+    setStateRiskMultiplier(finalValue);
+    if (manualOverrideEnabled) {
+      modelOverrideService.setStateRiskMultiplier(finalValue);
+    }
+  };
+
+  const handleMonsoonIntensityMultiplierChange = (value) => {
+    setMonsoonIntensityMultiplier(value);
+    if (manualOverrideEnabled) {
+      modelOverrideService.setMonsoonIntensityMultiplier(value);
+    }
+  };
+
+  const handleRiverDischargeThresholdChange = (value) => {
+    setRiverDischargeThreshold(value);
+    if (manualOverrideEnabled) {
+      modelOverrideService.setRiverDischargeThreshold(value);
+    }
+  };
+
+  const handleModelTypeChange = (modelType) => {
+    setSelectedModelType(modelType);
+    if (manualOverrideEnabled) {
+      modelOverrideService.setModelType(modelType);
+    }
+  };
+
+  const handleCustomConfigLoad = (config) => {
+    console.log('Custom model config loaded:', config);
+  };
+
   const getProbabilityColor = (probability) => {
     if (probability >= 90) return '#F44336';
     if (probability >= 75) return '#FF5722';
@@ -203,6 +296,7 @@ const DeveloperMode = ({ visible, onClose, onAlertGenerated }) => {
           {[
             { key: 'probability', title: 'Probability', icon: 'analytics' },
             { key: 'scenarios', title: 'Scenarios', icon: 'list' },
+            { key: 'model_control', title: 'Model Control', icon: 'construct' },
             { key: 'settings', title: 'Settings', icon: 'settings' }
           ].map((tab) => (
             <TouchableOpacity
@@ -338,6 +432,37 @@ const DeveloperMode = ({ visible, onClose, onAlertGenerated }) => {
                   <Text style={styles.scenarioDescription}>{scenario.description}</Text>
                 </TouchableOpacity>
               ))}
+            </View>
+          )}
+
+          {/* Model Control Tab */}
+          {activeTab === 'model_control' && (
+            <View style={styles.tabContent}>
+              <Text style={styles.sectionTitle}>🔧 Model Control & Override</Text>
+
+              {/* Model Override Sliders */}
+              <DeveloperModeSliders
+                floodRisk={manualFloodRisk}
+                onFloodRiskChange={handleFloodRiskChange}
+                rainfallMultiplier={rainfallMultiplier}
+                onRainfallMultiplierChange={handleRainfallMultiplierChange}
+                stateRiskMultiplier={stateRiskMultiplier}
+                onStateRiskMultiplierChange={handleStateRiskMultiplierChange}
+                monsoonIntensityMultiplier={monsoonIntensityMultiplier}
+                onMonsoonIntensityMultiplierChange={handleMonsoonIntensityMultiplierChange}
+                riverDischargeThreshold={riverDischargeThreshold}
+                onRiverDischargeThresholdChange={handleRiverDischargeThresholdChange}
+                manualOverrideEnabled={manualOverrideEnabled}
+                onManualOverrideToggle={handleManualOverrideToggle}
+              />
+
+              {/* Model Configuration Editor */}
+              <ModelConfigEditor
+                currentModelType={selectedModelType}
+                onModelTypeChange={handleModelTypeChange}
+                onConfigLoad={handleCustomConfigLoad}
+                overrideStatus={modelOverrideService.getOverrideStatus()}
+              />
             </View>
           )}
 
