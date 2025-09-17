@@ -30,9 +30,10 @@ export const getRiskColor = (probability) => {
  * @returns {string} - Risk level string
  */
 export const getRiskLevel = (probability) => {
-  if (probability >= 0.8) return 'High';        // 80-100%
-  if (probability >= 0.6) return 'Medium';      // 60-79%
-  return 'Low';                                 // <60%
+  if (probability >= 0.8) return 'Very High';   // 80-100%
+  if (probability >= 0.6) return 'High';        // 60-79%
+  if (probability >= 0.3) return 'Moderate';    // 30-59%
+  return 'Low';                                 // <30%
 };
 
 /**

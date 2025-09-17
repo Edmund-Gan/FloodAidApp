@@ -84,7 +84,7 @@ describe('EmbeddedMLService Tests', () => {
         river_discharge: 55.0,
         river_discharge_mean: 50.0,
         river_discharge_median: 48.0,
-        elevation: 50.0
+        elevation: 30.0
       }
     };
     
@@ -162,6 +162,61 @@ describe('EmbeddedMLService Tests', () => {
     expect(clearedStatus.cache_size).toBe(0);
     
     console.log('✅ Cache cleared successfully');
+  });
+
+  test('Elevation-based risk assessment (Fixed Logic)', async () => {
+    const testElevations = [
+      { elevation: 5, expectedRisk: 'high', description: 'Very low elevation - high flood risk' },
+      { elevation: 25, expectedRisk: 'high', description: 'Low elevation - high flood risk' },
+      { elevation: 75, expectedRisk: 'moderate', description: 'Moderate elevation - still at risk' },
+      { elevation: 150, expectedRisk: 'low', description: 'High elevation - genuinely protective' }
+    ];
+
+    for (const testCase of testElevations) {
+      const mockWeatherData = {
+        features: {
+          temp_max: 30.0,
+          temp_min: 25.0,
+          temp_mean: 27.5,
+          precipitation_sum: 10.0,
+          rain_sum: 8.0,
+          precipitation_hours: 2.0,
+          wind_speed_max: 15.0,
+          wind_gusts_max: 20.0,
+          wind_direction: 180.0,
+          river_discharge: 30.0,
+          river_discharge_mean: 30.0,
+          river_discharge_median: 30.0,
+          elevation: testCase.elevation
+        }
+      };
+
+      const prediction = await embeddedMLService.predictFloodRisk(
+        3.1390, // KL coordinates
+        101.6869,
+        '2024-07-15',
+        mockWeatherData
+      );
+
+      expect(prediction.success).toBe(true);
+
+      // Verify that elevation correctly influences risk assessment
+      if (testCase.elevation >= 100) {
+        // High elevation should provide protection
+        const protectiveFactors = prediction.contributing_factors?.filter(factor =>
+          factor.risk_direction && factor.risk_direction.toLowerCase().includes('decrease')
+        ) || [];
+        expect(protectiveFactors.length).toBeGreaterThan(0);
+      } else if (testCase.elevation < 50) {
+        // Low elevation should increase risk
+        const riskFactors = prediction.contributing_factors?.filter(factor =>
+          factor.risk_direction && factor.risk_direction.toLowerCase().includes('increase')
+        ) || [];
+        expect(riskFactors.length).toBeGreaterThan(0);
+      }
+
+      console.log(`✅ Elevation ${testCase.elevation}m: ${prediction.risk_level} risk (${(prediction.flood_probability * 100).toFixed(1)}%) - ${testCase.description}`);
+    }
   });
 
   test('Error handling', async () => {

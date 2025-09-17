@@ -55,7 +55,9 @@
       "Bash(/opt/homebrew/bin/pip3:*)",
       "Bash(ln:*)",
       "Bash(exec zsh)",
-      "Bash(alias python)"
+      "Bash(alias python)",
+      "Bash(npm test)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

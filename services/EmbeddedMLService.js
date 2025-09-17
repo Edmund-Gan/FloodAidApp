@@ -312,10 +312,12 @@ class EmbeddedMLService {
       const targetDate = date || new Date().toISOString().split('T')[0];
       
       console.log(`Predicting flood risk for coordinates: ${latitude}, ${longitude} on ${targetDate}`);
-      
+
       // Validate coordinates
-      if (!(-90 <= latitude <= 90) || !(-180 <= longitude <= 180)) {
-        throw new Error('Invalid coordinates');
+      if (latitude === null || latitude === undefined || longitude === null || longitude === undefined ||
+          isNaN(latitude) || isNaN(longitude) ||
+          latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        throw new Error(`Invalid coordinates: latitude=${latitude}, longitude=${longitude}`);
       }
       
       // Check cache first
@@ -778,12 +780,12 @@ class EmbeddedMLService {
         } else if (elev < 100) {
           return {
             title: "Moderate elevation",
-            description: `${elev}m above sea level provides some natural flood protection`
+            description: `${elev}m above sea level - still within potential flood zones during extreme weather`
           };
         } else {
           return {
-            title: "Higher elevation",
-            description: `${elev}m elevation reduces direct flood risk`
+            title: "Higher elevation - protective",
+            description: `${elev}m elevation provides genuine flood protection above typical Malaysian flood zones`
           };
         }
       
@@ -904,8 +906,8 @@ class EmbeddedMLService {
         let riskDirection = 'Increases';
         
         // Enhanced protective factor identification
-        if (featureName === 'elevation' && featureValue > 30) {
-          riskDirection = 'Decreases'; // Higher elevation reduces flood risk
+        if (featureName === 'elevation' && featureValue > 100) {
+          riskDirection = 'Decreases'; // Higher elevation reduces flood risk (100m+ is genuinely protective)
         } else if (featureName.startsWith('temp_') && Math.abs(featureValue) < 20) {
           riskDirection = 'Decreases'; // Very low temperatures indicate stable conditions
         } else if (featureName === 'wind_direction') {

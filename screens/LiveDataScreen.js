@@ -14,6 +14,7 @@ import { UserContext } from '../context/UserContext';
 import { COLORS } from '../utils/constants';
 import RealTimeWeatherService from '../services/RealTimeWeatherService';
 import LocationService from '../services/LocationService';
+import FloodRiskMapView from '../components/FloodRiskMapView';
 
 const realTimeWeatherService = new RealTimeWeatherService();
 
@@ -30,6 +31,9 @@ export default function LiveDataScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [locationLabel, setLocationLabel] = useState(null);
+  const [selectedState, setSelectedState] = useState(null);
+  const [isWeatherExpanded, setIsWeatherExpanded] = useState(false);
+  const [isRainOutlookExpanded, setIsRainOutlookExpanded] = useState(false);
 
   const loadWeather = useCallback(async (refresh = false) => {
     if (refresh) {
@@ -98,6 +102,19 @@ export default function LiveDataScreen() {
   const handleRefresh = () => {
     setRefreshing(true);
     loadWeather(true);
+  };
+
+  const handleStateSelected = (state) => {
+    console.log(`📍 State selected from map: ${state.name}`);
+    setSelectedState(state);
+  };
+
+  const toggleWeatherExpansion = () => {
+    setIsWeatherExpanded(!isWeatherExpanded);
+  };
+
+  const toggleRainOutlookExpansion = () => {
+    setIsRainOutlookExpanded(!isRainOutlookExpanded);
   };
 
   const formatMetricValue = (value, decimals = 0) => {
@@ -214,9 +231,18 @@ export default function LiveDataScreen() {
                 <Ionicons name="cloud-outline" size={24} color={COLORS.PRIMARY} style={styles.weatherIcon} />
                 <Text style={styles.compactCardTitle}>Weather Monitoring</Text>
               </View>
-              <View style={styles.liveIndicator}>
-                <View style={styles.liveDotSmall} />
-                <Text style={styles.liveTextSmall}>Live Data</Text>
+              <View style={styles.headerRight}>
+                <View style={styles.liveIndicator}>
+                  <View style={styles.liveDotSmall} />
+                  <Text style={styles.liveTextSmall}>Live Data</Text>
+                </View>
+                <TouchableOpacity onPress={toggleWeatherExpansion} style={styles.expandButton}>
+                  <Ionicons
+                    name={isWeatherExpanded ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color={COLORS.TEXT_SECONDARY}
+                  />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -228,18 +254,18 @@ export default function LiveDataScreen() {
                 'Temperature'
               )}
               {renderCompactMetric(
-                'water-outline',
-                formatMetricValue(weatherData.weather_summary?.current_humidity),
-                '%',
-                'Humidity'
-              )}
-              {renderCompactMetric(
                 'rainy-outline',
                 formatMetricValue(weatherData.weather_summary?.rainfall_24h_forecast, 1),
                 'mm',
                 'Rainfall'
               )}
-              {renderCompactMetric(
+              {isWeatherExpanded && renderCompactMetric(
+                'water-outline',
+                formatMetricValue(weatherData.weather_summary?.current_humidity),
+                '%',
+                'Humidity'
+              )}
+              {isWeatherExpanded && renderCompactMetric(
                 'speedometer-outline',
                 formatMetricValue(weatherData.weather_summary?.wind_speed),
                 'km/h',
@@ -250,21 +276,30 @@ export default function LiveDataScreen() {
 
           <View style={styles.forecastCard}>
             <View style={styles.sectionHeader}>
-              <View>
+              <View style={styles.sectionHeaderLeft}>
                 <Text style={styles.sectionTitle}>7-Day Rain Outlook</Text>
                 <Text style={styles.sectionSubtitle}>
                   {weatherData.rain_forecast?.rain_summary || 'Monitoring precipitation trends for your area'}
                 </Text>
               </View>
-              <Ionicons name="calendar-outline" size={24} color={COLORS.PRIMARY} />
+              <View style={styles.sectionHeaderRight}>
+                <Ionicons name="calendar-outline" size={24} color={COLORS.PRIMARY} />
+                <TouchableOpacity onPress={toggleRainOutlookExpansion} style={styles.expandButton}>
+                  <Ionicons
+                    name={isRainOutlookExpanded ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color={COLORS.TEXT_SECONDARY}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {rainDays.length > 0 ? (
               <View style={styles.forecastList}>
-                {rainDays.map((day, index) => (
+                {(isRainOutlookExpanded ? rainDays : rainDays.slice(0, 2)).map((day, index, displayedDays) => (
                   <View
                     key={day.date}
-                    style={[styles.forecastRow, index === rainDays.length - 1 && styles.forecastRowLast]}
+                    style={[styles.forecastRow, index === displayedDays.length - 1 && styles.forecastRowLast]}
                   >
                     <View style={styles.forecastInfo}>
                       <Text style={styles.forecastDay}>{day.day_name}</Text>
@@ -285,6 +320,39 @@ export default function LiveDataScreen() {
               <Text style={styles.nextRainText}>
                 Next rain in approximately {weatherData.rain_forecast.next_rain_in_hours} hours.
               </Text>
+            )}
+          </View>
+
+          <View style={styles.mapSection}>
+            <View style={styles.mapHeader}>
+              <View>
+                <Text style={styles.sectionTitle}>Malaysia Flood Risk Map</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Real-time flood risk assessment across Malaysian states
+                </Text>
+              </View>
+              <Ionicons name="map-outline" size={24} color={COLORS.PRIMARY} />
+            </View>
+
+            <View style={styles.mapContainer}>
+              <FloodRiskMapView
+                style={styles.floodMap}
+                onStateSelected={handleStateSelected}
+              />
+            </View>
+
+            {selectedState && (
+              <View style={styles.selectedStateInfo}>
+                <Text style={styles.selectedStateTitle}>
+                  {selectedState.name} - {selectedState.riskData.riskLevel} Risk
+                </Text>
+                <Text style={styles.selectedStateDetails}>
+                  {Math.round(selectedState.riskData.floodProbability * 100)}% flood probability
+                  {selectedState.riskData.weatherSummary &&
+                    ` • ${selectedState.riskData.weatherSummary.temperature}°C • ${selectedState.riskData.weatherSummary.rainfall}mm rain`
+                  }
+                </Text>
+              </View>
             )}
           </View>
         </>
@@ -421,6 +489,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   weatherIcon: {
     marginRight: 8,
   },
@@ -448,6 +520,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: COLORS.SUCCESS,
+  },
+  expandButton: {
+    marginLeft: 8,
+    padding: 4,
   },
   compactMetricGrid: {
     flexDirection: 'row',
@@ -549,6 +625,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  sectionHeaderLeft: {
+    flex: 1,
+    paddingRight: 16,
+  },
+  sectionHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
@@ -612,5 +696,49 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.TEXT_SECONDARY,
     textAlign: 'center',
+  },
+  mapSection: {
+    backgroundColor: COLORS.SURFACE,
+    marginHorizontal: 20,
+    borderRadius: 16,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 3,
+    overflow: 'hidden',
+  },
+  mapHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  mapContainer: {
+    height: 300,
+    backgroundColor: '#F5F5F5',
+  },
+  floodMap: {
+    flex: 1,
+  },
+  selectedStateInfo: {
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  selectedStateTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.TEXT_PRIMARY,
+    marginBottom: 4,
+  },
+  selectedStateDetails: {
+    fontSize: 13,
+    color: COLORS.TEXT_SECONDARY,
+    lineHeight: 18,
   },
 });

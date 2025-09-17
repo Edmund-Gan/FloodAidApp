@@ -579,7 +579,7 @@ class FloodPredictionModel {
       latitude: location.lat,
       longitude: location.lon,
       state: state,
-      elevation: weatherData.location.elevation || 50, // Default elevation
+      elevation: weatherData.location.elevation || 30, // Default elevation (conservative for Malaysian flood zones)
       
       // Weather features (24h aggregated)
       temperature: features.temp_avg,
@@ -1045,16 +1045,27 @@ class FloodPredictionModel {
     }
     
     // High elevation is protective
-    if (features.elevation && features.elevation > 50) {
+    if (features.elevation && features.elevation > 100) {
       fallbackFactors.push(createFallbackFactor(
-        'High Elevation',
-        `Location at ${Math.round(features.elevation)}m elevation provides natural flood protection`,
+        'High Elevation - Protective',
+        `Location at ${Math.round(features.elevation)}m elevation is well above Malaysian flood zones and provides genuine protection`,
         'High',
         features.elevation / 100,
         true // isProtective
       ));
     }
-    
+
+    // Add warning for moderate elevation (50-100m) - still at risk
+    if (features.elevation && features.elevation >= 50 && features.elevation <= 100) {
+      fallbackFactors.push(createFallbackFactor(
+        'Moderate Elevation Warning',
+        `At ${Math.round(features.elevation)}m elevation, still within potential flood zones during extreme weather events`,
+        'Medium',
+        (100 - features.elevation) / 50, // Risk increases as elevation approaches 50m
+        false // Not protective - this is a warning
+      ));
+    }
+
     // Low precipitation is protective
     if (features.precipitation_sum < 15 && features.precipitation_sum >= 0) {
       fallbackFactors.push(createFallbackFactor(

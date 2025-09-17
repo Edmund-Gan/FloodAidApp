@@ -259,8 +259,8 @@ class EnvironmentalAnalysisService {
       floodRiskLevel = 'High - Low-lying area prone to flooding';
     } else if (elevation < 100) {
       elevationRisk = 'moderate';
-      elevationDescription = `Your area is at moderate elevation (${elevation}m) with some flood risk`;
-      floodRiskLevel = 'Moderate - Elevation provides some protection';
+      elevationDescription = `Your area is at moderate elevation (${elevation}m) - still within potential flood zones during extreme weather`;
+      floodRiskLevel = 'Moderate - Some flood risk remains at this elevation';
     } else if (elevation < 200) {
       elevationRisk = 'low';
       elevationDescription = `Your area is at elevated position (${elevation}m) with reduced flood risk`;

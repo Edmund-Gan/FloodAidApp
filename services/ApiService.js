@@ -175,7 +175,7 @@ class ApiService {
         location: {
           latitude: rawData.latitude,
           longitude: rawData.longitude,
-          elevation: rawData.elevation || 50,
+          elevation: rawData.elevation || 30,
           timezone: rawData.timezone
         },
         
@@ -452,7 +452,7 @@ class ApiService {
       const originalFeatures = {
         latitude: lat,
         longitude: lon,
-        elevation: data.elevation || 50,
+        elevation: data.elevation || 30,
         temp_max: this.calculateMax(hourly.temperature_2m, last24Hours),
         temp_min: this.calculateMin(hourly.temperature_2m, last24Hours),
         temp_mean: this.calculateAverage(hourly.temperature_2m, last24Hours),
@@ -735,7 +735,7 @@ class ApiService {
     const monthlyInfo = this.calculateMonthlyFeatures(new Date());
     
     return {
-      location: { latitude: lat, longitude: lon, elevation: 50, timezone: 'Asia/Kuala_Lumpur' },
+      location: { latitude: lat, longitude: lon, elevation: 30, timezone: 'Asia/Kuala_Lumpur' },
       current: {
         temperature: 28 + Math.random() * 6,
         windspeed: 5 + Math.random() * 15,
@@ -747,7 +747,7 @@ class ApiService {
         // Original 15 features
         latitude: lat,
         longitude: lon,
-        elevation: 50,
+        elevation: 30,
         temp_max: 32 + Math.random() * 3,
         temp_min: 24 + Math.random() * 3,
         temp_mean: 28 + Math.random() * 4,
