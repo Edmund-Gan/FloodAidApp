@@ -15,7 +15,14 @@ export const UserProvider = ({ children }) => {
     healthConditions: [],
     riskTolerance: 'moderate', // low, moderate, high
     language: 'en', // en, ms
-    setupComplete: true
+    setupComplete: true,
+    specialMedicalNeeds: false,
+    mobilityAssistance: false,
+    emergencyPreferences: {
+      selectedState: 'SELANGOR',
+      autoDetectLocation: true,
+      preferredContactMethod: 'call'
+    }
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -285,7 +292,14 @@ export const UserProvider = ({ children }) => {
         healthConditions: [],
         riskTolerance: 'moderate',
         language: 'en',
-        setupComplete: false
+        setupComplete: false,
+        specialMedicalNeeds: false,
+        mobilityAssistance: false,
+        emergencyPreferences: {
+          selectedState: 'SELANGOR',
+          autoDetectLocation: true,
+          preferredContactMethod: 'call'
+        }
       });
     } catch (error) {
       console.log('Error resetting user data:', error);

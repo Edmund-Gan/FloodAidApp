@@ -27,10 +27,10 @@ export const FloodProvider = ({ children }) => {
   });
 
   const [riskFactors, setRiskFactors] = useState([
-    'Heavy rainfall expected',
-    'Rising river levels',
-    'Monsoon season',
-    'Low-lying area'
+    'Heavy rain expected in your area',
+    'River water levels rising',
+    'Rainy season increasing flood risk',
+    'Your area is at low elevation'
   ]);
 
   const [hotspots, setHotspots] = useState([

@@ -40,16 +40,24 @@ import MockDataService from './utils/MockDataService';
 import RealTimeWeatherService from './services/RealTimeWeatherService';
 import DeveloperModeButton from './components/DeveloperModeButton';
 import { notificationService } from './utils/NotificationService';
+import EmergencyKit from './components/EmergencyKit';
+import PreparationGuidelines from './components/PreparationGuidelines';
+import EmergencyContacts from './components/EmergencyContacts';
 
 // Import FloodHotspotsScreen for Epic 3 - Using CSV data version
 import FloodHotspotsScreen from './screens/FloodHotspotsCSV';
 import LiveDataScreen from './screens/LiveDataScreen';
+import ProfileScreen from './screens/ProfileScreen';
 
 // Import Multi-Location Alerts Components and Context
 import MyLocationsScreen from './screens/MyLocationsScreen';
 import { LocationProvider } from './context/LocationContext';
 import { UserProvider } from './context/UserContext';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Import emergency data
+const emergencyKitData = require('./emergency_kit.json');
+const emergencyContactsData = require('./emergency_contact.json');
 
 const { width, height } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
@@ -1218,7 +1226,14 @@ function HomeScreen() {
 
       {/* REMOVED: Fallback Rain Forecast Card - redundant when prediction is N/A, weather data shown in main Weather Card */}
 
-      <TouchableOpacity 
+      {/* Emergency Components */}
+      <EmergencyKit emergencyKitData={emergencyKitData} />
+
+      <PreparationGuidelines />
+
+      <EmergencyContacts emergencyContactsData={emergencyContactsData} />
+
+      <TouchableOpacity
         style={styles.primaryButton}
         onPress={() => setShowDetailsModal(true)}
       >
@@ -1405,6 +1420,8 @@ export default function App() {
                   iconName = focused ? 'location' : 'location-outline';
                 } else if (route.name === 'Locations') {
                   iconName = focused ? 'pin' : 'pin-outline';
+                } else if (route.name === 'Profile') {
+                  iconName = focused ? 'person' : 'person-outline';
                 }
                 return <Ionicons name={iconName} size={size} color={color} />;
               },
@@ -1418,6 +1435,7 @@ export default function App() {
             <Tab.Screen name="Live Data" component={LiveDataScreen} />
             <Tab.Screen name="Hotspots" component={FloodHotspotsScreen} />
             <Tab.Screen name="Locations" component={LocationsScreen} />
+            <Tab.Screen name="Profile" component={ProfileScreen} />
           </Tab.Navigator>
           </NavigationContainer>
         </LocationProvider>

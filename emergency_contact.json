@@ -1,0 +1,207 @@
+{
+  "PERLIS": {
+    "contacts": [
+      "Perlis Civil Defence Dept: 04-9762510",
+      "APM Kangar: 04-9762510",
+      "APM Padang Besar: 04-9762510",
+      "APM Arau: 04-9706379",
+      "General Disaster Hotline: 999"
+    ],
+    "sources": [
+      "https://www.civildefence.gov.my/perlis/?lang=en"
+    ]
+  },
+  "KEDAH": {
+    "contacts": [
+      "NADMA: 03-8870 4800",
+      "Kedah Fire & Rescue: 04-7344444",
+      "Kedah Police HQ: 04-7741222",
+      "Social Welfare Dept JKM: 04-7335255"
+    ],
+    "sources": [
+      "https://www.nadma.gov.my/",
+      "https://pbt.kedah.gov.my/index.php/talian-kecemasan-mbas/"
+    ]
+  },
+  "SARAWAK": {
+    "contacts": [
+      "Sarawak State Disaster Mgmt Committee: 082-441957",
+      "Royal Malaysia Police Sarawak: 082-244444",
+      "Fire & Rescue Department Sarawak: 994",
+      "Sarawak General Hospital: 082-276666",
+      "Malaysian Red Crescent Sarawak: 082-240270"
+    ],
+    "sources": [
+      "https://sarawakdisaster.sarawak.gov.my/",
+      "https://www.rmp.gov.my/"
+    ]
+  },
+  "SABAH": {
+    "contacts": [
+      "Sabah Emergency: 999",
+      "Royal Malaysian Police (Kota Kinabalu): 088-529222",
+      "Fire & Rescue: 088-218422",
+      "Queen Elizabeth Hospital: 088-517555",
+      "Sabah Disaster Mgmt Committee: 088-219455"
+    ],
+    "sources": [
+      "https://sabahtourism.com/assets/uploads/ENGLISH_Full-Sabah-Emergency-Carelines-.pdf",
+      "https://sites.google.com/view/ldpinfohub/list-of-local-authorities-and-emergency-contacts-%E5%9C%B0%E6%96%B9%E5%BD%93%E5%B1%80%E5%92%8C%E7%B4%A7%E6%80%A5%E8%81%94%E7%B3%BB%E4%BA%BA%E5%90%8D%E5%8D%95-senarai-p"
+    ]
+  },
+  "JOHOR": {
+    "contacts": [
+      "NADMA: 03-8870 4800",
+      "Johor Police: 07-2212999",
+      "Johor Fire & Rescue: 07-2243444",
+      "JKM Johor: 07-2232606"
+    ],
+    "sources": [
+      "https://www.nadma.gov.my/bm/",
+      "https://www.malaysiaservicecentre.com/fire-a-rescue-department-of-malaysia-johor/"
+    ]
+  },
+  "KELANTAN": {
+    "contacts": [
+      "NADMA: +603 8870 4800",
+      "State Civil Defence Ops Room: 09-748 1180",
+      "Police: 09-745 1999",
+      "Fire & Rescue: 09-748 2112",
+    ],
+    "sources": [
+      "https://disaster.marufish.com/2025/01/01/kelantan-emergency-hotline-apm/",
+      "https://ebencana.kelantan.gov.my/portal/senarai_pp.php"
+    ]
+  },
+  "MALACCA": {
+    "contacts": [
+      "Melaka Disaster Mgmt Committee: 06-3333333",
+      "Melaka Police: 06-2841999",
+      "Melaka Fire & Rescue HQ: 06-2828481",
+      "Jasin Fire & Rescue: 06-5291444",
+      "State Civil Defence: 999",
+    ],
+    "sources": [
+      "https://melakarelief.melaka.gov.my",
+      "https://www.malaymail.com/news/malaysia/2025/03/07/flood-victims-in-melaka-rise-to-330-this-morning/168834",
+      "https://www.civildefence.gov.my/999-emergency-services/?lang=en"
+    ]
+  },
+  "NEGERI SEMBILAN": {
+    "contacts": [
+      "JPAM Negeri Sembilan: 06-7645755",
+      "Balai Bomba Seremban: 06-7624444",
+      "Police/MERS: 999",
+      "NDCC: 03-8064 2400",
+      "Meteorology Malaysia: 03-79678000"
+    ],
+    "sources": [
+      "https://marufish.com/emergency-contact/",
+      "https://www.mbs.gov.my/ms/rakyat/perkhidmatan-kecemasan/balai-bomba"
+    ]
+  },
+  "PAHANG": {
+    "contacts": [
+      "Pahang Civil Defence Force: 09-5131991",
+      "Fire & Rescue: 999",
+      "Police: 999",
+      "State Flood Relief Centre hotline: 09-4455436",
+      "Malaysian Relief Agency (MRA) Pahang: +6013-4897703",
+      "MRA Kuantan office: +603-9174 4672"
+    ],
+    "sources": [
+      "https://www.civildefence.gov.my/pahang/?lang=en",
+      "https://mra.my/mra-states/",
+      "https://marufish.com/2024/12/11/talian-kecemasan-pusat-kawalan-operasi-bencana-banjir-pahang/"
+    ]
+  },
+  "PENANG": {
+    "contacts": [
+      "Police: 999",
+      "Fire & Rescue: 994",
+      "Ambulance: 999",
+      "Tourist Police Hotline: 03-2149 6590",
+      "Penang General Hospital: +60 4-222 5333"
+    ],
+    "sources": [
+      "Emergency numbers and contacts in Penang"
+    ]
+  },
+  "PERAK": {
+    "contacts": [
+      "Perak Disaster Hotline: 05-209 5000",
+      "Civil Defence Ops: 05-527 5875",
+      "Police: 999",
+      "Fire & Rescue: 994",
+      "Hospital Raja Permaisuri Bainun: 05-208 5000",
+    ],
+    "sources": [
+      "https://disaster.marufish.com/2025/01/06/perak-emergency-disaster-hotline-apm/",
+      "https://www.tourismperakmalaysia.com/emergency-contact-list/"
+    ]
+  },
+  "SELANGOR": {
+    "contacts": [
+      "Selangor State Disaster Management Unit: 03-55212421",
+      "JPAM Selangor: 03-55196551",
+      "MERS/Police: 999",
+      "Fire Dept. Selangor: 03-55190042",
+      "NDCC/NADMA: 03-8064 2400"
+    ],
+    "sources": [
+      "https://www.selangor.gov.my/index.php/pages/view/741?mid=901&lang=en",
+      "https://portalbencana.nadma.gov.my/en/"
+    ]
+  },
+  "TERENGGANU": {
+    "contacts": [
+      "APM (Civil Defence): 09-6668246",
+      "Police: 09-6270499",
+      "Fire & Rescue: 09-6224444",
+      "JPS (Irrigation & Drainage): 09-6220050",
+    ],
+    "sources": [
+      "https://www.civildefence.gov.my/terengganu/?lang=en",
+      "https://marufish.com/emergency-contact/",
+      "https://jpsweb.terengganu.gov.my/index.php/en/flood-info/flood-preparedness"
+    ]
+  },
+  "KUALA LUMPUR": {
+    "contacts": [
+      "NADMA: +603-8870 4800",
+      "DBKL Hotline: 1-800-88-3255",
+      "Police: 999",
+      "Fire & Rescue: 999",
+      "JPAM: 03-8920 6080",
+      "Malaysian Relief Agency: +603-9174 4672"
+    ],
+    "sources": [
+      "https://www.nadma.gov.my/",
+      "https://www.civildefence.gov.my/999-emergency-services/?lang=en",
+      "https://mra.my/contact/"
+    ]
+  },
+  "PUTRAJAYA": {
+    "contacts": [
+      "PPj Disaster Management: 603-8887 7000",
+      "Police: 03-8886 2222",
+      "Fire & Rescue: 999",
+      "Complaint: 603-8887 3000"
+    ],
+    "sources": [
+      "https://www.ppj.gov.my/en/second-menu/pengurusan-bencana-perbadanan-putrajaya",
+      "https://www.ppj.gov.my/en/second-page/ibu-pejabat-polis-daerah-2"
+    ]
+  },
+  "LABUAN": {
+    "contacts": [
+      "Labuan Water Department: 087-422000",
+      "Labuan Civil Defence: 087-421234",
+      "Fire & Rescue: 999"
+    ],
+    "sources": [
+      "https://wplb.water.gov.my/en/contact-us/labuan-office",
+      "https://www.nadma.gov.my/en/disaster-management/labuan-flood-preparedness"
+    ]
+  }
+}

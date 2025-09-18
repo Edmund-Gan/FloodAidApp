@@ -966,8 +966,8 @@ class FloodPredictionModel {
     // Enhanced rainfall analysis
     if (features.rain_sum > 20) {
       fallbackFactors.push(createFallbackFactor(
-        'Heavy Rainfall Alert',
-        `${Math.round(features.rain_sum)}mm of rainfall recorded in 24 hours, significantly above safe levels`,
+        'Heavy rain detected',
+        `${Math.round(features.rain_sum)}mm of rain in 24 hours - much more than normal`,
         features.rain_sum > 40 ? 'High' : 'Medium',
         features.rain_sum
       ));
@@ -975,8 +975,8 @@ class FloodPredictionModel {
     
     if (features.precipitation_sum > 30) {
       fallbackFactors.push(createFallbackFactor(
-        'High Precipitation Warning',
-        `${Math.round(features.precipitation_sum)}mm total precipitation detected`,
+        'Heavy downpour warning',
+        `${Math.round(features.precipitation_sum)}mm total rainfall - causing flood risk`,
         features.precipitation_sum > 50 ? 'High' : 'Medium',
         features.precipitation_sum
       ));
@@ -984,8 +984,8 @@ class FloodPredictionModel {
     
     if (features.precipitation_hours > 8) {
       fallbackFactors.push(createFallbackFactor(
-        'Extended Rain Period',
-        `Precipitation expected for ${features.precipitation_hours} hours, increasing saturation risk`,
+        'Long periods of rain',
+        `Rain expected for ${features.precipitation_hours} hours - ground getting too wet`,
         features.precipitation_hours > 12 ? 'High' : 'Medium',
         features.precipitation_hours
       ));
@@ -995,16 +995,16 @@ class FloodPredictionModel {
     if (monsoonInfo) {
       if (monsoonInfo.intensity > 0.3) {
         fallbackFactors.push(createFallbackFactor(
-          `${monsoonInfo.season} Monsoon`,
-          'High intensity monsoon period - elevated flood risk across Malaysia',
+          `${monsoonInfo.season} rainy season`,
+          'Heavy monsoon period - higher flood risk across Malaysia',
           'High',
           monsoonInfo.intensity
         ));
       }
       if (indicators.monsoon_peak_warning) {
         fallbackFactors.push(createFallbackFactor(
-          'Peak Monsoon Season',
-          'Currently in peak monsoon season with highest historical flood rates',
+          'Peak rainy season',
+          'Currently in the wettest time of year with highest flood risk',
           'High',
           0.8
         ));
@@ -1014,8 +1014,8 @@ class FloodPredictionModel {
     // Enhanced wind analysis
     if (features.wind_speed_max > 25) {
       fallbackFactors.push(createFallbackFactor(
-        'Strong Wind Conditions',
-        `Maximum winds of ${Math.round(features.wind_speed_max)} km/h can worsen flooding impact`,
+        'Strong winds detected',
+        `Winds up to ${Math.round(features.wind_speed_max)} km/h making storms more dangerous`,
         features.wind_speed_max > 40 ? 'High' : 'Medium',
         features.wind_speed_max
       ));
@@ -1024,8 +1024,8 @@ class FloodPredictionModel {
     // River discharge analysis
     if (features.river_discharge > 3) {
       fallbackFactors.push(createFallbackFactor(
-        'Elevated River Levels',
-        `River discharge at ${features.river_discharge.toFixed(1)} m³/s, above normal capacity`,
+        'Rivers running high',
+        `River water levels are higher than normal - increasing flood risk`,
         features.river_discharge > 5 ? 'High' : 'Medium',
         features.river_discharge
       ));
@@ -1036,8 +1036,8 @@ class FloodPredictionModel {
     // Low rainfall is protective
     if (features.rain_sum < 10 && features.rain_sum >= 0) {
       fallbackFactors.push(createFallbackFactor(
-        'Low Rainfall',
-        `Only ${Math.round(features.rain_sum)}mm recorded - well below flood threshold`,
+        'Little rain recorded',
+        `Only ${Math.round(features.rain_sum)}mm of rain - much less than needed for flooding`,
         'High',
         10 - features.rain_sum,
         true // isProtective
@@ -1047,8 +1047,8 @@ class FloodPredictionModel {
     // High elevation is protective
     if (features.elevation && features.elevation > 100) {
       fallbackFactors.push(createFallbackFactor(
-        'High Elevation - Protective',
-        `Location at ${Math.round(features.elevation)}m elevation is well above Malaysian flood zones and provides genuine protection`,
+        'Higher ground - safer',
+        `Your location is ${Math.round(features.elevation)}m above sea level - good protection from floods`,
         'High',
         features.elevation / 100,
         true // isProtective
@@ -1058,8 +1058,8 @@ class FloodPredictionModel {
     // Add warning for moderate elevation (50-100m) - still at risk
     if (features.elevation && features.elevation >= 50 && features.elevation <= 100) {
       fallbackFactors.push(createFallbackFactor(
-        'Moderate Elevation Warning',
-        `At ${Math.round(features.elevation)}m elevation, still within potential flood zones during extreme weather events`,
+        'Moderate elevation warning',
+        `At ${Math.round(features.elevation)}m above sea level - still at risk during heavy rains`,
         'Medium',
         (100 - features.elevation) / 50, // Risk increases as elevation approaches 50m
         false // Not protective - this is a warning
@@ -1069,8 +1069,8 @@ class FloodPredictionModel {
     // Low precipitation is protective
     if (features.precipitation_sum < 15 && features.precipitation_sum >= 0) {
       fallbackFactors.push(createFallbackFactor(
-        'Dry Conditions',
-        `Low precipitation (${Math.round(features.precipitation_sum)}mm) indicates stable weather`,
+        'Dry weather',
+        `Low rainfall (${Math.round(features.precipitation_sum)}mm) means stable weather conditions`,
         'Medium',
         15 - features.precipitation_sum,
         true // isProtective
@@ -1080,8 +1080,8 @@ class FloodPredictionModel {
     // Low river levels are protective
     if (features.river_discharge < 2 && features.river_discharge >= 0) {
       fallbackFactors.push(createFallbackFactor(
-        'Normal River Levels',
-        `River discharge at ${features.river_discharge.toFixed(1)} m³/s - within safe levels`,
+        'Rivers at normal levels',
+        `River water levels are normal - no flood threat from waterways`,
         'Medium',
         2 - features.river_discharge,
         true // isProtective
@@ -1091,8 +1091,8 @@ class FloodPredictionModel {
     // Short precipitation duration is protective
     if (features.precipitation_hours < 3 && features.precipitation_hours >= 0) {
       fallbackFactors.push(createFallbackFactor(
-        'Brief Weather',
-        `Short precipitation period (${features.precipitation_hours}h) reduces saturation risk`,
+        'Brief rain period',
+        `Rain only expected for ${features.precipitation_hours} hours - not long enough to cause flooding`,
         'Low',
         3 - features.precipitation_hours,
         true // isProtective
@@ -1102,8 +1102,8 @@ class FloodPredictionModel {
     // Calm wind conditions are protective
     if (features.wind_speed_max < 15 && features.wind_speed_max >= 0) {
       fallbackFactors.push(createFallbackFactor(
-        'Calm Conditions',
-        `Light winds (${Math.round(features.wind_speed_max)} km/h) indicate stable atmospheric conditions`,
+        'Calm weather',
+        `Light winds (${Math.round(features.wind_speed_max)} km/h) indicate stable weather conditions`,
         'Low',
         15 - features.wind_speed_max,
         true // isProtective
@@ -1113,8 +1113,8 @@ class FloodPredictionModel {
     // Add at least one factor for UI if no factors exist
     if (fallbackFactors.length === 0) {
       fallbackFactors.push(createFallbackFactor(
-        'Enhanced Monitoring Active',
-        '31-feature model continuously monitoring all flood conditions',
+        'Flood monitoring active',
+        'Advanced system continuously monitoring weather and flood conditions',
         'Low',
         0.5
       ));

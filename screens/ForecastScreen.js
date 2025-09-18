@@ -237,7 +237,7 @@ export default function ForecastScreen({ navigation }) {
                   </View>
                   <View style={styles.weatherItem}>
                     <Ionicons name="water" size={16} color={COLORS.TEXT_SECONDARY} />
-                    <Text style={styles.weatherLabel}>Precipitation</Text>
+                    <Text style={styles.weatherLabel}>Rainfall</Text>
                     <Text style={styles.weatherValue}>
                       {weatherSummary.currentPrecipitation.toFixed(1)} mm
                     </Text>
@@ -251,7 +251,7 @@ export default function ForecastScreen({ navigation }) {
                   </View>
                   <View style={styles.weatherItem}>
                     <Ionicons name="boat" size={16} color={COLORS.TEXT_SECONDARY} />
-                    <Text style={styles.weatherLabel}>River Level</Text>
+                    <Text style={styles.weatherLabel}>River Water</Text>
                     <Text style={styles.weatherValue}>
                       {weatherSummary.riverLevel.toFixed(1)} ft
                     </Text>

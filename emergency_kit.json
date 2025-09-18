@@ -1,0 +1,163 @@
+{
+  "Items": [
+    {
+      "Item": "Clean drinking water (4L/person/day for 3 days)",
+      "Priority": "HIGH",
+      "Base Prep Time": "15–30 min",
+      "Scaling for More People": "Linear scaling: 12L × people",
+      "Mobility Considerations": null,
+      "Where to Shop": "Grocery store, bulk stores"
+    },
+    {
+      "Item": "Non-perishable food (3-day supply)",
+      "Priority": "HIGH",
+      "Base Prep Time": "30–45 min",
+      "Scaling for More People": "Linear scaling per person",
+      "Mobility Considerations": null,
+      "Where to Shop": "Grocery store, camping stores"
+    },
+    {
+      "Item": "Essential medications",
+      "Priority": "HIGH",
+      "Base Prep Time": "15–30 min",
+      "Scaling for More People": "Per person’s needs",
+      "Mobility Considerations": null,
+      "Where to Shop": "Pharmacy"
+    },
+    {
+      "Item": "First aid kit",
+      "Priority": "HIGH",
+      "Base Prep Time": "20–30 min",
+      "Scaling for More People": "1 basic + 1 extra per 4 people",
+      "Mobility Considerations": "Standard time: Pre-assembled kits available, consider larger family-sized kits",
+      "Where to Shop": "Pharmacy, department stores"
+    },
+    {
+      "Item": "Important documents (waterproof bag)",
+      "Priority": "HIGH",
+      "Base Prep Time": "45–90 min",
+      "Scaling for More People": "Per person + family docs",
+      "Mobility Considerations": null,
+      "Where to Shop": "Office supply stores"
+    },
+    {
+      "Item": "Emergency contact list",
+      "Priority": "HIGH",
+      "Base Prep Time": "30–45 min",
+      "Scaling for More People": "Same for all",
+      "Mobility Considerations": null,
+      "Where to Shop": "Home preparation"
+    },
+    {
+      "Item": "Torchlight/Flashlight",
+      "Priority": "MEDIUM",
+      "Base Prep Time": "10–15 min",
+      "Scaling for More People": "1 per person + 2 extras",
+      "Mobility Considerations": "Standard time: Lightweight LED options, headlamps for hands-free use",
+      "Where to Shop": "Hardware store, department stores"
+    },
+    {
+      "Item": "Battery-operated radio",
+      "Priority": "MEDIUM",
+      "Base Prep Time": "10–20 min",
+      "Scaling for More People": "1 per group (backup recommended)",
+      "Mobility Considerations": "Standard time: Hand-crank options available",
+      "Where to Shop": "Electronics, department stores"
+    },
+    {
+      "Item": "Power bank & phone charger",
+      "Priority": "MEDIUM",
+      "Base Prep Time": "15–25 min",
+      "Scaling for More People": "1 large or multiple smaller ones",
+      "Mobility Considerations": null,
+      "Where to Shop": "Electronics stores"
+    },
+    {
+      "Item": "Extra batteries",
+      "Priority": "MEDIUM",
+      "Base Prep Time": "5–10 min",
+      "Scaling for More People": "Increases with devices",
+      "Mobility Considerations": "Standard time: Buy in bulk packs",
+      "Where to Shop": "Any store with electronics"
+    },
+    {
+      "Item": "Face masks",
+      "Priority": "MEDIUM",
+      "Base Prep Time": "5–10 min",
+      "Scaling for More People": "10 per person minimum",
+      "Mobility Considerations": "Standard time: Box quantities available",
+      "Where to Shop": "Pharmacy, department stores"
+    },
+    {
+      "Item": "Whistle",
+      "Priority": "MEDIUM",
+      "Base Prep Time": "5 min",
+      "Scaling for More People": "1 per person",
+      "Mobility Considerations": "Standard time: Attach to keychain for easy access",
+      "Where to Shop": "Sporting goods, hardware stores"
+    },
+    {
+      "Item": "Cash",
+      "Priority": "MEDIUM",
+      "Base Prep Time": "10–15 min",
+      "Scaling for More People": "Same amount recommended",
+      "Mobility Considerations": "Standard time: Small bills, multiple locations",
+      "Where to Shop": "Bank, ATM"
+    },
+    {
+      "Item": "Personal hygiene items",
+      "Priority": "LOW",
+      "Base Prep Time": "15–25 min",
+      "Scaling for More People": "Per person",
+      "Mobility Considerations": null,
+      "Where to Shop": "Pharmacy, grocery store"
+    },
+    {
+      "Item": "Spare clothes",
+      "Priority": "LOW",
+      "Base Prep Time": "20–30 min",
+      "Scaling for More People": "Per person",
+      "Mobility Considerations": null,
+      "Where to Shop": "Department stores"
+    },
+    {
+      "Item": "Blankets/Emergency blankets",
+      "Priority": "LOW",
+      "Base Prep Time": "10–15 min",
+      "Scaling for More People": "1–2 per person",
+      "Mobility Considerations": "Standard time: Space blankets are lightweight, sleeping bags for comfort",
+      "Where to Shop": "Outdoor stores, department stores"
+    },
+    {
+      "Item": "Multi-tool",
+      "Priority": "LOW",
+      "Base Prep Time": "10–15 min",
+      "Scaling for More People": "1 per 2–3 people",
+      "Mobility Considerations": "Standard time: Consider arthritis-friendly tools, separate simple tools",
+      "Where to Shop": "Hardware store, outdoor stores"
+    },
+    {
+      "Item": "Waterproof matches/lighter",
+      "Priority": "LOW",
+      "Base Prep Time": "5–10 min",
+      "Scaling for More People": "2–3 sets per group",
+      "Mobility Considerations": "Standard time: Multiple ignition sources",
+      "Where to Shop": "Hardware store, camping stores"
+    },
+    {
+      "Item": "Water purification tablets",
+      "Priority": "LOW",
+      "Base Prep Time": "5–10 min",
+      "Scaling for More People": "1 pack treats ~25–50L",
+      "Mobility Considerations": null,
+      "Where to Shop": null
+    }
+  ],
+  "Sources": [
+    "Marufish – Emergency Kit Guide",
+    "NADMA – Directives",
+    "Homage Malaysia – Flood Preparation",
+    "NADMA – Johor Earthquake Preparedness News",
+    "GPM Malaysia – Emergency Grab Bags"
+  ]
+}

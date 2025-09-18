@@ -45,3 +45,13 @@ yarn-error.*
 # Temporary files
 *.tmp
 *.temp
+
+# Emergency component development files
+emergency_kit_test.json
+emergency_contacts_test.json
+
+# User data backups
+user_data_backup/
+
+# Component documentation backups
+COMPONENT_DOCS_BACKUP.md

@@ -691,18 +691,18 @@ class EmbeddedMLService {
         const direction = Math.round(Math.abs(featureValue));
         if (direction >= 45 && direction <= 135) {
           return {
-            title: "Winds from the northeast",
-            description: "Bringing moisture from the South China Sea, typical of high-risk monsoon patterns"
+            title: "Wind from the northeast",
+            description: "Bringing heavy rain clouds from the sea - increases flood risk"
           };
         } else if (direction >= 225 && direction <= 315) {
           return {
-            title: "Southwest winds active",
-            description: "Bringing moisture from the Indian Ocean during southwest monsoon"
+            title: "Wind from the southwest",
+            description: "Bringing moisture from the ocean during rainy season"
           };
         } else {
           return {
-            title: `Wind direction at ${direction}°`,
-            description: "Current wind patterns affecting regional weather systems"
+            title: "Wind affecting weather",
+            description: "Current wind patterns may influence rainfall in your area"
           };
         }
       
@@ -712,23 +712,23 @@ class EmbeddedMLService {
         const discharge = Math.abs(featureValue).toFixed(1);
         if (discharge > 5.0) {
           return {
-            title: "High river levels",
-            description: `River discharge at ${discharge} m³/s, well above normal capacity`
+            title: "High river water levels",
+            description: `Rivers are flowing much higher than normal - major flood risk`
           };
         } else if (discharge > 3.0) {
           return {
-            title: "Elevated river flow",
-            description: `Current discharge of ${discharge} m³/s indicates rising water levels`
+            title: "Rising river levels",
+            description: `River water levels are above normal - increasing flood risk`
           };
         } else if (discharge > 1.5) {
           return {
-            title: "Moderate river activity",
-            description: `River flow at ${discharge} m³/s, within manageable levels`
+            title: "Moderate river flow",
+            description: `River levels are slightly elevated but manageable`
           };
         } else {
           return {
-            title: "Normal river conditions",
-            description: `River discharge at ${discharge} m³/s`
+            title: "Normal river levels",
+            description: `Rivers are flowing at safe levels`
           };
         }
       
@@ -736,56 +736,56 @@ class EmbeddedMLService {
         const tempMax = Math.round(Math.abs(featureValue));
         if (tempMax > 35) {
           return {
-            title: "Extreme heat conditions",
-            description: `Maximum temperature of ${tempMax}°C increases evaporation and storm intensity`
+            title: "Very hot weather",
+            description: `Extreme heat (${tempMax}°C) can lead to sudden heavy storms`
           };
         } else if (tempMax > 32) {
           return {
-            title: "High temperature",
-            description: `${tempMax}°C maximum temperature contributing to atmospheric instability`
+            title: "Hot weather",
+            description: `High temperature (${tempMax}°C) may trigger thunderstorms`
           };
         } else {
           return {
-            title: `Temperature at ${tempMax}°C`,
-            description: "Contributing to current weather patterns"
+            title: `Temperature ${tempMax}°C`,
+            description: "Current temperature affecting weather patterns"
           };
         }
       
       case 'temp_min':
         const tempMin = Math.round(Math.abs(featureValue));
         return {
-          title: "Minimum temperature",
-          description: `${tempMin}°C overnight temperature affects humidity and condensation patterns`
+          title: "Overnight temperature",
+          description: `${tempMin}°C minimum temperature affects moisture in the air`
         };
       
       case 'temp_mean':
         const tempMean = Math.round(Math.abs(featureValue));
         return {
-          title: "Average temperature",
-          description: `${tempMean}°C daily average contributing to atmospheric conditions`
+          title: "Daily temperature",
+          description: `${tempMean}°C average temperature affects weather patterns`
         };
       
       case 'elevation':
         const elev = Math.round(Math.abs(featureValue));
         if (elev < 10) {
           return {
-            title: "Very low elevation area",
-            description: `At ${elev}m above sea level, highly vulnerable to flooding`
+            title: "Very low area",
+            description: `Your location is very close to sea level - high flood risk`
           };
         } else if (elev < 50) {
           return {
-            title: "Low-lying location",
-            description: `${elev}m elevation increases flood susceptibility`
+            title: "Low-lying area",
+            description: `Your area is at low elevation - higher chance of flooding`
           };
         } else if (elev < 100) {
           return {
-            title: "Moderate elevation",
-            description: `${elev}m above sea level - still within potential flood zones during extreme weather`
+            title: "Moderate elevation warning",
+            description: `Still at risk during heavy rains despite being ${elev}m above sea level`
           };
         } else {
           return {
-            title: "Higher elevation - protective",
-            description: `${elev}m elevation provides genuine flood protection above typical Malaysian flood zones`
+            title: "Higher ground - safer",
+            description: `Your elevated location (${elev}m) provides good protection from flooding`
           };
         }
       
@@ -793,18 +793,18 @@ class EmbeddedMLService {
         const lat = Math.abs(featureValue).toFixed(2);
         if (Math.abs(featureValue) > 5.0) {
           return {
-            title: "Northern Malaysia location",
-            description: `Geographic position (${lat}°N) in high-risk monsoon zone`
+            title: "Northern region",
+            description: `Your area has higher flood risk during monsoon season`
           };
         } else if (Math.abs(featureValue) > 3.0) {
           return {
-            title: "Central Malaysia location",
-            description: `Position (${lat}°N) experiences varied flood patterns`
+            title: "Central region",
+            description: `Your location experiences varied flood patterns throughout the year`
           };
         } else {
           return {
-            title: "Southern Malaysia location",
-            description: `Geographic position (${lat}°N) with different seasonal patterns`
+            title: "Southern region",
+            description: `Your area has different flood risk patterns`
           };
         }
       
@@ -812,18 +812,18 @@ class EmbeddedMLService {
         const lon = Math.abs(featureValue).toFixed(2);
         if (Math.abs(featureValue) > 110) {
           return {
-            title: "East Malaysia location",
-            description: `Position in Borneo (${lon}°E) with unique flood characteristics`
+            title: "East Malaysia area",
+            description: `Your region in Borneo has different flood patterns`
           };
         } else if (Math.abs(featureValue) > 103) {
           return {
-            title: "East coast Peninsula",
-            description: `Location (${lon}°E) directly exposed to Northeast Monsoon`
+            title: "East coastal area",
+            description: `Your location faces higher flood risk during monsoon season`
           };
         } else {
           return {
-            title: "West coast Peninsula",
-            description: `Geographic position (${lon}°E) with different monsoon exposure`
+            title: "Coastal flood-prone area",
+            description: `Your location is more exposed to flooding during rainy season`
           };
         }
       
