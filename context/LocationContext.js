@@ -1,9 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import LocationService from '../services/LocationService';
-import FusedLocationProvider from '../services/FusedLocationProvider';
-import IPGeolocationService from '../services/IPGeolocationService';
-import LocationCache from '../services/LocationCache';
+import LocationManager from '../services/LocationManager';
 import ManualLocationService from '../services/ManualLocationService';
 import FloodPredictionModel from '../services/FloodPredictionModel';
 import floodAlertService from '../utils/FloodAlertService';
@@ -179,24 +176,42 @@ export const LocationProvider = ({ children }) => {
 
   const requestLocationPermission = async () => {
     try {
-      // Use LocationService which handles permissions more robustly
-      const location = await LocationService.getCurrentLocation(false);
-      
-      if (location) {
+      console.log('📍 LocationContext: Requesting location permission and initial location...');
+
+      const hasPermission = await LocationManager.hasLocationPermission();
+      if (hasPermission) {
         setLocationPermission('granted');
-        setCurrentLocation({
-          latitude: location.lat,
-          longitude: location.lon,
-          accuracy: location.accuracy,
-          timestamp: location.timestamp ? new Date(location.timestamp).toISOString() : new Date().toISOString(),
-          isCached: location.isCached || false,
-          isDefault: location.isDefault || false
-        });
+
+        // Try to get location with fast priority
+        try {
+          const location = await LocationManager.getCurrentLocation({
+            priority: 'fast',
+            allowStale: true,
+            showError: false
+          });
+
+          if (location) {
+            setCurrentLocation({
+              latitude: location.latitude,
+              longitude: location.longitude,
+              accuracy: location.accuracy,
+              timestamp: new Date(location.timestamp).toISOString(),
+              isCached: location.isCached || false,
+              isDefault: false,
+              source: location.source
+            });
+            console.log('✅ LocationContext: Initial location set successfully');
+          }
+        } catch (locationError) {
+          console.log('📍 LocationContext: Initial location failed, will prompt later');
+          setLocationError(LocationManager.getUserFriendlyError(locationError));
+        }
       } else {
         setLocationPermission('denied');
+        console.log('⚠️ LocationContext: Location permission not granted');
       }
     } catch (error) {
-      console.log('Error requesting location permission:', error);
+      console.error('❌ LocationContext: Error in requestLocationPermission:', error);
       setLocationPermission('denied');
     }
   };
@@ -205,111 +220,74 @@ export const LocationProvider = ({ children }) => {
     try {
       console.log(`📍 LocationContext: Getting current location (skipGPS: ${skipGPS}, priority: ${priority})`);
 
-      let location;
+      // Map priority names to LocationManager priorities
+      const locationPriority = priority === 'speed' ? 'fast' :
+                              priority === 'accuracy' ? 'thorough' : 'normal';
 
-      if (skipGPS) {
-        // Use immediate location methods only
-        location = await LocationService.getImmediateLocation(Date.now());
-      } else {
-        // Use enhanced hybrid approach based on priority
-        switch (priority) {
-          case 'speed':
-            location = await LocationService.getBestAvailableLocation({ priority: 'speed' });
-            break;
-          case 'accuracy':
-            location = await LocationService.getBestAvailableLocation({ priority: 'accuracy' });
-            break;
-          default:
-            location = await LocationService.getCurrentLocationWithRetry(false);
-        }
-      }
+      const location = await LocationManager.getCurrentLocation({
+        priority: locationPriority,
+        allowStale: !skipGPS,
+        showError: true,
+        forceGPS: !skipGPS && priority === 'accuracy'
+      });
 
       if (location) {
-        console.log('📍 LocationContext: Location obtained successfully');
+        console.log('✅ LocationContext: Location obtained successfully');
         setLocationPermission('granted');
-        setCurrentLocation({
-          latitude: location.lat,
-          longitude: location.lon,
+        setLocationError(null);
+
+        const formattedLocation = {
+          latitude: location.latitude,
+          longitude: location.longitude,
           accuracy: location.accuracy,
-          timestamp: location.timestamp ? new Date(location.timestamp).toISOString() : new Date().toISOString(),
+          timestamp: new Date(location.timestamp).toISOString(),
           isCached: location.isCached || false,
-          isDefault: location.isDefault || false,
-          isRedirected: location.isRedirected || false,
-          source: location.source || 'unknown',
-          confidence: location.confidence || null,
+          isDefault: false,
+          isStale: location.isStale || false,
+          source: location.source,
           debugId: location.debugId
-        });
+        };
 
-        // Setup enhancement callback if location might be improved
-        if (!skipGPS && (location.source === 'IP_GEOLOCATION' || location.isCached)) {
-          setupLocationEnhancement(location);
-        }
-
-        return location;
+        setCurrentLocation(formattedLocation);
+        return formattedLocation;
       } else {
-        throw new Error('All location methods returned null');
+        throw new Error('Location request returned null');
       }
+
     } catch (error) {
       console.error('❌ LocationContext: Error getting current location:', error);
 
-      // Get user-friendly error message
-      const friendlyError = LocationService.getLocationErrorMessage(error);
+      // Set user-friendly error
+      const friendlyError = error.type ? error : LocationManager.getUserFriendlyError(error);
       setLocationError(friendlyError);
+
       console.log(`💬 LocationContext: Setting user-friendly error: ${friendlyError.title}`);
 
-      // Try to get cached location as fallback
-      try {
-        const cachedLocation = await LocationService.getCachedLocation();
-        console.log('📍 LocationContext: Using cached location as fallback');
-        setCurrentLocation({
-          latitude: cachedLocation.lat,
-          longitude: cachedLocation.lon,
-          accuracy: cachedLocation.accuracy,
-          timestamp: cachedLocation.cacheTime ? new Date(cachedLocation.cacheTime).toISOString() : new Date().toISOString(),
-          isCached: true,
-          isDefault: cachedLocation.isDefault || false
-        });
-
-        // Clear error since we have a fallback location
-        setLocationError(null);
-        return cachedLocation;
-      } catch (cacheError) {
-        console.log('❌ LocationContext: No cached location available either');
+      // If no location available and it's not a permission issue, prompt for manual input
+      if (friendlyError.type !== 'permission') {
+        console.log('📍 LocationContext: Prompting for manual location input');
+        setShowLocationInput(true);
       }
 
-      // No automatic location available - prompt for manual input
-      console.log('📍 LocationContext: Prompting for manual location input');
-      setShowLocationInput(true);
       throw error;
     }
   };
 
-  // Setup progressive location enhancement
-  const setupLocationEnhancement = (initialLocation) => {
-    console.log('🔄 LocationContext: Setting up location enhancement...');
-
-    const enhancementCallback = (enhancedLocation) => {
-      console.log('📍 LocationContext: Received location enhancement:', {
-        source: enhancedLocation.source,
-        accuracy: enhancedLocation.accuracy,
-        confidence: enhancedLocation.confidence
-      });
-
-      // Update current location with enhanced data
+  // Setup location listener for background updates
+  useEffect(() => {
+    const handleLocationUpdate = (updatedLocation) => {
+      console.log('📍 LocationContext: Received background location update');
       setCurrentLocation(prevLocation => {
-        // Only update if this is actually better
-        if (!prevLocation || enhancedLocation.confidence > (prevLocation.confidence || 0)) {
+        // Only update if this is actually newer/better
+        if (!prevLocation || updatedLocation.timestamp > new Date(prevLocation.timestamp).getTime()) {
           return {
-            latitude: enhancedLocation.lat,
-            longitude: enhancedLocation.lon,
-            accuracy: enhancedLocation.accuracy,
-            timestamp: enhancedLocation.timestamp ? new Date(enhancedLocation.timestamp).toISOString() : new Date().toISOString(),
-            isCached: enhancedLocation.isCached || false,
-            isDefault: enhancedLocation.isDefault || false,
-            isRedirected: enhancedLocation.isRedirected || false,
-            source: enhancedLocation.source || 'enhanced',
-            confidence: enhancedLocation.confidence || null,
-            debugId: enhancedLocation.debugId,
+            latitude: updatedLocation.latitude,
+            longitude: updatedLocation.longitude,
+            accuracy: updatedLocation.accuracy,
+            timestamp: new Date(updatedLocation.timestamp).toISOString(),
+            isCached: false,
+            isDefault: false,
+            source: updatedLocation.source || 'background_update',
             isEnhanced: true
           };
         }
@@ -317,36 +295,37 @@ export const LocationProvider = ({ children }) => {
       });
     };
 
-    // Add to cache enhancement callbacks
-    LocationCache.addEnhancementCallback(enhancementCallback);
+    LocationManager.addLocationListener(handleLocationUpdate);
 
-    // Clean up callback after 2 minutes
-    setTimeout(() => {
-      LocationCache.removeEnhancementCallback(enhancementCallback);
-      console.log('🔄 LocationContext: Enhancement callback cleaned up');
-    }, 120000);
-  };
+    return () => {
+      LocationManager.removeLocationListener(handleLocationUpdate);
+    };
+  }, []);
 
   // Handle manual location input
   const handleManualLocationSelected = async (manualLocation) => {
     try {
       console.log('📍 LocationContext: Manual location selected:', manualLocation.address);
 
+      // Use LocationManager to set manual location
+      const savedLocation = await LocationManager.setManualLocation(
+        manualLocation.lat,
+        manualLocation.lon,
+        manualLocation.address
+      );
+
       // Set the location in context
       setCurrentLocation({
-        latitude: manualLocation.lat,
-        longitude: manualLocation.lon,
-        accuracy: manualLocation.accuracy,
-        timestamp: new Date(manualLocation.timestamp).toISOString(),
-        source: manualLocation.source,
-        address: manualLocation.address,
+        latitude: savedLocation.latitude,
+        longitude: savedLocation.longitude,
+        accuracy: savedLocation.accuracy,
+        timestamp: new Date(savedLocation.timestamp).toISOString(),
+        source: 'manual',
+        address: savedLocation.address,
         isCached: false,
         isDefault: false,
         isManual: true
       });
-
-      // Cache the manual location
-      await LocationCache.cacheLocation(manualLocation);
 
       // Clear any location errors
       setLocationError(null);
@@ -356,7 +335,7 @@ export const LocationProvider = ({ children }) => {
       setShowLocationInput(false);
 
       console.log('✅ LocationContext: Manual location set successfully');
-      return manualLocation;
+      return savedLocation;
 
     } catch (error) {
       console.error('❌ LocationContext: Error setting manual location:', error);

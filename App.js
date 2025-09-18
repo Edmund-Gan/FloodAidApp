@@ -25,7 +25,7 @@ import Svg, { Path, Circle as SvgCircle, Text as SvgText } from 'react-native-sv
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FloodPredictionModel from './services/FloodPredictionModel';
-import LocationService from './services/LocationService';
+import LocationManager from './services/LocationManager';
 import GeoJSONService from './services/GeoJSONService';
 import FloodAlert from './components/FloodAlert';
 import FloodAlertDetails from './components/FloodAlertDetails';
@@ -491,8 +491,6 @@ function HomeScreen() {
     return () => {
       clearInterval(interval);
       floodAlertService.stopAllMonitoring();
-      // Cancel any active GPS requests when component unmounts
-      LocationService.cancelAllRequests();
       // Clear weather service cache on unmount
       realTimeWeatherService.clearCache();
     };
@@ -500,20 +498,30 @@ function HomeScreen() {
 
   const setupFloodAlertMonitoring = async () => {
     try {
-      // Get current location for alert monitoring
-      const locationResult = await LocationService.getCurrentLocation();
-      if (locationResult.success) {
+      console.log('📍 App: Setting up flood alert monitoring...');
+
+      // Get current location for alert monitoring using new LocationManager
+      const locationResult = await LocationManager.getCurrentLocation({
+        priority: 'normal',
+        allowStale: true,
+        showError: false
+      });
+
+      if (locationResult) {
         const location = {
-          lat: locationResult.location.latitude,
-          lng: locationResult.location.longitude,
-          name: locationResult.locationInfo?.display_name || 'Your Location'
+          lat: locationResult.latitude,
+          lng: locationResult.longitude,
+          name: 'Your Location'
         };
-        
+
+        console.log('✅ App: Starting flood alert monitoring for location');
         // Start monitoring for flood alerts
         await floodAlertService.startMonitoring(location, handleFloodAlert);
+      } else {
+        console.log('⚠️ App: No location available for flood alert monitoring');
       }
     } catch (error) {
-      console.error('Error setting up flood alert monitoring:', error);
+      console.error('❌ App: Error setting up flood alert monitoring:', error);
     }
   };
 
@@ -779,17 +787,23 @@ function HomeScreen() {
       if (!weatherLocation) {
         console.log('🌤️ ML prediction failed, getting location independently for weather...');
         try {
-          const locationResult = await LocationService.getCurrentLocation(skipGPS);
-          if (locationResult && locationResult.lat && locationResult.lon) {
+          const locationResult = await LocationManager.getCurrentLocation({
+            priority: skipGPS ? 'fast' : 'normal',
+            allowStale: true,
+            showError: false,
+            forceGPS: !skipGPS
+          });
+
+          if (locationResult && locationResult.latitude && locationResult.longitude) {
             weatherLocation = {
-              lat: locationResult.lat,
-              lon: locationResult.lon,
-              display_name: locationResult.display_name || 'Current Location'
+              lat: locationResult.latitude,
+              lon: locationResult.longitude,
+              display_name: 'Current Location'
             };
-            console.log('✅ Independent location obtained for weather:', weatherLocation.display_name);
+            console.log('✅ Independent location obtained for weather');
           }
         } catch (locationError) {
-          console.error('❌ Failed to get location for weather:', locationError);
+          console.error('❌ Failed to get location for weather:', locationError.message || locationError);
           // Use fallback coordinates for Malaysia (Kuala Lumpur city center)
           weatherLocation = {
             lat: 3.1390,

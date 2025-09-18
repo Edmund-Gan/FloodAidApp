@@ -12,6 +12,14 @@ export const UserProvider = ({ children }) => {
     familySize: 4,
     hasChildren: true,
     childrenAges: [8, 12],
+    childrenDetails: [
+      { age: 8, name: '', needsComfortItems: true, hasSpecialNeeds: false },
+      { age: 12, name: '', needsComfortItems: false, hasSpecialNeeds: false }
+    ],
+    hasInfants: false, // children under 2 years
+    hasToddlers: false, // children 2-5 years
+    hasSchoolChildren: true, // children 6-12 years
+    hasTeens: false, // children 13-17 years
     healthConditions: [],
     riskTolerance: 'moderate', // low, moderate, high
     language: 'en', // en, ms
@@ -289,6 +297,11 @@ export const UserProvider = ({ children }) => {
         familySize: 1,
         hasChildren: false,
         childrenAges: [],
+        childrenDetails: [],
+        hasInfants: false,
+        hasToddlers: false,
+        hasSchoolChildren: false,
+        hasTeens: false,
         healthConditions: [],
         riskTolerance: 'moderate',
         language: 'en',

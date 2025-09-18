@@ -9,11 +9,13 @@ import {
   Linking,
   Dimensions,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserContext } from '../context/UserContext';
+import EmergencyPlacesService from '../services/EmergencyPlacesService';
 
 const { width } = Dimensions.get('window');
 
@@ -22,6 +24,11 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
   const [expanded, setExpanded] = useState(false);
   const [selectedState, setSelectedState] = useState('SELANGOR');
   const [showStatePicker, setShowStatePicker] = useState(false);
+  const [activeTab, setActiveTab] = useState('callCenters'); // 'callCenters' or 'nearMe'
+  const [nearbyPlaces, setNearbyPlaces] = useState({});
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationError, setLocationError] = useState(null);
 
   useEffect(() => {
     loadSelectedState();
@@ -164,6 +171,176 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
     );
   };
 
+  // Load nearby emergency places using GPS location
+  const loadNearbyPlaces = async () => {
+    setLoadingLocation(true);
+    setLocationError(null);
+
+    try {
+      // Get user's current location
+      const location = await EmergencyPlacesService.getCurrentLocation();
+      setUserLocation(location);
+
+      // Get all emergency services near the user
+      const services = await EmergencyPlacesService.getAllEmergencyServices(location);
+      setNearbyPlaces(services);
+    } catch (error) {
+      console.error('Error loading nearby places:', error);
+      setLocationError(error.message);
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  // Open directions to a specific place
+  const openDirections = async (place) => {
+    try {
+      await EmergencyPlacesService.openDirections(place, userLocation);
+    } catch (error) {
+      Alert.alert(
+        'Navigation Error',
+        'Unable to open directions. Please check if Google Maps is installed.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  // Render a place item in the "Near Me" section
+  const renderPlaceItem = (place, index) => {
+    const distance = EmergencyPlacesService.formatDistance(place.distance);
+    const isOpen = EmergencyPlacesService.isPlaceOpen(place);
+
+    return (
+      <View key={index} style={styles.placeItem}>
+        <View style={[styles.placeIcon, { backgroundColor: place.color + '20' }]}>
+          <Ionicons name={place.icon} size={20} color={place.color} />
+        </View>
+
+        <View style={styles.placeInfo}>
+          <Text style={styles.placeName}>{place.name}</Text>
+          <View style={styles.placeDetails}>
+            <Text style={styles.placeDistance}>{distance} away</Text>
+            {isOpen !== null && (
+              <Text style={[styles.placeStatus, { color: isOpen ? '#4CAF50' : '#FF5722' }]}>
+                • {isOpen ? 'Open' : 'Closed'}
+              </Text>
+            )}
+            {place.rating && (
+              <Text style={styles.placeRating}>• ⭐ {place.rating}</Text>
+            )}
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.directionsButton}
+          onPress={() => openDirections(place)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="navigate" size={18} color="#4CAF50" />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  // Render category section in "Near Me"
+  const renderPlaceCategory = (categoryKey, categoryData) => {
+    if (!categoryData || categoryData.places.length === 0) {
+      return null;
+    }
+
+    const { places, config, count } = categoryData;
+
+    return (
+      <View key={categoryKey} style={styles.placeCategory}>
+        <View style={styles.placeCategoryHeader}>
+          <View style={styles.placeCategoryTitle}>
+            <Ionicons name={config.icon} size={20} color={config.color} />
+            <Text style={styles.placeCategoryText}>
+              {config.displayName} ({count} found)
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.placeCategoryList}>
+          {places.slice(0, 3).map((place, index) => renderPlaceItem(place, index))}
+          {places.length > 3 && (
+            <Text style={styles.moreItemsText}>
+              + {places.length - 3} more nearby
+            </Text>
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  // Render the "Near Me" content
+  const renderNearMeContent = () => {
+    if (loadingLocation) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4CAF50" />
+          <Text style={styles.loadingText}>Finding nearby emergency services...</Text>
+        </View>
+      );
+    }
+
+    if (locationError) {
+      return (
+        <View style={styles.errorContainer}>
+          <Ionicons name="location-outline" size={48} color="#FF5722" />
+          <Text style={styles.errorTitle}>Location Access Required</Text>
+          <Text style={styles.errorMessage}>{locationError}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={loadNearbyPlaces}
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (!userLocation || Object.keys(nearbyPlaces).length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="search" size={48} color="#666" />
+          <Text style={styles.emptyTitle}>No Emergency Services Found</Text>
+          <Text style={styles.emptyMessage}>
+            Try enabling location services or check your internet connection.
+          </Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={loadNearbyPlaces}
+          >
+            <Text style={styles.retryButtonText}>Search Again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    const sortedCategories = Object.entries(nearbyPlaces)
+      .filter(([_, data]) => data.places.length > 0)
+      .sort((a, b) => a[1].config.priority - b[1].config.priority);
+
+    return (
+      <View style={styles.nearMeContent}>
+        <View style={styles.locationHeader}>
+          <Ionicons name="location" size={16} color="#4CAF50" />
+          <Text style={styles.locationHeaderText}>
+            Emergency services near your location
+          </Text>
+          <TouchableOpacity onPress={loadNearbyPlaces}>
+            <Ionicons name="refresh" size={16} color="#666" />
+          </TouchableOpacity>
+        </View>
+
+        {sortedCategories.map(([categoryKey, categoryData]) =>
+          renderPlaceCategory(categoryKey, categoryData)
+        )}
+      </View>
+    );
+  };
+
   const renderStatePicker = () => {
     const states = Object.keys(emergencyContactsData || {});
 
@@ -300,25 +477,69 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
             showsVerticalScrollIndicator={false}
             nestedScrollEnabled={true}
           >
-            <View style={styles.headerInfo}>
-              <View style={styles.locationInfo}>
-                <Ionicons name="location" size={16} color="#4CAF50" />
-                <Text style={styles.locationText}>
-                  Emergency services for {selectedState.replace(/_/g, ' ')}
-                </Text>
-              </View>
+            {/* Category Switcher */}
+            <View style={styles.categoryTabs}>
               <TouchableOpacity
-                style={styles.changeLocationButton}
-                onPress={() => setShowStatePicker(true)}
+                style={[styles.categoryTab, activeTab === 'callCenters' && styles.categoryTabActive]}
+                onPress={() => setActiveTab('callCenters')}
               >
-                <Text style={styles.changeLocationText}>Change Location</Text>
-                <Ionicons name="chevron-forward" size={14} color="#666" />
+                <Ionicons
+                  name="call"
+                  size={16}
+                  color={activeTab === 'callCenters' ? '#4CAF50' : '#666'}
+                />
+                <Text style={[styles.categoryTabText, activeTab === 'callCenters' && styles.categoryTabTextActive]}>
+                  Call Centers
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.categoryTab, activeTab === 'nearMe' && styles.categoryTabActive]}
+                onPress={() => {
+                  setActiveTab('nearMe');
+                  if (!userLocation) {
+                    loadNearbyPlaces();
+                  }
+                }}
+              >
+                <Ionicons
+                  name="location"
+                  size={16}
+                  color={activeTab === 'nearMe' ? '#4CAF50' : '#666'}
+                />
+                <Text style={[styles.categoryTabText, activeTab === 'nearMe' && styles.categoryTabTextActive]}>
+                  Near Me
+                </Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.contactsList}>
-              {sortedContacts.map((contact, index) => renderContactItem(contact, index))}
-            </View>
+            {activeTab === 'callCenters' ? (
+              <>
+                <View style={styles.headerInfo}>
+                  <View style={styles.locationInfo}>
+                    <Ionicons name="location" size={16} color="#4CAF50" />
+                    <Text style={styles.locationText}>
+                      Emergency services for {selectedState.replace(/_/g, ' ')}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.changeLocationButton}
+                    onPress={() => setShowStatePicker(true)}
+                  >
+                    <Text style={styles.changeLocationText}>Change Location</Text>
+                    <Ionicons name="chevron-forward" size={14} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.contactsList}>
+                  {sortedContacts.map((contact, index) => renderContactItem(contact, index))}
+                </View>
+              </>
+            ) : (
+              <View style={styles.nearMeContainer}>
+                {renderNearMeContent()}
+              </View>
+            )}
 
             {currentStateData?.sources && (
               <View style={styles.sourcesSection}>
@@ -602,6 +823,201 @@ const styles = StyleSheet.create({
   },
   stateTextSelected: {
     color: '#4CAF50',
+    fontWeight: '600',
+  },
+  // Category tabs styles
+  categoryTabs: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F9FA',
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 8,
+    padding: 4,
+  },
+  categoryTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  categoryTabActive: {
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  categoryTabText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  categoryTabTextActive: {
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  // Near Me styles
+  nearMeContainer: {
+    flex: 1,
+  },
+  nearMeContent: {
+    paddingBottom: 16,
+  },
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  locationHeaderText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+    flex: 1,
+    marginLeft: 6,
+  },
+  // Place category styles
+  placeCategory: {
+    marginBottom: 16,
+  },
+  placeCategoryHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  placeCategoryTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  placeCategoryText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 8,
+  },
+  placeCategoryList: {
+    paddingHorizontal: 16,
+  },
+  // Place item styles
+  placeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8F9FA',
+  },
+  placeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  placeInfo: {
+    flex: 1,
+  },
+  placeName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  placeDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  placeDistance: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  placeStatus: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  placeRating: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
+  },
+  directionsButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F0F8FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  moreItemsText: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 8,
+  },
+  // Loading, error, and empty states
+  loadingText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    alignItems: 'center',
+    padding: 32,
+  },
+  errorTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 14,
     fontWeight: '600',
   },
 });

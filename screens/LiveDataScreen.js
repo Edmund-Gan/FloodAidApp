@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { UserContext } from '../context/UserContext';
 import { COLORS } from '../utils/constants';
 import RealTimeWeatherService from '../services/RealTimeWeatherService';
+import openMeteoService from '../services/OpenMeteoService';
 import LocationService from '../services/LocationService';
 import FloodRiskMapView from '../components/FloodRiskMapView';
 
@@ -29,6 +30,7 @@ export default function LiveDataScreen() {
   const { logFeatureUsage } = useContext(UserContext);
   const insets = useSafeAreaInsets();
   const [weatherData, setWeatherData] = useState(null);
+  const [riverData, setRiverData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -79,6 +81,18 @@ export default function LiveDataScreen() {
 
       setWeatherData(data);
       setLocationLabel(weatherLocation.label);
+
+      // Fetch river discharge data
+      try {
+        const riverResult = await openMeteoService.getCurrentRiverDischarge(
+          weatherLocation.lat,
+          weatherLocation.lon
+        );
+        setRiverData(riverResult);
+      } catch (riverError) {
+        console.warn('LiveDataScreen: Failed to load river data', riverError);
+        setRiverData(null); // Set to null if river data fails
+      }
     } catch (apiError) {
       console.error('LiveDataScreen: Failed to load weather data', apiError);
       setError('Unable to load live weather data right now.');
@@ -128,6 +142,43 @@ export default function LiveDataScreen() {
     return Math.round(value * factor) / factor;
   };
 
+  const processRiverData = (riverData) => {
+    if (!riverData || riverData.error || !riverData.current) {
+      return {
+        discharge: 'N/A',
+        status: 'N/A',
+        statusColor: COLORS.TEXT_SECONDARY
+      };
+    }
+
+    const discharge = parseFloat(riverData.current);
+    const percentile = riverData.statistics?.percentile || 0;
+
+    let status, statusColor;
+    if (percentile >= 95) {
+      status = 'Extreme';
+      statusColor = COLORS.ERROR;
+    } else if (percentile >= 90) {
+      status = 'Very High';
+      statusColor = COLORS.ERROR;
+    } else if (percentile >= 75) {
+      status = 'High';
+      statusColor = COLORS.WARNING;
+    } else if (percentile >= 50) {
+      status = 'Above Normal';
+      statusColor = COLORS.INFO;
+    } else {
+      status = 'Normal';
+      statusColor = COLORS.SUCCESS;
+    }
+
+    return {
+      discharge: formatMetricValue(discharge, 1),
+      status,
+      statusColor
+    };
+  };
+
   const renderMetric = (iconName, label, rawValue, unit) => {
     const displayValue = rawValue === undefined || rawValue === null ? '--' : rawValue;
     const valueText = displayValue === '--' ? '--' : `${displayValue}${unit}`;
@@ -154,6 +205,54 @@ export default function LiveDataScreen() {
           <Text style={styles.compactMetricValue}>{valueText}</Text>
         </View>
         <Text style={styles.compactMetricLabel}>{label}</Text>
+      </View>
+    );
+  };
+
+  // Visual forecast components
+  const renderPrecipitationBar = (amount) => {
+    // Don't show bars for dry days
+    if (amount === 0) {
+      return (
+        <View style={styles.precipitationBarContainer}>
+          <Text style={styles.dryLabel}>Dry</Text>
+        </View>
+      );
+    }
+
+    const segments = getPrecipitationSegments(amount);
+    const barColor = getPrecipitationBarColor(amount);
+
+    return (
+      <View style={styles.precipitationBarContainer}>
+        <View style={styles.precipitationBar}>
+          {segments.map((filled, index) => (
+            <View
+              key={index}
+              style={[
+                styles.precipitationSegment,
+                { backgroundColor: filled ? barColor : '#E0E0E0' }
+              ]}
+            />
+          ))}
+        </View>
+        <Text style={styles.precipitationAmount}>{amount}mm</Text>
+      </View>
+    );
+  };
+
+  const renderProbabilityBadge = (probability) => {
+    const label = getProbabilityLabel(probability);
+    const style = getProbabilityStyle(probability);
+
+    // Don't show badge for dry days
+    if (!label || !style) {
+      return null;
+    }
+
+    return (
+      <View style={[styles.probabilityLabel, style]}>
+        <Text style={[styles.probabilityText, { color: style.color }]}>{label}</Text>
       </View>
     );
   };
@@ -185,6 +284,67 @@ export default function LiveDataScreen() {
   };
 
   const rainDays = weatherData?.rain_forecast?.upcoming_rain_days || [];
+
+  // Generate smart summary for rain outlook
+  const generateRainSummary = (rainDays) => {
+    if (!rainDays || rainDays.length === 0) return 'No rain data available';
+
+    const rainyDays = rainDays.filter(day => day.precipitation > 0);
+    const rainDaysCount = rainyDays.length;
+
+    if (rainDaysCount >= 5) return 'Very rainy week ahead';
+    if (rainDaysCount >= 3) return 'Rainy week expected';
+    if (rainDaysCount >= 1) return 'Some rain expected';
+    return 'Dry week ahead';
+  };
+
+  // Visual forecast helper functions
+  const getWeatherIcon = (intensity, precipitation) => {
+    if (precipitation === 0) return 'partly-sunny-outline';
+    if (intensity === 'Heavy') return 'thunderstorm-outline';
+    if (intensity === 'Moderate') return 'rain-outline';
+    return 'rainy-outline'; // Light/Drizzle
+  };
+
+  const getPrecipitationSegments = (amount) => {
+    const segments = 5;
+    const maxPerSegment = 10; // 10mm per segment
+    const filledSegments = Math.min(segments, Math.ceil(amount / maxPerSegment));
+    return Array(segments).fill(false).map((_, i) => i < filledSegments);
+  };
+
+  const getProbabilityLabel = (probability) => {
+    if (probability <= 20) return null; // No label for dry days
+    if (probability <= 50) return 'Low chance';
+    if (probability <= 80) return 'Likely';
+    return 'High chance';
+  };
+
+  const getProbabilityStyle = (probability) => {
+    if (probability <= 20) return null;
+    if (probability <= 50) return {
+      backgroundColor: '#FFF3E0',
+      color: '#F57C00',
+      borderColor: '#F57C00'
+    };
+    if (probability <= 80) return {
+      backgroundColor: '#E8F5E9',
+      color: '#388E3C',
+      borderColor: '#388E3C'
+    };
+    return {
+      backgroundColor: '#E3F2FD',
+      color: '#1976D2',
+      borderColor: '#1976D2'
+    };
+  };
+
+  const getPrecipitationBarColor = (amount) => {
+    if (amount >= 20) return '#1565C0'; // Heavy rain - darkest blue
+    if (amount >= 10) return '#1E88E5'; // Moderate rain - darker blue
+    if (amount > 0) return '#42A5F5';   // Light rain - medium blue
+    return '#E3F2FD'; // No rain - very light blue
+  };
 
   // Calculate proper bottom padding to account for tab bar and safe area
   const scrollContentStyle = [
@@ -237,7 +397,7 @@ export default function LiveDataScreen() {
             <View style={styles.compactCardHeader}>
               <View style={styles.headerLeft}>
                 <Ionicons name="cloud-outline" size={24} color={COLORS.PRIMARY} style={styles.weatherIcon} />
-                <Text style={styles.compactCardTitle}>Weather Monitoring</Text>
+                <Text style={styles.compactCardTitle}>Environmental Monitoring</Text>
               </View>
               <View style={styles.headerRight}>
                 <View style={styles.liveIndicator}>
@@ -255,20 +415,41 @@ export default function LiveDataScreen() {
             </View>
 
             <View style={styles.compactMetricGrid}>
-              {renderCompactMetric(
-                'thermometer-outline',
-                formatMetricValue(weatherData.weather_summary?.current_temp),
-                '°C',
-                'Temperature'
-              )}
+              {/* Compact view: Show only 2 most critical flood-risk metrics */}
               {renderCompactMetric(
                 'rainy-outline',
                 formatMetricValue(weatherData.weather_summary?.rainfall_24h_forecast, 1),
                 'mm',
                 'Rainfall'
               )}
+              {(() => {
+                const riverProcessed = processRiverData(riverData);
+                return renderCompactMetric(
+                  'analytics-outline',
+                  riverProcessed.status,
+                  '',
+                  'River Level'
+                );
+              })()}
+
+              {/* Expanded view: Show additional metrics */}
               {isWeatherExpanded && renderCompactMetric(
-                'water-outline',
+                'thermometer-outline',
+                formatMetricValue(weatherData.weather_summary?.current_temp),
+                '°C',
+                'Temperature'
+              )}
+              {isWeatherExpanded && (() => {
+                const riverProcessed = processRiverData(riverData);
+                return renderCompactMetric(
+                  'water-outline',
+                  riverProcessed.discharge,
+                  riverProcessed.discharge === 'N/A' ? '' : ' m³/s',
+                  'River Flow'
+                );
+              })()}
+              {isWeatherExpanded && renderCompactMetric(
+                'partly-sunny-outline',
                 formatMetricValue(weatherData.weather_summary?.current_humidity),
                 '%',
                 'Humidity'
@@ -287,7 +468,7 @@ export default function LiveDataScreen() {
               <View style={styles.sectionHeaderLeft}>
                 <Text style={styles.sectionTitle}>7-Day Rain Outlook</Text>
                 <Text style={styles.sectionSubtitle}>
-                  {weatherData.rain_forecast?.rain_summary || 'Monitoring precipitation trends for your area'}
+                  {generateRainSummary(rainDays)}
                 </Text>
               </View>
               <View style={styles.sectionHeaderRight}>
@@ -304,19 +485,102 @@ export default function LiveDataScreen() {
 
             {rainDays.length > 0 ? (
               <View style={styles.forecastList}>
-                {(isRainOutlookExpanded ? rainDays : rainDays.slice(0, 2)).map((day, index, displayedDays) => (
+                {(isRainOutlookExpanded ? rainDays : rainDays.slice(0, 1)).map((day, index, displayedDays) => (
                   <View
                     key={day.date}
                     style={[styles.forecastRow, index === displayedDays.length - 1 && styles.forecastRowLast]}
                   >
-                    <View style={styles.forecastInfo}>
-                      <Text style={styles.forecastDay}>{day.day_name}</Text>
-                      <Text style={styles.forecastCondition}>{day.intensity}</Text>
-                    </View>
-                    <View style={styles.forecastMetrics}>
-                      <Text style={styles.forecastAmount}>{day.precipitation}mm</Text>
-                      <Text style={styles.forecastProbability}>{day.probability}%</Text>
-                    </View>
+                    {(() => {
+                      const isDryDay = day.precipitation === 0;
+
+                      if (isRainOutlookExpanded) {
+                        // Expanded view: Different layouts for dry vs rainy days
+                        if (isDryDay) {
+                          return (
+                            <View style={styles.dryDayExpanded}>
+                              <View style={styles.forecastDaySection}>
+                                <Text style={styles.forecastDay}>{day.day_name}</Text>
+                              </View>
+                              <View style={styles.forecastWeatherSection}>
+                                <Ionicons
+                                  name="partly-sunny-outline"
+                                  size={24}
+                                  color="#FFA726"
+                                  style={styles.weatherIcon}
+                                />
+                              </View>
+                              <View style={styles.dryIndicatorSection}>
+                                <Text style={styles.dryText}>Dry</Text>
+                              </View>
+                            </View>
+                          );
+                        } else {
+                          return (
+                            <View style={styles.rainyDayExpanded}>
+                              <View style={styles.forecastDaySection}>
+                                <Text style={styles.forecastDay}>{day.day_name}</Text>
+                              </View>
+                              <View style={styles.forecastWeatherSection}>
+                                <Ionicons
+                                  name={getWeatherIcon(day.intensity, day.precipitation)}
+                                  size={24}
+                                  color={COLORS.PRIMARY}
+                                  style={styles.weatherIcon}
+                                />
+                              </View>
+                              <View style={styles.forecastPrecipSection}>
+                                {renderPrecipitationBar(day.precipitation)}
+                              </View>
+                              <View style={styles.forecastProbabilitySection}>
+                                {renderProbabilityBadge(day.probability)}
+                              </View>
+                            </View>
+                          );
+                        }
+                      } else {
+                        // Compact view: Different layouts for dry vs rainy days
+                        if (isDryDay) {
+                          return (
+                            <View style={styles.dryDayCompact}>
+                              <View style={styles.compactDaySection}>
+                                <Text style={styles.compactDayText}>{day.day_name}</Text>
+                              </View>
+                              <View style={styles.compactWeatherSection}>
+                                <Ionicons
+                                  name="partly-sunny-outline"
+                                  size={20}
+                                  color="#FFA726"
+                                />
+                              </View>
+                              <View style={styles.compactDrySection}>
+                                <Text style={styles.compactDryText}>Dry</Text>
+                              </View>
+                            </View>
+                          );
+                        } else {
+                          return (
+                            <View style={styles.rainyDayCompact}>
+                              <View style={styles.compactDaySection}>
+                                <Text style={styles.compactDayText}>{day.day_name}</Text>
+                              </View>
+                              <View style={styles.compactWeatherSection}>
+                                <Ionicons
+                                  name={getWeatherIcon(day.intensity, day.precipitation)}
+                                  size={20}
+                                  color={COLORS.PRIMARY}
+                                />
+                              </View>
+                              <View style={styles.compactPrecipSection}>
+                                {renderPrecipitationBar(day.precipitation)}
+                              </View>
+                              <View style={styles.compactProbabilitySection}>
+                                {renderProbabilityBadge(day.probability)}
+                              </View>
+                            </View>
+                          );
+                        }
+                      }
+                    })()}
                   </View>
                 ))}
               </View>
@@ -324,11 +588,6 @@ export default function LiveDataScreen() {
               <Text style={styles.noRainMessage}>No significant rainfall expected in the next 7 days.</Text>
             )}
 
-            {weatherData.rain_forecast?.next_rain_in_hours != null && (
-              <Text style={styles.nextRainText}>
-                Next rain in approximately {weatherData.rain_forecast.next_rain_in_hours} hours.
-              </Text>
-            )}
           </View>
 
           <View style={styles.mapSection}>
@@ -699,6 +958,15 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_SECONDARY,
     textAlign: 'center',
   },
+  forecastCompact: {
+    flex: 1,
+  },
+  forecastCompactText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: COLORS.TEXT_PRIMARY,
+    lineHeight: 22,
+  },
   nextRainText: {
     marginTop: 18,
     fontSize: 13,
@@ -748,5 +1016,151 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.TEXT_SECONDARY,
     lineHeight: 18,
+  },
+  // Visual forecast component styles
+  precipitationBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  precipitationSegment: {
+    width: 8,
+    height: 4,
+    borderRadius: 2,
+  },
+  probabilityBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  probabilityText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  // Visual forecast layout styles
+  visualForecastCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  visualForecastExpanded: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 16,
+  },
+  compactDaySection: {
+    flex: 2,
+  },
+  compactDayText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.TEXT_PRIMARY,
+  },
+  compactWeatherSection: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  compactPrecipSection: {
+    flex: 2,
+    alignItems: 'center',
+  },
+  compactProbabilitySection: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  // Expanded view sections
+  forecastDaySection: {
+    flex: 2,
+  },
+  forecastWeatherSection: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  forecastPrecipSection: {
+    flex: 3,
+    alignItems: 'center',
+  },
+  forecastProbabilitySection: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  precipitationAmount: {
+    fontSize: 12,
+    color: COLORS.TEXT_SECONDARY,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  weatherIcon: {
+    marginRight: 4,
+  },
+  // Enhanced visual styles for improved contrast and clarity
+  precipitationBarContainer: {
+    alignItems: 'center',
+    minWidth: 60,
+  },
+  dryLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.TEXT_SECONDARY,
+  },
+  probabilityLabel: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  // Dry day layouts
+  dryDayExpanded: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 16,
+    opacity: 0.7, // Subtle visual hierarchy
+  },
+  dryDayCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+    opacity: 0.7, // Subtle visual hierarchy
+  },
+  dryIndicatorSection: {
+    flex: 3,
+    alignItems: 'center',
+  },
+  dryText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: COLORS.TEXT_SECONDARY,
+  },
+  compactDrySection: {
+    flex: 2,
+    alignItems: 'center',
+  },
+  compactDryText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.TEXT_SECONDARY,
+  },
+  // Rainy day layouts
+  rainyDayExpanded: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 16,
+  },
+  rainyDayCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
   },
 });

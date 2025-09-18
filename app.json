@@ -4,6 +4,7 @@
     "slug": "floodaid",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "resizeMode": "contain",
@@ -27,7 +28,9 @@
       }
     },
     "android": {
+      "icon": "./assets/icon.png",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#2196F3"
       },
       "package": "com.floodaid.malaysia",

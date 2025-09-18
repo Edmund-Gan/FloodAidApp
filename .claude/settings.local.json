@@ -62,7 +62,9 @@
       "Bash(sudo rm:*)",
       "Bash(mv:*)",
       "Bash(git check-ignore:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "WebFetch(domain:developers.google.com)",
+      "Read(//var/folders//**)"
     ],
     "deny": [],
     "ask": []

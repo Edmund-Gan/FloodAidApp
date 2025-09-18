@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { UserContext } from '../context/UserContext';
+import ChildPersonalizationService from '../services/ChildPersonalizationService';
+import ChildSummaryBanner from './ChildSummaryBanner';
 
 const { width } = Dimensions.get('window');
 
 const PreparationGuidelines = () => {
+  const { userProfile, updateUserProfile } = useContext(UserContext);
   const [expanded, setExpanded] = useState(false);
   const [completedSections, setCompletedSections] = useState({});
   const [expandedSections, setExpandedSections] = useState({});
@@ -21,6 +25,13 @@ const PreparationGuidelines = () => {
   useEffect(() => {
     loadProgress();
   }, []);
+
+  // Auto-update child categorization when children ages change
+  useEffect(() => {
+    if (userProfile.hasChildren && userProfile.childrenAges) {
+      ChildPersonalizationService.updateChildCategorization(userProfile, updateUserProfile);
+    }
+  }, [userProfile.childrenAges, userProfile.hasChildren]);
 
   const loadProgress = async () => {
     try {
@@ -57,7 +68,95 @@ const PreparationGuidelines = () => {
     }));
   };
 
-  const preparationSections = [
+  const getChildSpecificSections = () => {
+    const { hasChildren, hasInfants, hasToddlers, hasSchoolChildren, hasTeens, childrenDetails = [] } = userProfile;
+
+    if (!hasChildren) return [];
+
+    const childSections = [];
+
+    // Child Safety Planning section
+    childSections.push({
+      id: 'child_safety_planning',
+      title: 'Plan child safety and comfort measures',
+      timeEstimate: '20 min',
+      icon: 'shield-checkmark',
+      color: '#FF6B6B',
+      category: 'Child Safety',
+      isChildSection: true,
+      tasks: [
+        'Create child identification cards with emergency contacts',
+        'Pack comfort items (favorite toys, blankets) for each child',
+        'Practice evacuation routes with children',
+        'Teach children how to dial emergency numbers',
+        'Prepare age-appropriate entertainment for stress relief'
+      ]
+    });
+
+    // School coordination section for school-age children
+    if (hasSchoolChildren || hasTeens) {
+      childSections.push({
+        id: 'school_coordination',
+        title: 'Coordinate with schools and childcare',
+        timeEstimate: '15 min',
+        icon: 'school',
+        color: '#4ECDC4',
+        category: 'Child Safety',
+        isChildSection: true,
+        tasks: [
+          'Update emergency contacts at school/childcare',
+          'Review school emergency procedures with children',
+          'Establish child pickup plan with authorized persons',
+          'Share family emergency plan with school',
+          'Ensure children know safe meeting locations'
+        ]
+      });
+    }
+
+    // Infant/toddler specific preparation
+    if (hasInfants || hasToddlers) {
+      childSections.push({
+        id: 'infant_toddler_prep',
+        title: 'Prepare supplies for infants and toddlers',
+        timeEstimate: '25 min',
+        icon: 'baby',
+        color: '#FFB347',
+        category: 'Child Safety',
+        isChildSection: true,
+        tasks: [
+          'Pack 72-hour supply of diapers and formula',
+          'Organize baby food, bottles, and feeding supplies',
+          'Include favorite pacifiers and comfort objects',
+          'Prepare portable crib or travel bed',
+          'Pack extra clothes and blankets for temperature changes'
+        ]
+      });
+    }
+
+    // Children's emergency communication section
+    if (hasChildren) {
+      childSections.push({
+        id: 'child_communication',
+        title: 'Set up child communication plan',
+        timeEstimate: '15 min',
+        icon: 'chatbubbles',
+        color: '#A78BFA',
+        category: 'Child Safety',
+        isChildSection: true,
+        tasks: [
+          'Teach children family emergency contact numbers',
+          'Practice using emergency communication devices',
+          'Create simple emergency instruction cards for children',
+          'Establish check-in procedures for older children',
+          'Plan for children who may be separated from family'
+        ]
+      });
+    }
+
+    return childSections;
+  };
+
+  const baseSections = [
     {
       id: 'water_storage',
       title: 'Check water storage (3 days minimum)',
@@ -85,7 +184,7 @@ const PreparationGuidelines = () => {
         'Include manual can opener and utensils',
         'Check expiration dates and rotate stock',
         'Pack comfort foods and special dietary items',
-        'Store infant formula if needed'
+        userProfile.hasChildren ? 'Store infant formula and baby food if needed' : 'Store infant formula if needed'
       ]
     },
     {
@@ -115,7 +214,7 @@ const PreparationGuidelines = () => {
         'Include insurance policies and medical records',
         'Copy bank account and credit card information',
         'Store digital copies on encrypted USB drive',
-        'Include contact information for family and doctors'
+        userProfile.hasChildren ? 'Include children\'s birth certificates and medical records' : 'Include contact information for family and doctors'
       ]
     },
     {
@@ -159,7 +258,7 @@ const PreparationGuidelines = () => {
         'Create written list of emergency numbers',
         'Include family, friends, and local authorities',
         'Add medical providers and insurance contacts',
-        'Share contact list with all family members',
+        userProfile.hasChildren ? 'Include children\'s school and childcare contacts' : 'Share contact list with all family members',
         'Post copy in accessible location'
       ]
     },
@@ -173,12 +272,16 @@ const PreparationGuidelines = () => {
       tasks: [
         'Identify primary and alternate evacuation routes',
         'Choose meeting points near home and neighborhood',
-        'Practice evacuation with all family members',
+        userProfile.hasChildren ? 'Practice evacuation with all family members, including children' : 'Practice evacuation with all family members',
         'Plan for pets and livestock',
         'Keep vehicle gas tanks at least half full'
       ]
     }
   ];
+
+  // Combine base sections with child-specific sections
+  const childSections = getChildSpecificSections();
+  const preparationSections = [...baseSections, ...childSections];
 
   const totalSections = preparationSections.length;
   const completedCount = Object.values(completedSections).filter(Boolean).length;
@@ -188,7 +291,12 @@ const PreparationGuidelines = () => {
     .filter(section => !completedSections[section.id])
     .reduce((total, section) => {
       const timeMatch = section.timeEstimate.match(/(\d+)/);
-      return total + (timeMatch ? parseInt(timeMatch[0]) : 5);
+      const baseTime = timeMatch ? parseInt(timeMatch[0]) : 5;
+
+      // Apply child-specific time adjustments
+      const adjustedTime = ChildPersonalizationService.calculateChildAdjustedTime(baseTime, userProfile);
+
+      return total + adjustedTime;
     }, 0);
 
   const renderPreparationSection = (section) => {
@@ -196,7 +304,10 @@ const PreparationGuidelines = () => {
     const isExpanded = expandedSections[section.id];
 
     return (
-      <View key={section.id} style={styles.sectionContainer}>
+      <View key={section.id} style={[
+        styles.sectionContainer,
+        section.isChildSection && styles.childSectionContainer
+      ]}>
         <TouchableOpacity
           style={[
             styles.sectionHeader,
@@ -220,12 +331,20 @@ const PreparationGuidelines = () => {
               <Ionicons name={section.icon} size={20} color={section.color} />
             </View>
             <View style={styles.sectionInfo}>
-              <Text style={[
-                styles.sectionTitle,
-                isCompleted && styles.sectionTitleCompleted
-              ]}>
-                {section.title}
-              </Text>
+              <View style={styles.sectionTitleRow}>
+                <Text style={[
+                  styles.sectionTitle,
+                  isCompleted && styles.sectionTitleCompleted
+                ]}>
+                  {section.title}
+                </Text>
+                {section.isChildSection && (
+                  <View style={styles.childSectionBadge}>
+                    <Ionicons name="people-outline" size={10} color="#FF6B6B" />
+                    <Text style={styles.childSectionBadgeText}>Child</Text>
+                  </View>
+                )}
+              </View>
               <View style={styles.sectionMeta}>
                 <Text style={styles.sectionCategory}>{section.category}</Text>
                 <Text style={styles.sectionTime}>{section.timeEstimate}</Text>
@@ -276,7 +395,8 @@ const PreparationGuidelines = () => {
               <View style={styles.headerText}>
                 <Text style={styles.headerTitle}>Preparation Guidelines</Text>
                 <Text style={styles.headerSubtitle}>
-                  4-step personalized plan
+                  {preparationSections.length}-step personalized plan
+                  {userProfile.hasChildren && ` with child safety measures`}
                 </Text>
               </View>
             </View>
@@ -328,6 +448,7 @@ const PreparationGuidelines = () => {
                 <Text style={styles.summaryTitle}>Flood Preparedness Checklist</Text>
                 <Text style={styles.summarySubtitle}>
                   Complete these essential preparation steps to ensure your family's safety
+                  {userProfile.hasChildren && ', including child-specific safety measures'}
                 </Text>
               </View>
 
@@ -348,6 +469,13 @@ const PreparationGuidelines = () => {
                 </View>
               </View>
             </View>
+
+            {/* Child Summary Banner */}
+            <ChildSummaryBanner
+              userProfile={userProfile}
+              showTimeAdjustment={true}
+              estimatedTime={totalEstimatedTime}
+            />
 
             <View style={styles.sectionsContainer}>
               {preparationSections.map(renderPreparationSection)}
@@ -525,6 +653,11 @@ const styles = StyleSheet.create({
     borderColor: '#F0F0F0',
     overflow: 'hidden',
   },
+  childSectionContainer: {
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF6B6B',
+    backgroundColor: '#FFF8F8',
+  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -553,12 +686,18 @@ const styles = StyleSheet.create({
   sectionInfo: {
     flex: 1,
   },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 4,
     lineHeight: 20,
+    flex: 1,
   },
   sectionTitleCompleted: {
     textDecorationLine: 'line-through',
@@ -612,6 +751,22 @@ const styles = StyleSheet.create({
     color: '#999',
     fontStyle: 'italic',
     textAlign: 'center',
+  },
+  childSectionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFE5E5',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FFCCCB',
+  },
+  childSectionBadgeText: {
+    fontSize: 9,
+    color: '#FF6B6B',
+    fontWeight: '600',
+    marginLeft: 2,
   },
 });
 
