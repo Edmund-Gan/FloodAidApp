@@ -12,7 +12,7 @@ const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.googleMapsApiKey ||
 // Emergency service place types for Google Places API
 const EMERGENCY_PLACE_TYPES = {
   emergency_medical: {
-    types: ['hospital', 'emergency_room'],
+    types: ['hospital'],
     icon: 'medical',
     color: '#D32F2F',
     displayName: 'Emergency Medical',
@@ -21,7 +21,7 @@ const EMERGENCY_PLACE_TYPES = {
     emergencyOnly: true
   },
   medical_care: {
-    types: ['doctor', 'clinic', 'health'],
+    types: ['doctor'],
     icon: 'medical-outline',
     color: '#4CAF50',
     displayName: 'Medical Centers',
@@ -57,7 +57,7 @@ const EMERGENCY_PLACE_TYPES = {
     emergencyOnly: true
   },
   evacuation_shelters: {
-    types: ['school', 'community_center'],
+    types: ['school'],
     icon: 'home',
     color: '#9C27B0',
     displayName: 'Evacuation Centers',
@@ -65,47 +65,29 @@ const EMERGENCY_PLACE_TYPES = {
     description: 'Designated emergency shelters',
     emergencyOnly: true
   },
-  veterinary: {
-    types: ['veterinary_care'],
-    icon: 'paw',
-    color: '#8BC34A',
-    displayName: 'Veterinary Care',
-    priority: 7,
-    description: 'Pet emergency services',
-    emergencyOnly: false
-  },
   pharmacies: {
     types: ['pharmacy', 'drugstore'],
     icon: 'medical-outline',
     color: '#00BCD4',
-    displayName: '24-Hour Pharmacies',
-    priority: 8,
+    displayName: 'Emergency Pharmacies',
+    priority: 7,
     description: 'Emergency medications, medical supplies',
-    emergencyOnly: false
-  },
-  fuel: {
-    types: ['gas_station'],
-    icon: 'car',
-    color: '#FF9800',
-    displayName: 'Fuel Stations',
-    priority: 9,
-    description: 'Emergency transportation fuel',
-    emergencyOnly: false
-  },
-  banking: {
-    types: ['bank', 'atm'],
-    icon: 'card',
-    color: '#795548',
-    displayName: 'ATMs & Banks',
-    priority: 10,
-    description: 'Emergency cash access',
     emergencyOnly: false
   }
 };
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
-const SEARCH_RADIUS = 5000; // 5km radius
+const SEARCH_RADIUS_INITIAL = 2000; // 2km initial radius
+const SEARCH_RADIUS_FALLBACK = 5000; // 5km fallback radius
 const MAX_RESULTS = 20;
+const MIN_RESULTS_FOR_FALLBACK = 3; // Trigger fallback if less than 3 results
+
+// Priority tiers for progressive loading
+const PRIORITY_TIERS = {
+  critical: ['emergency_medical', 'police', 'fire_rescue'], // Load first (most urgent)
+  important: ['government_emergency'], // Load second
+  helpful: ['evacuation_shelters', 'pharmacies'] // Load last
+};
 
 class EmergencyPlacesService {
   static performanceMetrics = {
@@ -212,9 +194,9 @@ class EmergencyPlacesService {
   }
 
   /**
-   * Search for nearby emergency places using Google Places API
+   * Search for nearby emergency places using Google Places API with fallback radius
    */
-  static async searchNearbyPlaces(placeType, userLocation, radius = SEARCH_RADIUS) {
+  static async searchNearbyPlaces(placeType, userLocation, radius = SEARCH_RADIUS_INITIAL) {
     const startTime = Date.now();
     this.performanceMetrics.totalRequests++;
 
@@ -261,6 +243,12 @@ class EmergencyPlacesService {
           return a.distance - b.distance;
         })
         .slice(0, MAX_RESULTS);
+
+      // If we have insufficient results and used initial radius, try fallback
+      if (sortedResults.length < MIN_RESULTS_FOR_FALLBACK && radius === SEARCH_RADIUS_INITIAL) {
+        console.log(`Only ${sortedResults.length} results for ${placeType}, trying larger radius...`);
+        return this.searchNearbyPlaces(placeType, userLocation, SEARCH_RADIUS_FALLBACK);
+      }
 
       // Cache results
       await this.cacheResults(cacheKey, sortedResults);
@@ -384,7 +372,7 @@ class EmergencyPlacesService {
       }
 
       // For medical searches, exclude beauty/spa services
-      if (type === 'doctor' || type === 'health') {
+      if (type === 'doctor') {
         const excludeKeywords = ['spa', 'beauty', 'massage', 'wellness center', 'meditation'];
         if (excludeKeywords.some(keyword => name.includes(keyword))) {
           return false;
@@ -445,31 +433,80 @@ class EmergencyPlacesService {
   }
 
   /**
-   * Get all emergency services near user location
+   * Get all emergency services near user location with progressive loading
    */
-  static async getAllEmergencyServices(userLocation) {
+  static async getAllEmergencyServices(userLocation, onProgressUpdate = null) {
     try {
       const results = {};
+      const allServiceKeys = Object.keys(EMERGENCY_PLACE_TYPES);
 
-      for (const [key, config] of Object.entries(EMERGENCY_PLACE_TYPES)) {
-        try {
-          const places = await this.searchNearbyPlaces(key, userLocation);
-          if (places.length > 0) {
-            results[key] = {
+      // Function to process a tier of services in parallel
+      const processTier = async (serviceKeys, tierName) => {
+        console.log(`Loading ${tierName} services:`, serviceKeys);
+
+        const tierPromises = serviceKeys.map(async (key) => {
+          try {
+            const config = EMERGENCY_PLACE_TYPES[key];
+            const places = await this.searchNearbyPlaces(key, userLocation);
+
+            const result = {
               places,
               config,
-              count: places.length
+              count: places.length,
+              tier: tierName
             };
+
+            // Update results immediately as each service completes
+            results[key] = result;
+
+            // Notify caller of progress if callback provided
+            if (onProgressUpdate) {
+              onProgressUpdate(key, result, { ...results });
+            }
+
+            return { key, result };
+          } catch (error) {
+            console.warn(`Failed to fetch ${key}:`, error);
+            const errorResult = {
+              places: [],
+              config: EMERGENCY_PLACE_TYPES[key],
+              count: 0,
+              error: error.message,
+              tier: tierName
+            };
+
+            results[key] = errorResult;
+
+            if (onProgressUpdate) {
+              onProgressUpdate(key, errorResult, { ...results });
+            }
+
+            return { key, result: errorResult };
           }
-        } catch (error) {
-          console.warn(`Failed to fetch ${key}:`, error);
-          results[key] = {
-            places: [],
-            config,
-            count: 0,
-            error: error.message
-          };
-        }
+        });
+
+        // Wait for all services in this tier to complete
+        return Promise.allSettled(tierPromises);
+      };
+
+      // Process services by priority tiers
+      const criticalKeys = PRIORITY_TIERS.critical.filter(key => allServiceKeys.includes(key));
+      const importantKeys = PRIORITY_TIERS.important.filter(key => allServiceKeys.includes(key));
+      const helpfulKeys = PRIORITY_TIERS.helpful.filter(key => allServiceKeys.includes(key));
+
+      // Load critical services first (parallel within tier)
+      if (criticalKeys.length > 0) {
+        await processTier(criticalKeys, 'critical');
+      }
+
+      // Load important services second (parallel within tier)
+      if (importantKeys.length > 0) {
+        await processTier(importantKeys, 'important');
+      }
+
+      // Load helpful services last (parallel within tier)
+      if (helpfulKeys.length > 0) {
+        await processTier(helpfulKeys, 'helpful');
       }
 
       return results;
@@ -648,20 +685,6 @@ class EmergencyPlacesService {
           quality_score: 80
         }
       ],
-      emergency_room: [
-        {
-          place_id: 'mock_emergency_1',
-          name: 'HUKM Emergency Department',
-          geometry: {
-            location: { lat: location.latitude + 0.012, lng: location.longitude - 0.008 }
-          },
-          rating: 4.1,
-          user_ratings_total: 234,
-          opening_hours: { open_now: true },
-          types: ['hospital', 'emergency_room'],
-          quality_score: 90
-        }
-      ],
       doctor: [
         {
           place_id: 'mock_clinic_1',
@@ -751,33 +774,6 @@ class EmergencyPlacesService {
           quality_score: 50
         }
       ],
-      community_center: [
-        {
-          place_id: 'mock_community_1',
-          name: 'Dewan Komuniti Bangsar',
-          geometry: {
-            location: { lat: location.latitude + 0.020, lng: location.longitude - 0.008 }
-          },
-          rating: 3.8,
-          user_ratings_total: 23,
-          types: ['community_center'],
-          quality_score: 45
-        }
-      ],
-      veterinary_care: [
-        {
-          place_id: 'mock_vet_1',
-          name: 'Animal Hospital PJ',
-          geometry: {
-            location: { lat: location.latitude - 0.025, lng: location.longitude + 0.020 }
-          },
-          rating: 4.4,
-          user_ratings_total: 156,
-          opening_hours: { open_now: true },
-          types: ['veterinary_care'],
-          quality_score: 70
-        }
-      ],
       pharmacy: [
         {
           place_id: 'mock_pharmacy_1',
@@ -802,48 +798,6 @@ class EmergencyPlacesService {
           opening_hours: { open_now: false },
           types: ['pharmacy'],
           quality_score: 60
-        }
-      ],
-      gas_station: [
-        {
-          place_id: 'mock_gas_1',
-          name: 'Petronas Bangsar',
-          geometry: {
-            location: { lat: location.latitude + 0.009, lng: location.longitude - 0.015 }
-          },
-          rating: 4.0,
-          user_ratings_total: 167,
-          opening_hours: { open_now: true },
-          types: ['gas_station'],
-          quality_score: 70
-        }
-      ],
-      bank: [
-        {
-          place_id: 'mock_bank_1',
-          name: 'Maybank KL Sentral',
-          geometry: {
-            location: { lat: location.latitude - 0.018, lng: location.longitude - 0.005 }
-          },
-          rating: 3.7,
-          user_ratings_total: 89,
-          opening_hours: { open_now: false },
-          types: ['bank'],
-          quality_score: 55
-        }
-      ],
-      atm: [
-        {
-          place_id: 'mock_atm_1',
-          name: 'CIMB ATM Pavilion',
-          geometry: {
-            location: { lat: location.latitude + 0.003, lng: location.longitude + 0.005 }
-          },
-          rating: 3.5,
-          user_ratings_total: 23,
-          opening_hours: { open_now: true },
-          types: ['atm'],
-          quality_score: 40
         }
       ]
     };

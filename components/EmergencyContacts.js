@@ -171,18 +171,42 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
     );
   };
 
-  // Load nearby emergency places using GPS location
+  // Load nearby emergency places using GPS location with progressive updates
   const loadNearbyPlaces = async () => {
     setLoadingLocation(true);
     setLocationError(null);
+    setNearbyPlaces({}); // Clear previous results
 
     try {
       // Get user's current location
       const location = await EmergencyPlacesService.getCurrentLocation();
       setUserLocation(location);
 
-      // Get all emergency services near the user
-      const services = await EmergencyPlacesService.getAllEmergencyServices(location);
+      // Progressive callback to update UI as each service loads
+      const onProgressUpdate = (serviceKey, serviceResult, allResults) => {
+        console.log(`Loaded ${serviceKey}:`, serviceResult.count, 'places');
+
+        // Update state with new results immediately
+        setNearbyPlaces(prevPlaces => ({
+          ...prevPlaces,
+          [serviceKey]: serviceResult
+        }));
+
+        // If we have at least one critical service loaded, we can hide the loading spinner
+        const criticalServicesLoaded = Object.keys(allResults).some(key =>
+          ['emergency_medical', 'police', 'fire_rescue'].includes(key) &&
+          allResults[key].places.length > 0
+        );
+
+        if (criticalServicesLoaded && loadingLocation) {
+          setLoadingLocation(false);
+        }
+      };
+
+      // Get all emergency services with progressive loading
+      const services = await EmergencyPlacesService.getAllEmergencyServices(location, onProgressUpdate);
+
+      // Final update with complete results
       setNearbyPlaces(services);
     } catch (error) {
       console.error('Error loading nearby places:', error);
@@ -242,13 +266,46 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
     );
   };
 
-  // Render category section in "Near Me"
+  // Render category section in "Near Me" with loading states
   const renderPlaceCategory = (categoryKey, categoryData) => {
-    if (!categoryData || categoryData.places.length === 0) {
+    const config = EmergencyPlacesService.getPlaceTypes()[categoryKey];
+
+    if (!config) {
       return null;
     }
 
-    const { places, config, count } = categoryData;
+    // Show loading skeleton if data is not yet available
+    if (!categoryData) {
+      return (
+        <View key={categoryKey} style={styles.placeCategory}>
+          <View style={styles.placeCategoryHeader}>
+            <View style={styles.placeCategoryTitle}>
+              <Ionicons name={config.icon} size={20} color={config.color} />
+              <Text style={styles.placeCategoryText}>
+                {config.displayName} (searching...)
+              </Text>
+            </View>
+          </View>
+          <View style={styles.placeCategoryList}>
+            <View style={[styles.placeItem, styles.placeholderItem]}>
+              <View style={[styles.placeIcon, { backgroundColor: '#f0f0f0' }]}>
+                <ActivityIndicator size="small" color={config.color} />
+              </View>
+              <View style={styles.placeInfo}>
+                <Text style={styles.placeholderText}>Searching for {config.displayName.toLowerCase()}...</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      );
+    }
+
+    // Hide categories with no results
+    if (categoryData.places.length === 0) {
+      return null;
+    }
+
+    const { places, count } = categoryData;
 
     return (
       <View key={categoryKey} style={styles.placeCategory}>
@@ -318,9 +375,13 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
       );
     }
 
-    const sortedCategories = Object.entries(nearbyPlaces)
-      .filter(([_, data]) => data.places.length > 0)
-      .sort((a, b) => a[1].config.priority - b[1].config.priority);
+    // Get all possible service categories and show them in priority order
+    const allServiceKeys = Object.keys(EmergencyPlacesService.getPlaceTypes());
+    const sortedCategoryKeys = allServiceKeys.sort((a, b) => {
+      const priorityA = EmergencyPlacesService.getPlaceTypes()[a]?.priority || 999;
+      const priorityB = EmergencyPlacesService.getPlaceTypes()[b]?.priority || 999;
+      return priorityA - priorityB;
+    });
 
     return (
       <View style={styles.nearMeContent}>
@@ -334,8 +395,17 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
           </TouchableOpacity>
         </View>
 
-        {sortedCategories.map(([categoryKey, categoryData]) =>
-          renderPlaceCategory(categoryKey, categoryData)
+        {sortedCategoryKeys.map((categoryKey) =>
+          renderPlaceCategory(categoryKey, nearbyPlaces[categoryKey])
+        )}
+
+        {/* Show message if no services are loading */}
+        {Object.keys(nearbyPlaces).length === 0 && !loadingLocation && (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyMessage}>
+              Tap search to find emergency services near you
+            </Text>
+          </View>
         )}
       </View>
     );
@@ -1019,6 +1089,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Loading placeholder styles
+  placeholderItem: {
+    opacity: 0.7,
+  },
+  placeholderText: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
   },
 });
 

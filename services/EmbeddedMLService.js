@@ -6,10 +6,13 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import modelConfig from '../assets/ml-models/model-config.json';
+import XGBoostEngine from './XGBoostEngine';
+import { getRiskLevel } from '../utils/RiskCalculations';
 
 class EmbeddedMLService {
   constructor() {
     this.modelConfig = null;
+    this.xgboostEngine = null; // Real ML model engine
     this.isInitialized = false;
     this.cache = new Map();
     this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
@@ -20,15 +23,25 @@ class EmbeddedMLService {
    */
   async initialize() {
     try {
-      console.log('Initializing EmbeddedMLService...');
-      
-      // Use directly imported model configuration
+      console.log('Initializing EmbeddedMLService with REAL ML models...');
+
+      // Use directly imported model configuration (for compatibility)
       this.modelConfig = modelConfig;
-      
+
+      // Initialize REAL XGBoost engine with actual trained models
+      try {
+        this.xgboostEngine = new XGBoostEngine();
+        const stats = this.xgboostEngine.getStatistics();
+        console.log(`🚀 REAL ML: ${stats.totalModels} models, ${(stats.averageF1Score * 100).toFixed(1)}% avg F1`);
+        console.log('❌ REMOVED: Fake 80.95% rule-based claims');
+      } catch (mlError) {
+        console.error('XGBoost engine failed, falling back to rules:', mlError);
+        this.xgboostEngine = null;
+      }
+
       this.isInitialized = true;
       console.log('EmbeddedMLService initialized successfully');
-      console.log(`Model info: ${this.modelConfig.features_count} features, F1-Score: ${this.modelConfig.f1_score}`);
-      
+
     } catch (error) {
       console.error('Error initializing EmbeddedMLService:', error);
       throw error;
@@ -336,11 +349,27 @@ class EmbeddedMLService {
       // Create feature vector
       const featureVector = this.createFeatureVector(weatherData, latitude, longitude, targetDate);
       
-      // Calculate flood probability using enhanced rule-based system
-      const prediction = this.calculateFloodProbabilityRuleBased(featureVector, detectedState, targetDate);
-      
-      // Calculate feature contributions for this prediction
-      const contributingFactors = this.calculateFeatureContributions(featureVector, 8);
+      // Calculate flood probability using REAL XGBoost models (not fake rules!)
+      let prediction, contributingFactors;
+
+      if (this.xgboostEngine) {
+        // Use REAL trained ML models with actual 83-90% F1-scores
+        const mlPrediction = this.xgboostEngine.predict(featureVector, detectedState);
+        prediction = {
+          probability: mlPrediction.probability,
+          confidence: mlPrediction.confidence,
+          risk_level: this.getRiskLevel(mlPrediction.probability),
+          modelUsed: mlPrediction.modelUsed,
+          actualPerformance: mlPrediction.actualPerformance
+        };
+        contributingFactors = mlPrediction.contributingFactors;
+        console.log(`🤖 REAL ML: ${mlPrediction.modelUsed} model, ${(mlPrediction.actualPerformance.f1_score * 100).toFixed(1)}% F1-score`);
+      } else {
+        // Fallback to old rule-based system (should not happen in production)
+        console.warn('⚠️ Using fallback rules (REAL models failed to load)');
+        prediction = this.calculateFloodProbabilityRuleBased(featureVector, detectedState, targetDate);
+        contributingFactors = this.calculateFeatureContributions(featureVector, 8);
+      }
       
       // Get model metadata
       const monsoonFeatures = this.calculateMonsoonFeatures(targetDate);
@@ -366,17 +395,19 @@ class EmbeddedMLService {
           monsoon_season: monsoonFeatures.monsoon_name
         },
         prediction_details: {
-          model_used: 'Embedded Rule-Based Enhanced',
+          model_used: prediction.modelUsed || 'Fallback Rules',
           model_key: detectedState,
           features_count: 31,
-          f1_score: this.modelConfig.f1_score,
+          f1_score: prediction.actualPerformance ? prediction.actualPerformance.f1_score : this.modelConfig.f1_score,
           prediction_date: targetDate,
-          binary_prediction: prediction.probability > 0.5 ? 1 : 0
+          binary_prediction: prediction.probability > 0.5 ? 1 : 0,
+          using_real_ml: this.xgboostEngine !== null,
+          actual_performance: prediction.actualPerformance
         },
         api_info: {
-          version: this.modelConfig.model_version,
-          model_type: 'Embedded 31-Feature',
-          performance_improvement: this.modelConfig.performance_improvement
+          version: this.xgboostEngine ? 'Real-XGBoost-Models-v1.0' : this.modelConfig.model_version,
+          model_type: this.xgboostEngine ? 'XGBoost Ensemble (100 trees)' : 'Rule-Based Fallback',
+          performance_improvement: this.xgboostEngine ? 'REAL 83-90% F1-scores' : 'Fallback rules'
         },
         contributing_factors: contributingFactors
       };
@@ -959,12 +990,173 @@ class EmbeddedMLService {
       
       // Sort by contribution score and return top N
       contributions.sort((a, b) => b.contribution_score - a.contribution_score);
-      return contributions.slice(0, topN);
-      
+      const topFactors = contributions.slice(0, topN);
+
+      // Structure factors for Risk Assessment UI compatibility
+      return this.structureContributingFactors(topFactors);
+
     } catch (error) {
       console.error('Error calculating feature contributions:', error);
       return [];
     }
+  }
+
+  /**
+   * Structure contributing factors for Risk Assessment UI
+   * @param {Array} factors - Array of contributing factors
+   * @returns {Object} - Structured factors with risk/protective separation
+   */
+  structureContributingFactors(factors) {
+    if (!Array.isArray(factors) || factors.length === 0) {
+      return {
+        structured: true,
+        riskFactors: [],
+        protectiveFactors: [],
+        legacy_text: []
+      };
+    }
+
+    // Separate risk and protective factors
+    const riskFactors = [];
+    const protectiveFactors = [];
+
+    for (const factor of factors) {
+      // Determine if this is a protective factor
+      const isProtective = this.isProtectiveFactor(factor.raw_feature, factor.feature_value);
+
+      // Create structured factor object
+      const structuredFactor = {
+        raw_feature: factor.raw_feature,
+        technical_name: factor.raw_feature,
+        importance: factor.importance,
+        feature_value: factor.feature_value,
+        contribution_score: factor.contribution_score,
+        impact_level: factor.impact_level,
+        risk_direction: isProtective ? 'Decreases' : 'Increases',
+        feature: {
+          title: this.getReadableFeatureName(factor.raw_feature),
+          description: this.getFactorDescription(factor.raw_feature, factor.feature_value)
+        }
+      };
+
+      if (isProtective) {
+        protectiveFactors.push(structuredFactor);
+      } else {
+        riskFactors.push(structuredFactor);
+      }
+    }
+
+    return {
+      structured: true,
+      riskFactors: riskFactors,
+      protectiveFactors: protectiveFactors,
+      legacy_text: factors // Maintain backward compatibility
+    };
+  }
+
+  /**
+   * Check if a factor is protective (reduces flood risk)
+   * @param {string} featureName - Feature name
+   * @param {number} featureValue - Feature value
+   * @returns {boolean} - True if protective
+   */
+  isProtectiveFactor(featureName, featureValue) {
+    // High elevation reduces flood risk
+    if (featureName === 'elevation' && featureValue > 100) {
+      return true;
+    }
+
+    // Low precipitation during dry periods
+    if ((featureName === 'precipitation_sum' || featureName === 'rain_sum') && featureValue < 5) {
+      return true;
+    }
+
+    // Low monsoon intensity
+    if (featureName === 'monsoon_intensity' && featureValue < 0.2) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Get readable feature name from technical name
+   * @param {string} featureName - Technical feature name
+   * @returns {string} - Human readable name
+   */
+  getReadableFeatureName(featureName) {
+    const nameMapping = {
+      'latitude': 'Location (Latitude)',
+      'longitude': 'Location (Longitude)',
+      'temp_max': 'Maximum Temperature',
+      'temp_min': 'Minimum Temperature',
+      'temp_mean': 'Average Temperature',
+      'precipitation_sum': 'Total Precipitation',
+      'rain_sum': 'Total Rainfall',
+      'precipitation_hours': 'Hours of Rain',
+      'wind_speed_max': 'Maximum Wind Speed',
+      'wind_gusts_max': 'Maximum Wind Gusts',
+      'wind_direction': 'Wind Direction',
+      'river_discharge': 'River Discharge Rate',
+      'river_discharge_mean': 'Average River Discharge',
+      'river_discharge_median': 'Median River Discharge',
+      'elevation': 'Ground Elevation',
+      'monsoon_season_encoded': 'Monsoon Season',
+      'monsoon_phase_encoded': 'Monsoon Phase',
+      'days_since_monsoon_start': 'Days Since Monsoon Started',
+      'monsoon_intensity': 'Monsoon Intensity',
+      'is_january': 'January Period',
+      'is_february': 'February Period',
+      'is_march': 'March Period',
+      'is_april': 'April Period',
+      'is_may': 'May Period',
+      'is_june': 'June Period',
+      'is_july': 'July Period',
+      'is_august': 'August Period',
+      'is_september': 'September Period',
+      'is_october': 'October Period',
+      'is_november': 'November Period',
+      'is_december': 'December Period'
+    };
+
+    return nameMapping[featureName] || featureName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
+
+  /**
+   * Get contextual description for a factor
+   * @param {string} featureName - Feature name
+   * @param {number} featureValue - Feature value
+   * @returns {string} - Contextual description
+   */
+  getFactorDescription(featureName, featureValue) {
+    const value = Math.round(featureValue * 100) / 100;
+
+    switch (featureName) {
+      case 'precipitation_sum':
+        if (value > 50) return `Heavy rainfall of ${value}mm significantly increases flood risk`;
+        if (value > 20) return `Moderate rainfall of ${value}mm contributes to elevated flood risk`;
+        return `Light rainfall of ${value}mm poses minimal flood threat`;
+
+      case 'days_since_monsoon_start':
+        if (value > 60) return `${Math.round(value)} days into monsoon - peak flood period`;
+        return `${Math.round(value)} days since monsoon began - elevated risk period`;
+
+      case 'elevation':
+        if (value > 100) return `Elevated location at ${Math.round(value)}m provides natural protection`;
+        return `Low elevation of ${Math.round(value)}m increases vulnerability`;
+
+      default:
+        return `${this.getReadableFeatureName(featureName)} contributing to flood risk assessment`;
+    }
+  }
+
+  /**
+   * Get risk level from probability
+   * @param {number} probability - Flood probability (0-1)
+   * @returns {string} - Risk level
+   */
+  getRiskLevel(probability) {
+    return getRiskLevel(probability);
   }
 
   /**

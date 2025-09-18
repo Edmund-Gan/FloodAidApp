@@ -65,7 +65,8 @@
       "Bash(git rm:*)",
       "WebFetch(domain:developers.google.com)",
       "Read(//var/folders//**)",
-      "Bash(sips:*)"
+      "Bash(sips:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
