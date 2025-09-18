@@ -57,7 +57,12 @@
       "Bash(exec zsh)",
       "Bash(alias python)",
       "Bash(npm test)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(rm:*)",
+      "Bash(sudo rm:*)",
+      "Bash(mv:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

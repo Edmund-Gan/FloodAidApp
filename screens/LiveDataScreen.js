@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { UserContext } from '../context/UserContext';
 import { COLORS } from '../utils/constants';
 import RealTimeWeatherService from '../services/RealTimeWeatherService';
@@ -26,6 +27,7 @@ const FALLBACK_LOCATION = {
 
 export default function LiveDataScreen() {
   const { logFeatureUsage } = useContext(UserContext);
+  const insets = useSafeAreaInsets();
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -184,10 +186,16 @@ export default function LiveDataScreen() {
 
   const rainDays = weatherData?.rain_forecast?.upcoming_rain_days || [];
 
+  // Calculate proper bottom padding to account for tab bar and safe area
+  const scrollContentStyle = [
+    styles.scrollContent,
+    { paddingBottom: 40 + insets.bottom + 60 + 20 } // base padding + safe area + tab bar height + buffer
+  ];
+
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={scrollContentStyle}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}

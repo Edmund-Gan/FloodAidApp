@@ -6,9 +6,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Alert,
-  Dimensions,
-  Modal,
-  ScrollView
+  Dimensions
 } from 'react-native';
 import MapView, { Polygon, Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,7 +21,6 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
   const [error, setError] = useState(null);
   const [statesData, setStatesData] = useState([]);
   const [selectedState, setSelectedState] = useState(null);
-  const [showStateModal, setShowStateModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [mapRegion, setMapRegion] = useState(null);
   const mapRef = useRef(null);
@@ -106,7 +103,6 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
   const handleStatePress = (state) => {
     console.log(`📍 State selected: ${state.name}`);
     setSelectedState(state);
-    setShowStateModal(true);
 
     if (onStateSelected) {
       onStateSelected(state);
@@ -452,106 +448,6 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
     </View>
   );
 
-  const renderStateModal = () => {
-    if (!selectedState) return null;
-
-    const riskData = selectedState.riskData;
-
-    return (
-      <Modal
-        visible={showStateModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowStateModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{selectedState.name}</Text>
-              <TouchableOpacity
-                onPress={() => setShowStateModal(false)}
-                style={styles.closeButton}
-              >
-                <Ionicons name="close" size={24} color={COLORS.TEXT_PRIMARY} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalContent}>
-              <View style={styles.riskOverview}>
-                <View style={styles.riskIndicator}>
-                  <View
-                    style={[styles.riskCircle, { backgroundColor: riskData.color }]}
-                  />
-                  <View>
-                    <Text style={styles.riskLevel}>{riskData.riskLevel} Risk</Text>
-                    <Text style={styles.riskProbability}>
-                      {Math.round(riskData.floodProbability * 100)}% probability
-                    </Text>
-                  </View>
-                </View>
-
-                <Text style={styles.lastUpdated}>
-                  Last updated: {new Date(riskData.lastUpdated).toLocaleTimeString()}
-                </Text>
-              </View>
-
-              {riskData.weatherSummary && (
-                <View style={styles.weatherSection}>
-                  <Text style={styles.sectionTitle}>Current Conditions</Text>
-
-                  <View style={styles.weatherGrid}>
-                    <View style={styles.weatherItem}>
-                      <Ionicons name="thermometer-outline" size={20} color={COLORS.PRIMARY} />
-                      <Text style={styles.weatherValue}>{riskData.weatherSummary.temperature}°C</Text>
-                      <Text style={styles.weatherLabel}>Temperature</Text>
-                    </View>
-
-                    <View style={styles.weatherItem}>
-                      <Ionicons name="rainy-outline" size={20} color={COLORS.PRIMARY} />
-                      <Text style={styles.weatherValue}>{riskData.weatherSummary.rainfall}mm</Text>
-                      <Text style={styles.weatherLabel}>Rainfall</Text>
-                    </View>
-
-                    <View style={styles.weatherItem}>
-                      <Ionicons name="water-outline" size={20} color={COLORS.PRIMARY} />
-                      <Text style={styles.weatherValue}>{riskData.weatherSummary.humidity}%</Text>
-                      <Text style={styles.weatherLabel}>Humidity</Text>
-                    </View>
-
-                    <View style={styles.weatherItem}>
-                      <Ionicons name="speedometer-outline" size={20} color={COLORS.PRIMARY} />
-                      <Text style={styles.weatherValue}>{riskData.weatherSummary.windSpeed}km/h</Text>
-                      <Text style={styles.weatherLabel}>Wind</Text>
-                    </View>
-                  </View>
-                </View>
-              )}
-
-              {riskData.factors && riskData.factors.length > 0 && (
-                <View style={styles.factorsSection}>
-                  <Text style={styles.sectionTitle}>Contributing Factors</Text>
-                  {riskData.factors.slice(0, 3).map((factor, index) => (
-                    <Text key={index} style={styles.factorText}>
-                      • {typeof factor === 'string' ? factor : factor.feature?.description || 'Weather pattern detected'}
-                    </Text>
-                  ))}
-                </View>
-              )}
-
-              <View style={styles.locationInfo}>
-                <Text style={styles.sectionTitle}>Location Details</Text>
-                <Text style={styles.infoText}>Capital: {selectedState.capital}</Text>
-                <Text style={styles.infoText}>State Code: {selectedState.stateCode}</Text>
-                <Text style={styles.infoText}>
-                  Coordinates: {selectedState.center.latitude.toFixed(4)}°, {selectedState.center.longitude.toFixed(4)}°
-                </Text>
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-    );
-  };
 
   if (loading) {
     return (
@@ -615,8 +511,6 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
 
         {renderRiskLegend()}
       </View>
-
-      {renderStateModal()}
     </View>
   );
 }
@@ -727,120 +621,5 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: COLORS.TEXT_ON_PRIMARY,
     fontWeight: '600'
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end'
-  },
-  modalContainer: {
-    backgroundColor: COLORS.SURFACE,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: height * 0.7,
-    paddingBottom: 20
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0'
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.TEXT_PRIMARY
-  },
-  closeButton: {
-    padding: 4
-  },
-  modalContent: {
-    flex: 1,
-    paddingHorizontal: 20
-  },
-  riskOverview: {
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0'
-  },
-  riskIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8
-  },
-  riskCircle: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: 12
-  },
-  riskLevel: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.TEXT_PRIMARY
-  },
-  riskProbability: {
-    fontSize: 14,
-    color: COLORS.TEXT_SECONDARY,
-    marginTop: 2
-  },
-  lastUpdated: {
-    fontSize: 12,
-    color: COLORS.TEXT_SECONDARY,
-    fontStyle: 'italic'
-  },
-  weatherSection: {
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0'
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.TEXT_PRIMARY,
-    marginBottom: 12
-  },
-  weatherGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between'
-  },
-  weatherItem: {
-    alignItems: 'center',
-    width: '23%',
-    marginBottom: 12
-  },
-  weatherValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.TEXT_PRIMARY,
-    marginTop: 4
-  },
-  weatherLabel: {
-    fontSize: 10,
-    color: COLORS.TEXT_SECONDARY,
-    marginTop: 2,
-    textAlign: 'center'
-  },
-  factorsSection: {
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0'
-  },
-  factorText: {
-    fontSize: 12,
-    color: COLORS.TEXT_SECONDARY,
-    marginBottom: 4,
-    lineHeight: 16
-  },
-  locationInfo: {
-    paddingTop: 16
-  },
-  infoText: {
-    fontSize: 12,
-    color: COLORS.TEXT_SECONDARY,
-    marginBottom: 4
   }
 });
