@@ -12,7 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
-import LocationService from '../services/LocationService';
+import ReliableLocationService from '../services/ReliableLocationService';
+import SimplifiedLocationCache from '../services/SimplifiedLocationCache';
 import addressValidationService from '../services/AddressValidationService';
 import { COLORS } from '../utils/constants';
 
@@ -51,7 +52,11 @@ export default function MapLocationPicker({
   const getCurrentLocationForMap = async () => {
     try {
       setIsLoading(true);
-      const location = await LocationService.getCurrentLocationWithMalaysiaCheck(false);
+      const location = await ReliableLocationService.getCurrentLocation({
+        forceRefresh: true,
+        enableHighAccuracy: true,
+        includeAddress: false // Don't need address for map picker
+      });
       
       if (location) {
         const coords = {
@@ -96,10 +101,7 @@ export default function MapLocationPicker({
       setCoverageStatus(coverage);
       
       if (coverage.available) {
-        const displayName = await LocationService.getLocationDisplayName(
-          coordinates.latitude, 
-          coordinates.longitude
-        );
+        const displayName = `${coordinates.latitude.toFixed(4)}, ${coordinates.longitude.toFixed(4)}, Malaysia`;
         
         setLocationDetails({
           formattedAddress: displayName,

@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginVertical: 10,
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderRadius: 3,
   },
   timeEstimate: {
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     flexGrow: 1,
   },
   scrollContentContainer: {
@@ -601,7 +601,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     margin: 16,
     padding: 16,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: 'rgba(248, 249, 250, 0.8)',
     borderRadius: 12,
   },
   summaryHeader: {
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 30,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: 'rgba(224, 224, 224, 0.8)',
   },
   sectionsContainer: {
     paddingHorizontal: 16,
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
   sectionContainer: {
     marginBottom: 8,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderWidth: 1,
     borderColor: '#F0F0F0',
     overflow: 'hidden',
@@ -656,16 +656,16 @@ const styles = StyleSheet.create({
   childSectionContainer: {
     borderLeftWidth: 3,
     borderLeftColor: '#FF6B6B',
-    backgroundColor: '#FFF8F8',
+    backgroundColor: 'rgba(255, 248, 248, 0.8)',
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
   },
   sectionHeaderCompleted: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: 'rgba(248, 249, 250, 0.8)',
   },
   sectionLeft: {
     flexDirection: 'row',
@@ -720,7 +720,7 @@ const styles = StyleSheet.create({
   sectionContent: {
     paddingHorizontal: 16,
     paddingBottom: 16,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: 'rgba(250, 250, 250, 0.8)',
   },
   taskRow: {
     flexDirection: 'row',
@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
   childSectionBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFE5E5',
+    backgroundColor: 'rgba(255, 229, 229, 0.8)',
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 6,

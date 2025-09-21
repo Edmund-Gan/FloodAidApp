@@ -11,11 +11,13 @@ import {
   Alert,
   ActivityIndicator,
   Switch,
+  Platform,
+  ActionSheetIOS,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { LocationContext } from '../context/LocationContext';
+import { useReliableLocation } from '../context/ReliableLocationContext';
 import { UserContext } from '../context/UserContext';
 import AddressSearchInput from '../components/AddressSearchInput';
 import MapLocationPicker from '../components/MapLocationPicker';
@@ -55,13 +57,13 @@ const getLocationImageUri = (locationType) => {
 };
 
 export default function MyLocationsScreen({ navigation }) {
-  const { 
-    monitoredLocations, 
-    addLocation, 
-    removeLocation, 
+  const {
+    monitoredLocations,
+    addLocation,
+    removeLocation,
     refreshLocationRisk,
     updateLocationCustomLabel
-  } = useContext(LocationContext);
+  } = useReliableLocation();
   const { logFeatureUsage } = useContext(UserContext);
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -252,6 +254,25 @@ export default function MyLocationsScreen({ navigation }) {
     }
   };
 
+  const showIOSLocationTypePicker = () => {
+    const options = ['Cancel', 'Home', 'Office', 'School'];
+
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: options,
+        cancelButtonIndex: 0,
+        title: 'Select Location Type',
+        message: 'Choose the type of location you want to add',
+      },
+      (buttonIndex) => {
+        if (buttonIndex > 0) {
+          const selectedType = options[buttonIndex];
+          setNewLocation({...newLocation, subtitle: selectedType});
+        }
+      }
+    );
+  };
+
 
   return (
     <View style={styles.container}>
@@ -382,17 +403,35 @@ export default function MyLocationsScreen({ navigation }) {
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Location Type</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={newLocation.subtitle}
-                  style={styles.picker}
-                  onValueChange={(itemValue) => setNewLocation({...newLocation, subtitle: itemValue})}
+              {Platform.OS === 'ios' ? (
+                // iOS: Use TouchableOpacity to trigger ActionSheetIOS
+                <TouchableOpacity
+                  style={styles.iOSPickerButton}
+                  onPress={showIOSLocationTypePicker}
                 >
-                  <Picker.Item label="Home" value="Home" />
-                  <Picker.Item label="Office" value="Office" />
-                  <Picker.Item label="School" value="School" />
-                </Picker>
-              </View>
+                  <Text style={styles.iOSPickerText}>
+                    {newLocation.subtitle || 'Select location type...'}
+                  </Text>
+                  <Ionicons
+                    name="chevron-down"
+                    size={20}
+                    color={COLORS.TEXT_SECONDARY}
+                  />
+                </TouchableOpacity>
+              ) : (
+                // Android: Use regular Picker
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={newLocation.subtitle}
+                    style={styles.picker}
+                    onValueChange={(itemValue) => setNewLocation({...newLocation, subtitle: itemValue})}
+                  >
+                    <Picker.Item label="Home" value="Home" />
+                    <Picker.Item label="Office" value="Office" />
+                    <Picker.Item label="School" value="School" />
+                  </Picker>
+                </View>
+              )}
             </View>
 
             <View style={styles.inputContainer}>
@@ -674,15 +713,59 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     color: COLORS.TEXT_PRIMARY,
+    backgroundColor: 'transparent',
+    ...Platform.select({
+      ios: {
+        paddingVertical: 15,
+        backgroundColor: COLORS.SURFACE,
+      },
+      android: {
+        paddingVertical: 12,
+      },
+    }),
   },
   pickerContainer: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
     backgroundColor: COLORS.SURFACE,
+    ...Platform.select({
+      ios: {
+        paddingHorizontal: 12,
+      },
+    }),
   },
   picker: {
     height: 50,
+    ...Platform.select({
+      ios: {
+        color: COLORS.TEXT_PRIMARY,
+      },
+      android: {
+        color: COLORS.TEXT_PRIMARY,
+      },
+    }),
+  },
+  pickerItemIOS: {
+    fontSize: 16,
+    color: COLORS.TEXT_PRIMARY,
+    textAlign: 'center',
+  },
+  iOSPickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 15,
+    backgroundColor: COLORS.SURFACE,
+    minHeight: 50,
+  },
+  iOSPickerText: {
+    fontSize: 16,
+    color: COLORS.TEXT_PRIMARY,
+    flex: 1,
   },
   modalButtons: {
     flexDirection: 'row',

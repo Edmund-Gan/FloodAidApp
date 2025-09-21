@@ -1,11 +1,50 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import LocationManager from '../services/LocationManager';
+import ReliableLocationService from '../services/ReliableLocationService';
 import ManualLocationService from '../services/ManualLocationService';
 import FloodPredictionModel from '../services/FloodPredictionModel';
 import floodAlertService from '../utils/FloodAlertService';
 import addressValidationService from '../services/AddressValidationService';
 import { notificationService } from '../utils/NotificationService';
+
+// Compatibility wrapper for old LocationManager API
+const LocationManager = {
+  async hasLocationPermission() {
+    return await ReliableLocationService.hasLocationPermission();
+  },
+
+  async getCurrentLocation(options = {}) {
+    const location = await ReliableLocationService.getCurrentLocation({
+      forceRefresh: true,
+      enableHighAccuracy: true,
+      includeAddress: true
+    });
+    return {
+      latitude: location.lat,
+      longitude: location.lon,
+      ...location
+    };
+  },
+
+  getUserFriendlyError(error) {
+    return { message: error.message || 'Location error occurred' };
+  },
+
+  addLocationListener(callback) {
+    // Compatibility stub - new system doesn't use listeners
+    console.warn('LocationManager.addLocationListener is deprecated');
+  },
+
+  removeLocationListener(callback) {
+    // Compatibility stub - new system doesn't use listeners
+    console.warn('LocationManager.removeLocationListener is deprecated');
+  },
+
+  async setManualLocation(location) {
+    // Compatibility stub
+    return location;
+  }
+};
 
 export const LocationContext = createContext();
 

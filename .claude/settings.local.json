@@ -68,7 +68,12 @@
       "Bash(sips:*)",
       "Bash(python3:*)",
       "Bash(git checkout:*)",
-      "Bash(EXPO_DEV_SERVER_PORT=8082 npx expo start)"
+      "Bash(EXPO_DEV_SERVER_PORT=8082 npx expo start)",
+      "WebFetch(domain:docs.expo.dev)",
+      "WebFetch(domain:github.com)",
+      "Bash(lsof:*)",
+      "Read(///**)",
+      "Bash(npm update:*)"
     ],
     "deny": [],
     "ask": []

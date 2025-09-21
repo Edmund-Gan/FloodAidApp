@@ -1,7 +1,8 @@
 // services/FloodPredictionModel.js
 import { Platform } from 'react-native';
 import { apiService } from './ApiService';
-import LocationService from './LocationService';
+import SimplifiedLocationCache from './SimplifiedLocationCache';
+import ReliableLocationService from './ReliableLocationService';
 import embeddedMLService from './EmbeddedMLService';
 import modelOverrideService from '../utils/ModelOverrideService';
 
@@ -10,19 +11,72 @@ import modelOverrideService from '../utils/ModelOverrideService';
  * Implements Epic 1: AI-Based Prediction requirements
  */
 class FloodPredictionModel {
-  
+  // Request deduplication to prevent concurrent ML predictions
+  static activeRequests = new Map();
+
   /**
    * Main prediction function - Epic 1 implementation
    * Uses GPS location, Google Maps geocoding, Open Meteo weather data, and ML model
-   * 
+   *
    * TIMEOUT FIX IMPROVEMENTS:
    * - Increased base timeout from 30s to 60s in App.js
    * - Added parallel processing optimization (weather data starts with location)
    * - Added progressive fallback recovery strategies
    * - Added location timeout protection (25s max for GPS)
+   * - Added request deduplication to prevent concurrent calls
    */
-  static async getPredictionWithML(lat = null, lon = null, skipGPS = false) {
+  static async getPredictionWithML(lat = null, lon = null, skipGPS = false, requestOrigin = 'unknown') {
     const debugId = Date.now();
+
+    // Create request key for deduplication
+    const requestKey = lat && lon ? `${lat.toFixed(4)}_${lon.toFixed(4)}` : `auto_${skipGPS}`;
+
+    console.log(`🚀 [${debugId}]: Starting ML prediction request`);
+    console.log(`🚀 [${debugId}]: Request Origin: ${requestOrigin}`);
+    console.log(`🚀 [${debugId}]: Request Key: ${requestKey}`);
+    console.log(`🚀 [${debugId}]: Active Requests: ${this.activeRequests.size}`);
+
+    // Check if same request is already running
+    if (this.activeRequests.has(requestKey)) {
+      const existingRequest = this.activeRequests.get(requestKey);
+      console.log(`🔄 [${debugId}]: Duplicate request detected, waiting for existing request...`);
+      console.log(`🔄 [${debugId}]: Existing request started at: ${existingRequest.startTime}`);
+
+      try {
+        const result = await existingRequest.promise;
+        console.log(`✅ [${debugId}]: Using result from existing request`);
+        return result;
+      } catch (error) {
+        console.error(`❌ [${debugId}]: Existing request failed, proceeding with new request`);
+        this.activeRequests.delete(requestKey);
+      }
+    }
+
+    // Create new request promise
+    const requestPromise = this._executePrediction(lat, lon, skipGPS, debugId, requestOrigin);
+
+    // Store active request
+    this.activeRequests.set(requestKey, {
+      promise: requestPromise,
+      startTime: debugId,
+      origin: requestOrigin
+    });
+
+    try {
+      const result = await requestPromise;
+      console.log(`✅ [${debugId}]: ML prediction completed successfully`);
+      return result;
+    } finally {
+      // Clean up completed request
+      this.activeRequests.delete(requestKey);
+      console.log(`🧹 [${debugId}]: Request cleanup completed. Active requests: ${this.activeRequests.size}`);
+    }
+  }
+
+  /**
+   * Internal prediction execution (separated for deduplication)
+   */
+  static async _executePrediction(lat, lon, skipGPS, debugId, requestOrigin) {
     const performanceMetrics = {
       startTime: Date.now(),
       locationTime: null,
@@ -96,14 +150,33 @@ class FloodPredictionModel {
       // Get location with timeout protection
       const locationPromise = this.getOptimizedLocationWithTimeout(lat, lon, skipGPS, debugId, 25000); // 25s timeout
       
-      // Start weather data immediately with fallback coordinates if needed
-      const fallbackCoords = { lat: lat || 3.1390, lon: lon || 101.6869 }; // KL default
-      const weatherPromise = locationPromise.then(location => 
+      // Start weather data with proper fallback logic
+      const weatherPromise = locationPromise.then(location =>
         this.getWeatherDataWithFallback(location.lat, location.lon, debugId)
-      ).catch(() => 
-        // If location fails, use fallback coordinates for weather
-        this.getWeatherDataWithFallback(fallbackCoords.lat, fallbackCoords.lon, debugId)
-      );
+      ).catch(async (locationError) => {
+        console.warn(`⚠️ [${debugId}]: Location acquisition failed for weather, trying emergency fallback...`);
+
+        // Only use provided coordinates if they were explicitly given (not null)
+        if (lat && lon) {
+          console.log(`📍 [${debugId}]: Using provided coordinates for weather: ${lat}, ${lon}`);
+          return this.getWeatherDataWithFallback(lat, lon, debugId);
+        }
+
+        // Try to get cached location before falling back to KL
+        try {
+          const cachedLocation = await SimplifiedLocationCache.getAnyCachedLocation();
+          if (cachedLocation) {
+            console.log(`📍 [${debugId}]: Using cached coordinates for weather: ${cachedLocation.latitude}, ${cachedLocation.longitude}`);
+            return this.getWeatherDataWithFallback(cachedLocation.latitude, cachedLocation.longitude, debugId);
+          }
+        } catch (cacheError) {
+          console.warn(`⚠️ [${debugId}]: Cached location also failed for weather`);
+        }
+
+        // Absolute last resort: use KL coordinates for weather
+        console.log(`📍 [${debugId}]: Using absolute fallback KL coordinates for weather: 3.1390, 101.6869`);
+        return this.getWeatherDataWithFallback(3.1390, 101.6869, debugId);
+      });
       
       // Wait for location first (with timeout)
       console.log(`📍 [${debugId}]: Getting location with parallel weather processing...`);
@@ -121,21 +194,37 @@ class FloodPredictionModel {
       const [stateResult, displayNameResult, weatherDataResult] = await Promise.allSettled([
         // Parallel task 1: Get state (fast offline-first approach)
         this.getStateWithFallback(location.lat, location.lon, debugId),
-        
+
         // Parallel task 2: Get display name (cached when possible)
         this.getDisplayNameWithCache(location, debugId),
-        
+
         // Parallel task 3: Weather data (already started above)
         weatherPromise
       ]);
-      
+
       const parallelTime = Date.now() - startTime;
       console.log(`⚡ [${debugId}]: Optimized parallel processing completed in ${parallelTime}ms`);
-      
+
       // Process results with error handling
+      console.log(`🔍 [${debugId}]: ===== PROCESSING PARALLEL RESULTS =====`);
+      console.log(`🔍 [${debugId}]: State result status: ${stateResult.status}`);
+      console.log(`🔍 [${debugId}]: DisplayName result status: ${displayNameResult.status}`);
+      console.log(`🔍 [${debugId}]: Weather result status: ${weatherDataResult.status}`);
+
+      if (displayNameResult.status === 'fulfilled') {
+        console.log(`✅ [${debugId}]: DisplayName SUCCESS - value: "${displayNameResult.value}"`);
+      } else {
+        console.error(`❌ [${debugId}]: DisplayName FAILED - reason:`, displayNameResult.reason);
+      }
+
       const state = stateResult.status === 'fulfilled' ? stateResult.value : 'Selangor';
       const displayName = displayNameResult.status === 'fulfilled' ? displayNameResult.value : 'Unknown Location, Malaysia';
       const weatherData = weatherDataResult.status === 'fulfilled' ? weatherDataResult.value : null;
+
+      console.log(`🔍 [${debugId}]: Final values assigned:`);
+      console.log(`🔍 [${debugId}]: - state: "${state}"`);
+      console.log(`🔍 [${debugId}]: - displayName: "${displayName}"`);
+      console.log(`🔍 [${debugId}]: - weatherData available: ${!!weatherData}`);
       
       if (!weatherData) {
         console.error(`❌ [${debugId}]: Critical: Weather data acquisition failed`);
@@ -163,6 +252,14 @@ class FloodPredictionModel {
       const timeframe = this.calculateFloodTimeframe(weatherData);
       
       // Step 5: Prepare enhanced final prediction result
+      console.log(`🔍 [${debugId}]: ===== BUILDING FINAL RESULT OBJECT =====`);
+      console.log(`🔍 [${debugId}]: Location object will be created with:`);
+      console.log(`🔍 [${debugId}]: - lat: ${location.lat}`);
+      console.log(`🔍 [${debugId}]: - lon: ${location.lon}`);
+      console.log(`🔍 [${debugId}]: - state: "${state}"`);
+      console.log(`🔍 [${debugId}]: - display_name: "${displayName}"`);
+      console.log(`🔍 [${debugId}]: - is_default: ${location.isDefault || false}`);
+
       const result = {
         location: {
           lat: location.lat,
@@ -231,6 +328,10 @@ class FloodPredictionModel {
         total_time: `${performanceMetrics.totalTime}ms`,
         performance_improved: performanceMetrics.totalTime < 45000 ? 'YES' : 'NEEDS_WORK'
       });
+
+      console.log(`🏠 [${debugId}]: ===== FINAL ML RESULT BEING RETURNED =====`);
+      console.log(`🏠 [${debugId}]: result.location.display_name: "${result.location.display_name}"`);
+      console.log(`🏠 [${debugId}]: This is what will be used for home page location display`);
       
       // Add performance info to result for debugging
       result.performance_metrics = {
@@ -1315,18 +1416,47 @@ class FloodPredictionModel {
       return locationResult;
       
     } catch (error) {
-      console.warn(`⚠️ [${debugId}]: Location timeout, using fallback coordinates`);
-      
-      // Return fallback location (Kuala Lumpur)
-      const fallbackLocation = {
-        lat: lat || 3.1390,
-        lon: lon || 101.6869,
+      console.warn(`⚠️ [${debugId}]: Location timeout, trying emergency fallback strategies...`);
+
+      // If coordinates were explicitly provided, use them
+      if (lat && lon) {
+        console.log(`📍 [${debugId}]: Using provided coordinates after timeout: ${lat}, ${lon}`);
+        return {
+          lat: lat,
+          lon: lon,
+          isFallback: true,
+          isDefault: false,
+          fallbackReason: 'GPS timeout - using provided coordinates'
+        };
+      }
+
+      // Try to get cached location before ultimate fallback
+      try {
+        const cachedLocation = await SimplifiedLocationCache.getAnyCachedLocation();
+        if (cachedLocation) {
+          console.log(`📍 [${debugId}]: Using cached location after timeout: ${cachedLocation.latitude}, ${cachedLocation.longitude}`);
+          return {
+            lat: cachedLocation.latitude,
+            lon: cachedLocation.longitude,
+            isFallback: true,
+            isDefault: false,
+            source: cachedLocation.source || 'cached',
+            fallbackReason: 'GPS timeout - using cached location'
+          };
+        }
+      } catch (cacheError) {
+        console.warn(`⚠️ [${debugId}]: Cached location also failed after timeout:`, cacheError.message);
+      }
+
+      // Absolute last resort: Kuala Lumpur coordinates
+      console.log(`📍 [${debugId}]: Using absolute fallback KL coordinates after timeout: 3.1390, 101.6869`);
+      return {
+        lat: 3.1390,
+        lon: 101.6869,
         isFallback: true,
         isDefault: true,
-        fallbackReason: 'Location acquisition timeout'
+        fallbackReason: 'GPS timeout and no cached location available'
       };
-      
-      return fallbackLocation;
     }
   }
 
@@ -1339,9 +1469,9 @@ class FloodPredictionModel {
       const location = { lat, lon };
       
       // Quick Malaysia validation using optimized method
-      if (!LocationService.isLocationInMalaysia(lat, lon)) {
+      if (!SimplifiedLocationCache.isLocationInMalaysia(lat, lon)) {
         console.log(`⚠️ [${debugId}]: Outside Malaysia - finding nearest city...`);
-        const nearestCity = LocationService.findNearestMalaysianLocation(lat, lon);
+        const nearestCity = SimplifiedLocationCache.findNearestMalaysianCity(lat, lon);
         return {
           lat: nearestCity.lat,
           lon: nearestCity.lon,
@@ -1353,11 +1483,84 @@ class FloodPredictionModel {
       return location;
     } else {
       console.log(`📍 [${debugId}]: Getting GPS location with priority: ${skipGPS ? 'skip' : 'normal'}...`);
-      
-      if (LocationService.getCurrentLocationWithMalaysiaCheck) {
-        return await LocationService.getCurrentLocationWithMalaysiaCheck(skipGPS);
-      } else {
-        return await LocationService.getCurrentLocation(skipGPS);
+
+      try {
+        // Cancel any ongoing location requests to prevent race conditions
+        ReliableLocationService.cancelCurrentRequest();
+
+        // Use ReliableLocationService to get current GPS location
+        const locationResult = await ReliableLocationService.getCurrentLocation({
+          forceRefresh: true, // Always force fresh GPS location, don't use skipGPS
+          enableHighAccuracy: true, // Always use high accuracy for ML predictions
+          includeAddress: true
+        });
+
+        if (locationResult && locationResult.lat && locationResult.lon) {
+          console.log(`✅ [${debugId}]: GPS location acquired: ${locationResult.lat}, ${locationResult.lon}`);
+          console.log(`📍 [${debugId}]: === HOME PAGE LOCATION SOURCE TRACKING ===`);
+          console.log(`📍 [${debugId}]: FloodPredictionModel received coordinates: ${locationResult.lat}, ${locationResult.lon}`);
+          console.log(`📍 [${debugId}]: Location source: ${locationResult.source || 'gps'}`);
+          console.log(`📍 [${debugId}]: This location will be used for HOME PAGE display`);
+
+          const location = {
+            lat: locationResult.lat,
+            lon: locationResult.lon,
+            isCached: false,
+            isDefault: false,
+            source: locationResult.source || 'gps'
+          };
+
+          // Quick Malaysia validation using optimized method
+          if (!SimplifiedLocationCache.isLocationInMalaysia(locationResult.lat, locationResult.lon)) {
+            console.log(`⚠️ [${debugId}]: GPS location outside Malaysia - finding nearest city...`);
+            const nearestCity = SimplifiedLocationCache.findNearestMalaysianCity(locationResult.lat, locationResult.lon);
+            return {
+              lat: nearestCity.lat,
+              lon: nearestCity.lon,
+              originalLocation: { lat: locationResult.lat, lon: locationResult.lon },
+              nearestMalaysianLocation: nearestCity,
+              isRedirected: true
+            };
+          }
+
+          return location;
+        } else {
+          throw new Error('ReliableLocationService returned null location');
+        }
+      } catch (locationError) {
+        console.warn(`⚠️ [${debugId}]: GPS location acquisition failed:`, locationError.message);
+
+        // Try to get cached location as fallback
+        try {
+          const cachedLocation = await SimplifiedLocationCache.getAnyCachedLocation();
+          if (cachedLocation) {
+            console.log(`📍 [${debugId}]: Using cached location as fallback`);
+            return {
+              lat: cachedLocation.latitude,
+              lon: cachedLocation.longitude,
+              isCached: true,
+              isDefault: false,
+              source: cachedLocation.source || 'cached',
+              fallbackReason: 'GPS failed, using cache'
+            };
+          }
+        } catch (cacheError) {
+          console.warn(`⚠️ [${debugId}]: Cached location fallback also failed:`, cacheError.message);
+        }
+
+        // Ultimate fallback to Kuala Lumpur coordinates
+        console.log(`⚠️ [${debugId}]: Using ultimate fallback coordinates (Kuala Lumpur)`);
+        console.log(`📍 [${debugId}]: === HOME PAGE FALLBACK LOCATION TRACKING ===`);
+        console.log(`📍 [${debugId}]: FloodPredictionModel falling back to: 3.1390, 101.6869`);
+        console.log(`📍 [${debugId}]: Fallback reason: GPS and cache both failed`);
+        console.log(`📍 [${debugId}]: This FALLBACK location will be used for HOME PAGE display`);
+        return {
+          lat: 3.1390,
+          lon: 101.6869,
+          isFallback: true,
+          isDefault: true,
+          fallbackReason: 'GPS and cache both failed'
+        };
       }
     }
   }
@@ -1368,7 +1571,7 @@ class FloodPredictionModel {
   static async getStateWithFallback(lat, lon, debugId) {
     try {
       console.log(`🗺️ [${debugId}]: Getting state (offline-first)...`);
-      return await LocationService.getStateFromCoordinates(lat, lon);
+      return SimplifiedLocationCache.detectMalaysianState(lat, lon);
     } catch (error) {
       console.warn(`⚠️ [${debugId}]: State detection failed:`, error);
       return 'Selangor'; // Safe fallback
@@ -1376,22 +1579,66 @@ class FloodPredictionModel {
   }
 
   /**
-   * Get display name with caching optimization
+   * Get display name with reverse geocoding and caching optimization
    */
   static async getDisplayNameWithCache(location, debugId) {
     try {
-      console.log(`🏷️ [${debugId}]: Getting display name...`);
-      
+      console.log(`🏷️ [${debugId}]: ===== STARTING getDisplayNameWithCache =====`);
+      console.log(`🏷️ [${debugId}]: Input location object:`, {
+        lat: location.lat,
+        lon: location.lon,
+        isRedirected: location.isRedirected,
+        hasNearestMalaysianLocation: !!location.nearestMalaysianLocation,
+        nearestLocationName: location.nearestMalaysianLocation?.name
+      });
+
+      // Handle redirected locations (from outside Malaysia)
       if (location.isRedirected) {
-        return location.nearestMalaysianLocation ? 
-          location.nearestMalaysianLocation.name : 
-          await LocationService.getLocationDisplayName(location.lat, location.lon);
+        console.log(`🏷️ [${debugId}]: BRANCH: Redirected location detected`);
+        if (location.nearestMalaysianLocation) {
+          const result = location.nearestMalaysianLocation.name;
+          console.log(`📍 [${debugId}]: Using nearest Malaysian location: ${result}`);
+          console.log(`🏷️ [${debugId}]: RETURNING (nearest Malaysian): ${result}`);
+          return result;
+        } else {
+          // For redirected locations without a nearest city, try reverse geocoding the redirected coordinates
+          console.log(`🗺️ [${debugId}]: No nearest Malaysian location, attempting reverse geocoding for redirected location...`);
+          try {
+            const address = await ReliableLocationService._reverseGeocode(location.lat, location.lon, debugId);
+            console.log(`✅ [${debugId}]: Reverse geocoded redirected location: ${address}`);
+            console.log(`🏷️ [${debugId}]: RETURNING (reverse geocoded redirected): ${address}`);
+            return address;
+          } catch (geocodeError) {
+            console.warn(`⚠️ [${debugId}]: Reverse geocoding failed for redirected location:`, geocodeError.message);
+            const fallback = `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}, Malaysia`;
+            console.log(`🏷️ [${debugId}]: RETURNING (redirected fallback): ${fallback}`);
+            return fallback;
+          }
+        }
       } else {
-        return await LocationService.getLocationDisplayName(location.lat, location.lon);
+        // For normal Malaysian locations, use reverse geocoding
+        console.log(`🏷️ [${debugId}]: BRANCH: Normal Malaysian location`);
+        console.log(`🗺️ [${debugId}]: Using reverse geocoding for Malaysian coordinates lat=${location.lat}, lon=${location.lon}...`);
+        try {
+          const address = await ReliableLocationService._reverseGeocode(location.lat, location.lon, debugId);
+          console.log(`✅ [${debugId}]: Reverse geocoded to: ${address}`);
+          console.log(`🏷️ [${debugId}]: RETURNING (reverse geocoded): ${address}`);
+          return address;
+        } catch (geocodeError) {
+          console.warn(`⚠️ [${debugId}]: Reverse geocoding failed:`, geocodeError.message);
+          console.error(`⚠️ [${debugId}]: Reverse geocoding error details:`, geocodeError);
+          // Fallback to coordinates if reverse geocoding fails
+          const fallback = `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}, Malaysia`;
+          console.log(`🏷️ [${debugId}]: RETURNING (fallback coordinates): ${fallback}`);
+          return fallback;
+        }
       }
     } catch (error) {
-      console.warn(`⚠️ [${debugId}]: Display name failed:`, error);
-      return 'Unknown Location, Malaysia';
+      console.warn(`⚠️ [${debugId}]: Display name generation failed:`, error);
+      console.error(`⚠️ [${debugId}]: Display name error details:`, error);
+      const unknownFallback = 'Unknown Location, Malaysia';
+      console.log(`🏷️ [${debugId}]: RETURNING (unknown fallback): ${unknownFallback}`);
+      return unknownFallback;
     }
   }
 

@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import LocationManager from '../services/LocationManager';
+import ReliableLocationService from '../services/ReliableLocationService';
 import ChildPersonalizationService from '../services/ChildPersonalizationService';
 import ChildSummaryBanner from './ChildSummaryBanner';
 import ComfortItemsTracker from './ComfortItemsTracker';
@@ -46,16 +46,16 @@ const EmergencyKit = ({ emergencyKitData }) => {
     try {
       console.log('📍 EmergencyKit: Getting current location for store finder...');
 
-      const location = await LocationManager.getCurrentLocation({
-        priority: 'fast',
-        allowStale: true,
-        showError: false
+      const location = await ReliableLocationService.getCurrentLocation({
+        forceRefresh: true,
+        enableHighAccuracy: true,
+        includeAddress: false // Don't need address for store finder
       });
 
       if (location) {
         setCurrentLocation({
-          latitude: location.latitude,
-          longitude: location.longitude
+          latitude: location.lat,
+          longitude: location.lon
         });
         console.log('✅ EmergencyKit: Location acquired for store finder');
       }
@@ -471,7 +471,7 @@ const EmergencyKit = ({ emergencyKitData }) => {
 
     return (
       <View key={priority} style={styles.prioritySection}>
-        <View style={[styles.priorityHeader, { backgroundColor: color + '20' }]}>
+        <View style={[styles.priorityHeader, { backgroundColor: color + '15' }]}>
           <View style={styles.priorityTitleRow}>
             <Ionicons name={icon} size={20} color={color} />
             <Text style={[styles.priorityTitle, { color }]}>{priority} Priority</Text>
@@ -746,7 +746,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginVertical: 10,
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -826,7 +826,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderRadius: 3,
   },
   timeEstimate: {
@@ -841,10 +841,10 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   content: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
   },
   personalizationBanner: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(248, 249, 250, 0.8)',
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
@@ -869,7 +869,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     margin: 16,
     padding: 16,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(248, 249, 250, 0.8)',
     borderRadius: 12,
   },
   summaryRow: {
@@ -895,14 +895,14 @@ const styles = StyleSheet.create({
   summaryDivider: {
     width: 1,
     height: 40,
-    backgroundColor: '#dee2e6',
+    backgroundColor: 'rgba(222, 226, 230, 0.8)',
     marginHorizontal: 16,
   },
   prioritySection: {
     marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderWidth: 1,
     borderColor: '#e9ecef',
     overflow: 'hidden',
@@ -936,7 +936,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   childItemRow: {
-    backgroundColor: '#fef7f7',
+    backgroundColor: 'rgba(254, 247, 247, 0.8)',
   },
   itemCompleted: {
     opacity: 0.6,
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
   childItemBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffe6e6',
+    backgroundColor: 'rgba(255, 230, 230, 0.8)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
@@ -992,7 +992,7 @@ const styles = StyleSheet.create({
   findStoresButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#e8f5e8',
+    backgroundColor: 'rgba(232, 245, 232, 0.8)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -1008,7 +1008,7 @@ const styles = StyleSheet.create({
   mobilityNote: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#fff3e0',
+    backgroundColor: 'rgba(255, 243, 224, 0.8)',
     padding: 8,
     borderRadius: 6,
     marginTop: 4,
@@ -1031,11 +1031,11 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
@@ -1084,7 +1084,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#e8f5e8',
+    backgroundColor: 'rgba(232, 245, 232, 0.8)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -1105,7 +1105,7 @@ const styles = StyleSheet.create({
   locationWarning: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#e3f2fd',
+    backgroundColor: 'rgba(227, 242, 253, 0.8)',
     padding: 12,
     borderRadius: 8,
     marginTop: 16,

@@ -16,6 +16,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,7 +26,7 @@ import Svg, { Path, Circle as SvgCircle, Text as SvgText } from 'react-native-sv
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FloodPredictionModel from './services/FloodPredictionModel';
-import LocationManager from './services/LocationManager';
+import ReliableLocationService from './services/ReliableLocationService';
 import GeoJSONService from './services/GeoJSONService';
 import FloodAlert from './components/FloodAlert';
 import FloodAlertDetails from './components/FloodAlertDetails';
@@ -51,9 +52,9 @@ import ProfileScreen from './screens/ProfileScreen';
 
 // Import Multi-Location Alerts Components and Context
 import MyLocationsScreen from './screens/MyLocationsScreen';
-import { LocationProvider } from './context/LocationContext';
+import { ReliableLocationProvider } from './context/ReliableLocationContext';
+import { LocationCompatibilityProvider } from './context/LocationContextCompat';
 import { UserProvider } from './context/UserContext';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import emergency data
 const emergencyKitData = require('./emergency_kit.json');
@@ -500,17 +501,17 @@ function HomeScreen() {
     try {
       console.log('📍 App: Setting up flood alert monitoring...');
 
-      // Get current location for alert monitoring using new LocationManager
-      const locationResult = await LocationManager.getCurrentLocation({
-        priority: 'normal',
-        allowStale: true,
-        showError: false
+      // Get current location for alert monitoring using ReliableLocationService
+      const locationResult = await ReliableLocationService.getCurrentLocation({
+        forceRefresh: true,
+        enableHighAccuracy: true,
+        includeAddress: true
       });
 
       if (locationResult) {
         const location = {
-          lat: locationResult.latitude,
-          lng: locationResult.longitude,
+          lat: locationResult.lat,
+          lng: locationResult.lon,
           name: 'Your Location'
         };
 
@@ -671,6 +672,8 @@ function HomeScreen() {
   const loadPredictionWithRetry = async (isManualRetry = false, retryAttempt = 0) => {
     const debugId = Date.now();
     const currentRetry = isManualRetry ? retryCount + 1 : retryAttempt;
+
+    console.log(`🔄 [${debugId}]: loadPredictionWithRetry called - isManualRetry: ${isManualRetry}, retryAttempt: ${retryAttempt}`);
     
     
     try {
@@ -703,7 +706,7 @@ function HomeScreen() {
         try {
           // Epic 1: Use real GPS location, Google reverse geocoding, Open Meteo weather, and ML model
           mlPrediction = await Promise.race([
-            FloodPredictionModel.getPredictionWithML(null, null, skipGPS),
+            FloodPredictionModel.getPredictionWithML(null, null, skipGPS, 'home_screen_auto'),
             timeoutPromise
           ]);
         } finally {
@@ -717,7 +720,14 @@ function HomeScreen() {
       
       
       // Store location info for UI
+      console.log(`🏠 [${debugId}]: ===== SETTING LOCATION INFO FOR HOME PAGE =====`);
+      console.log(`🏠 [${debugId}]: ML Prediction location object:`, mlPrediction.location);
+      console.log(`🏠 [${debugId}]: display_name value: "${mlPrediction.location.display_name}"`);
+      console.log(`🏠 [${debugId}]: This will appear as the location text at top of home page`);
+
       setLocationInfo(mlPrediction.location);
+
+      console.log(`🏠 [${debugId}]: locationInfo state updated - home page should now show: "${mlPrediction.location.display_name}"`);
       
       // Convert ML prediction to format expected by UI
       const uiPrediction = {
@@ -771,6 +781,7 @@ function HomeScreen() {
 
   // Simple wrapper for initial load and backward compatibility
   const loadPrediction = async () => {
+    console.log(`🏠 Initial loadPrediction called from useEffect`);
     await loadPredictionWithRetry(false, 0);
     // Load real-time weather data after getting location
     if (locationInfo) {
@@ -787,18 +798,20 @@ function HomeScreen() {
       if (!weatherLocation) {
         console.log('🌤️ ML prediction failed, getting location independently for weather...');
         try {
-          const locationResult = await LocationManager.getCurrentLocation({
-            priority: skipGPS ? 'fast' : 'normal',
-            allowStale: true,
-            showError: false,
-            forceGPS: !skipGPS
+          // Cancel any ongoing location requests to prevent race conditions
+          ReliableLocationService.cancelCurrentRequest();
+
+          const locationResult = await ReliableLocationService.getCurrentLocation({
+            forceRefresh: true, // Always force fresh GPS for weather data
+            enableHighAccuracy: true,
+            includeAddress: true
           });
 
-          if (locationResult && locationResult.latitude && locationResult.longitude) {
+          if (locationResult && locationResult.lat && locationResult.lon) {
             weatherLocation = {
-              lat: locationResult.latitude,
-              lon: locationResult.longitude,
-              display_name: 'Current Location'
+              lat: locationResult.lat,
+              lon: locationResult.lon,
+              display_name: locationResult.display_name || 'Current Location'
             };
             console.log('✅ Independent location obtained for weather');
           }
@@ -846,6 +859,7 @@ function HomeScreen() {
   };
 
   const onRefresh = () => {
+    console.log(`🔄 Pull-to-refresh triggered`);
     setRefreshing(true);
     loadPrediction();
   };
@@ -860,7 +874,7 @@ function HomeScreen() {
       setError(null);
       
       // Use FloodPredictionModel with custom coordinates
-      const mlPrediction = await FloodPredictionModel.getPredictionWithML(lat, lon);
+      const mlPrediction = await FloodPredictionModel.getPredictionWithML(lat, lon, false, 'custom_coordinates');
       
       
       // Convert ML prediction to UI format
@@ -906,10 +920,11 @@ function HomeScreen() {
   // Handle null prediction data to prevent crashes
   if (!prediction) {
     return (
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 80 }}
-      >
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 80 }}
+        >
         <View>
           <LinearGradient
             colors={['#2563EB', '#1D4ED8']}
@@ -945,7 +960,10 @@ function HomeScreen() {
           </Text>
           <TouchableOpacity 
             style={[styles.retryButton, isRetrying && styles.retryButtonDisabled]} 
-            onPress={() => !isRetrying && loadPredictionWithRetry(true)}
+            onPress={() => {
+              console.log(`🔄 Manual retry button pressed`);
+              !isRetrying && loadPredictionWithRetry(true);
+            }}
             disabled={isRetrying}
           >
             <Text style={styles.retryButtonText}>
@@ -956,18 +974,20 @@ function HomeScreen() {
           {/* Mock data toggle moved to developer controls only */}
         </View>
       </ScrollView>
+      </SafeAreaView>
     );
   }
 
 
   return (
-    <ScrollView 
-      style={styles.container}
-      contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 80 }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 80 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
       <View>
         <LinearGradient
           colors={['#2563EB', '#1D4ED8']}
@@ -1295,6 +1315,7 @@ function HomeScreen() {
         onClose={handleCloseFactorModal}
       />
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -1419,8 +1440,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <UserProvider>
-        <LocationProvider>
-          <NavigationContainer>
+        <ReliableLocationProvider>
+          <LocationCompatibilityProvider>
+            <NavigationContainer>
             <StatusBar barStyle="dark-content" backgroundColor="#fff" />
             <Tab.Navigator
               screenOptions={({ route }) => ({
@@ -1451,8 +1473,9 @@ export default function App() {
             <Tab.Screen name="Locations" component={LocationsScreen} />
             <Tab.Screen name="Profile" component={ProfileScreen} />
           </Tab.Navigator>
-          </NavigationContainer>
-        </LocationProvider>
+            </NavigationContainer>
+          </LocationCompatibilityProvider>
+        </ReliableLocationProvider>
       </UserProvider>
     </SafeAreaProvider>
   );
@@ -1460,6 +1483,10 @@ export default function App() {
 
 // Styles
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   container: {
     flex: 1,
     backgroundColor: '#CFFAFE66',

@@ -1,4 +1,4 @@
-import LocationService from './LocationService';
+import SimplifiedLocationCache from './SimplifiedLocationCache';
 
 class AddressValidationService {
   
@@ -266,7 +266,7 @@ class AddressValidationService {
       }
 
       const { latitude, longitude } = coordinates;
-      const withinMalaysia = LocationService.isLocationInMalaysia(latitude, longitude);
+      const withinMalaysia = SimplifiedLocationCache.isLocationInMalaysia(latitude, longitude);
       
       if (!withinMalaysia) {
         return {
@@ -274,11 +274,11 @@ class AddressValidationService {
           coordinatesValid: true,
           withinMalaysia: false,
           suggestion: 'Location appears to be outside Malaysia',
-          nearestMalaysian: LocationService.findNearestMalaysianLocation(latitude, longitude)
+          nearestMalaysian: SimplifiedLocationCache.findNearestMalaysianCity(latitude, longitude)
         };
       }
 
-      const stateFromCoords = await LocationService.getStateFromCoordinates(latitude, longitude);
+      const stateFromCoords = SimplifiedLocationCache.detectMalaysianState(latitude, longitude);
       const addressComponents = this.parseAddressComponents(address);
       
       let stateMatch = true;
@@ -386,8 +386,8 @@ class AddressValidationService {
 
     const { latitude, longitude } = coordinates;
     
-    if (!LocationService.isLocationInMalaysia(latitude, longitude)) {
-      const nearest = LocationService.findNearestMalaysianLocation(latitude, longitude);
+    if (!SimplifiedLocationCache.isLocationInMalaysia(latitude, longitude)) {
+      const nearest = SimplifiedLocationCache.findNearestMalaysianCity(latitude, longitude);
       return {
         available: false,
         reason: 'Outside Malaysia coverage area',

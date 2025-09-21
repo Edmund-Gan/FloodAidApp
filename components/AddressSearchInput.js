@@ -16,12 +16,12 @@ import { COLORS } from '../utils/constants';
 
 const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.googleMapsApiKey || 'fallback-key-not-configured';
 
-export default function AddressSearchInput({ 
-  onAddressSelected, 
-  placeholder = "Enter address...", 
+export default function AddressSearchInput({
+  onAddressSelected,
+  placeholder = "Enter address...",
   initialValue = "",
   style = {},
-  showMapFallback = true 
+  showMapFallback = true
 }) {
   const [searchText, setSearchText] = useState(initialValue);
   const [suggestions, setSuggestions] = useState([]);
@@ -29,22 +29,31 @@ export default function AddressSearchInput({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const searchTimeoutRef = useRef(null);
+  const activeRequestRef = useRef(null);
+  const searchCacheRef = useRef(new Map());
+  const sessionTokenRef = useRef(null);
 
   useEffect(() => {
-    const words = searchText.trim().split(/\s+/).filter(word => word.length > 0);
-    if (words.length >= 3 || searchText.length > 10) {
+    // Simplified trigger: just need 3+ characters for faster response
+    if (searchText.trim().length >= 3) {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
-      
+
+      // Reduced debounce from 300ms to 150ms for faster response
       searchTimeoutRef.current = setTimeout(() => {
-        searchAddresses(searchText);
-      }, 300);
+        searchAddresses(searchText.trim());
+      }, 150);
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
+      // Cancel any active request when input is too short
+      if (activeRequestRef.current) {
+        activeRequestRef.current.abort();
+        activeRequestRef.current = null;
+      }
     }
-    
+
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
@@ -52,23 +61,56 @@ export default function AddressSearchInput({
     };
   }, [searchText]);
 
+  const generateSessionToken = () => {
+    return 'xxxx-xxxx-4xxx-yxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
   const searchAddresses = async (query) => {
     if (!query || query.length < 3) return;
-    
+
+    // Check cache first for instant results
+    const cacheKey = query.toLowerCase();
+    if (searchCacheRef.current.has(cacheKey)) {
+      const cachedResults = searchCacheRef.current.get(cacheKey);
+      setSuggestions(cachedResults);
+      setShowSuggestions(true);
+      return;
+    }
+
+    // Cancel previous request if still active
+    if (activeRequestRef.current) {
+      activeRequestRef.current.abort();
+    }
+
     setIsLoading(true);
-    
+
     try {
+      // Generate session token for cost optimization
+      if (!sessionTokenRef.current) {
+        sessionTokenRef.current = generateSessionToken();
+      }
+
+      // Create AbortController for request cancellation
+      const controller = new AbortController();
+      activeRequestRef.current = controller;
+
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/place/autocomplete/json?` +
         `input=${encodeURIComponent(query)}&` +
         `key=${GOOGLE_MAPS_API_KEY}&` +
         `components=country:MY&` +
         `language=en&` +
-        `types=geocode|establishment`
+        `types=geocode|establishment&` +
+        `sessiontoken=${sessionTokenRef.current}`,
+        { signal: controller.signal }
       );
-      
+
       const data = await response.json();
-      
+
       if (data.status === 'OK') {
         const malaysianSuggestions = data.predictions.slice(0, 5).map(prediction => ({
           placeId: prediction.place_id,
@@ -78,7 +120,13 @@ export default function AddressSearchInput({
           types: prediction.types || [],
           isEstablishment: prediction.types?.includes('establishment') || false
         }));
-        
+
+        // Cache results for 5 minutes
+        searchCacheRef.current.set(cacheKey, malaysianSuggestions);
+        setTimeout(() => {
+          searchCacheRef.current.delete(cacheKey);
+        }, 5 * 60 * 1000);
+
         setSuggestions(malaysianSuggestions);
         setShowSuggestions(true);
       } else if (data.status === 'ZERO_RESULTS') {
@@ -89,9 +137,14 @@ export default function AddressSearchInput({
         handleAPIError();
       }
     } catch (error) {
-      console.error('Address search error:', error);
-      handleAPIError();
+      if (error.name !== 'AbortError') {
+        console.error('Address search error:', error);
+        handleAPIError();
+      }
     } finally {
+      if (activeRequestRef.current) {
+        activeRequestRef.current = null;
+      }
       setIsLoading(false);
     }
   };
@@ -122,10 +175,13 @@ export default function AddressSearchInput({
 
     try {
       const placeDetails = await getPlaceDetails(suggestion.placeId);
-      
+
+      // Reset session token after place selection (session complete)
+      sessionTokenRef.current = null;
+
       if (placeDetails) {
         const isEstablishment = suggestion.isEstablishment;
-        
+
         const locationData = {
           address: isEstablishment ? (placeDetails.name || suggestion.mainText) : suggestion.description,
           formattedAddress: placeDetails.formatted_address,
@@ -141,7 +197,7 @@ export default function AddressSearchInput({
           source: 'google_places',
           isEstablishment: isEstablishment
         };
-        
+
         if (onAddressSelected) {
           onAddressSelected(locationData);
         }

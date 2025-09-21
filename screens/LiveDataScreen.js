@@ -15,7 +15,7 @@ import { UserContext } from '../context/UserContext';
 import { COLORS } from '../utils/constants';
 import RealTimeWeatherService from '../services/RealTimeWeatherService';
 import openMeteoService from '../services/OpenMeteoService';
-import LocationService from '../services/LocationService';
+import ReliableLocationService from '../services/ReliableLocationService';
 import FloodRiskMapView from '../components/FloodRiskMapView';
 
 const realTimeWeatherService = new RealTimeWeatherService();
@@ -54,16 +54,21 @@ export default function LiveDataScreen() {
       let weatherLocation = null;
 
       try {
-        const locationResult = await LocationService.getCurrentLocation();
+        const locationResult = await ReliableLocationService.getCurrentLocation({
+          forceRefresh: true,
+          enableHighAccuracy: true,
+          includeAddress: true // Include address for weather display
+        });
         if (locationResult?.lat && locationResult?.lon) {
+          console.log(`📍 LiveDataScreen: === LIVE DATA LOCATION SOURCE TRACKING ===`);
+          console.log(`📍 LiveDataScreen: Received coordinates: ${locationResult.lat}, ${locationResult.lon}`);
+          console.log(`📍 LiveDataScreen: Location source: ${locationResult.source || 'gps'}`);
+          console.log(`📍 LiveDataScreen: This location will be used for LIVE DATA display`);
+
           weatherLocation = {
             lat: locationResult.lat,
             lon: locationResult.lon,
-            label:
-              locationResult.display_name ||
-              locationResult.name ||
-              locationResult.locationName ||
-              'Current Location',
+            label: locationResult.display_name || 'Current Location',
           };
         }
       } catch (locationError) {
@@ -71,6 +76,10 @@ export default function LiveDataScreen() {
       }
 
       if (!weatherLocation) {
+        console.log(`📍 LiveDataScreen: === LIVE DATA FALLBACK LOCATION TRACKING ===`);
+        console.log(`📍 LiveDataScreen: Falling back to: ${FALLBACK_LOCATION.lat}, ${FALLBACK_LOCATION.lon}`);
+        console.log(`📍 LiveDataScreen: Fallback reason: GPS failed`);
+        console.log(`📍 LiveDataScreen: This FALLBACK location will be used for LIVE DATA display`);
         weatherLocation = FALLBACK_LOCATION;
       }
 

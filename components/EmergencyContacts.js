@@ -15,12 +15,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserContext } from '../context/UserContext';
+import { ReliableLocationContext } from '../context/ReliableLocationContext';
 import EmergencyPlacesService from '../services/EmergencyPlacesService';
+import SimplifiedLocationCache from '../services/SimplifiedLocationCache';
+import ReliableLocationService from '../services/ReliableLocationService';
 
 const { width } = Dimensions.get('window');
 
 const EmergencyContacts = ({ emergencyContactsData }) => {
   const { userProfile } = useContext(UserContext);
+  const {
+    currentLocation: contextLocation,
+    getCurrentLocation: getContextLocation,
+    getLocationDisplayInfo
+  } = useContext(ReliableLocationContext);
   const [expanded, setExpanded] = useState(false);
   const [selectedState, setSelectedState] = useState('SELANGOR');
   const [showStatePicker, setShowStatePicker] = useState(false);
@@ -33,6 +41,13 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
   useEffect(() => {
     loadSelectedState();
   }, []);
+
+  useEffect(() => {
+    // Auto-detect state from GPS location when available
+    if (contextLocation && !contextLocation.isManual) {
+      detectStateFromGPSLocation(contextLocation.latitude, contextLocation.longitude);
+    }
+  }, [contextLocation]);
 
   const loadSelectedState = async () => {
     try {
@@ -89,6 +104,47 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
       }
     }
     return null;
+  };
+
+  const detectStateFromGPSLocation = async (latitude, longitude) => {
+    try {
+      console.log('🗺️ EmergencyContacts: Detecting state from GPS coordinates:', latitude, longitude);
+
+      // Use SimplifiedLocationCache for accurate state detection
+      const detectedState = SimplifiedLocationCache.detectMalaysianState(latitude, longitude);
+
+      // Map the state name to the format used in emergency contacts data
+      const stateMapping = {
+        'Kuala Lumpur': 'KUALA LUMPUR',
+        'Selangor': 'SELANGOR',
+        'Johor': 'JOHOR',
+        'Penang': 'PENANG',
+        'Perak': 'PERAK',
+        'Kedah': 'KEDAH',
+        'Kelantan': 'KELANTAN',
+        'Terengganu': 'TERENGGANU',
+        'Pahang': 'PAHANG',
+        'Negeri Sembilan': 'NEGERI SEMBILAN',
+        'Melaka': 'MALACCA',
+        'Perlis': 'PERLIS',
+        'Sabah': 'SABAH',
+        'Sarawak': 'SARAWAK',
+        'Putrajaya': 'PUTRAJAYA',
+        'Labuan': 'LABUAN'
+      };
+
+      const mappedState = stateMapping[detectedState] || 'SELANGOR';
+
+      // Only auto-update if we have a different state and it exists in our data
+      if (mappedState !== selectedState && emergencyContactsData?.[mappedState]) {
+        console.log(`🎯 Auto-detected state: ${detectedState} -> ${mappedState}`);
+        setSelectedState(mappedState);
+        await saveSelectedState(mappedState);
+      }
+
+    } catch (error) {
+      console.error('❌ Error detecting state from GPS:', error);
+    }
   };
 
   const makeCall = (phoneNumber) => {
@@ -171,15 +227,41 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
     );
   };
 
-  // Load nearby emergency places using GPS location with progressive updates
+  // Load nearby emergency places using reliable GPS location with progressive updates
   const loadNearbyPlaces = async () => {
     setLoadingLocation(true);
     setLocationError(null);
     setNearbyPlaces({}); // Clear previous results
 
     try {
-      // Get user's current location
-      const location = await EmergencyPlacesService.getCurrentLocation();
+      // Try to get location from context first, then fallback to direct service call
+      let location = null;
+
+      if (contextLocation && !contextLocation.isCached) {
+        // Use current context location if it's fresh
+        location = {
+          latitude: contextLocation.latitude,
+          longitude: contextLocation.longitude,
+          accuracy: contextLocation.accuracy
+        };
+        console.log('📍 Using context location for emergency services');
+      } else {
+        // Get fresh location using reliable service
+        try {
+          const freshLocation = await getContextLocation(true, true); // Force refresh, high accuracy
+          location = {
+            latitude: freshLocation.latitude,
+            longitude: freshLocation.longitude,
+            accuracy: freshLocation.accuracy
+          };
+          console.log('📍 Got fresh location for emergency services');
+        } catch (error) {
+          console.warn('📍 Fresh location failed, trying fallback service');
+          // Fallback to EmergencyPlacesService if context fails
+          location = await EmergencyPlacesService.getCurrentLocation();
+        }
+      }
+
       setUserLocation(location);
 
       // Progressive callback to update UI as each service loads
@@ -288,7 +370,7 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
           </View>
           <View style={styles.placeCategoryList}>
             <View style={[styles.placeItem, styles.placeholderItem]}>
-              <View style={[styles.placeIcon, { backgroundColor: '#f0f0f0' }]}>
+              <View style={[styles.placeIcon, { backgroundColor: 'rgba(240, 240, 240, 0.8)' }]}>
                 <ActivityIndicator size="small" color={config.color} />
               </View>
               <View style={styles.placeInfo}>
@@ -644,7 +726,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginVertical: 10,
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -677,7 +759,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -732,7 +814,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     flexGrow: 1,
   },
   scrollContentContainer: {
@@ -776,6 +858,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F8F9FA',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
   },
   contactIcon: {
     width: 40,
@@ -803,13 +886,13 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F0F8FF',
+    backgroundColor: 'rgba(240, 248, 255, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   sourcesSection: {
     padding: 16,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: 'rgba(248, 249, 250, 0.8)',
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
   },
@@ -832,7 +915,7 @@ const styles = StyleSheet.create({
   warningBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF8E1',
+    backgroundColor: 'rgba(255, 248, 225, 0.8)',
     padding: 12,
     borderRadius: 8,
     borderLeftWidth: 3,
@@ -847,11 +930,11 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
@@ -885,7 +968,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F8F9FA',
   },
   stateItemSelected: {
-    backgroundColor: '#F0F8FF',
+    backgroundColor: 'rgba(240, 248, 255, 0.8)',
   },
   stateText: {
     fontSize: 16,
@@ -898,7 +981,7 @@ const styles = StyleSheet.create({
   // Category tabs styles
   categoryTabs: {
     flexDirection: 'row',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: 'rgba(248, 249, 250, 0.8)',
     marginHorizontal: 16,
     marginTop: 16,
     borderRadius: 8,
@@ -914,7 +997,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   categoryTabActive: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -982,6 +1065,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F8F9FA',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
   },
   placeIcon: {
     width: 40,
@@ -1024,7 +1108,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F0F8FF',
+    backgroundColor: 'rgba(240, 248, 255, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
@@ -1080,7 +1164,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: 'rgba(76, 175, 80, 0.8)',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,

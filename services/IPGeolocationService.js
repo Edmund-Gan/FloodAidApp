@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import LocationCache from './LocationCache';
+import SimplifiedLocationCache from './SimplifiedLocationCache';
 
 class IPGeolocationService {
   static cache = new Map();
@@ -285,11 +285,11 @@ class IPGeolocationService {
     }
 
     // Check if coordinates are within Malaysia bounds
-    const isInMalaysia = LocationCache.isLocationInMalaysia(location.lat, location.lon);
+    const isInMalaysia = SimplifiedLocationCache.isLocationInMalaysia(location.lat, location.lon);
 
     if (!isInMalaysia) {
       console.log('🌐 IP location is outside Malaysia, finding nearest Malaysian city');
-      const nearest = LocationCache.findNearestMalaysianLocation(location.lat, location.lon);
+      const nearest = SimplifiedLocationCache.findNearestMalaysianCity(location.lat, location.lon);
 
       return {
         ...location,

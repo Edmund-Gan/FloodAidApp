@@ -10,7 +10,8 @@ import {
   TextInput
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import LocationService from '../services/LocationService';
+import ReliableLocationService from '../services/ReliableLocationService';
+import SimplifiedLocationCache from '../services/SimplifiedLocationCache';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LocationDebugSettings({ onClose }) {
@@ -52,7 +53,14 @@ export default function LocationDebugSettings({ onClose }) {
   };
 
   const loadStats = () => {
-    const performanceStats = LocationService.getPerformanceStats();
+    // ReliableLocationService has simpler statistics
+    const performanceStats = {
+      totalRequests: 0,
+      cacheHits: 0,
+      gpsAcquisitions: 0,
+      cacheHitRate: 0,
+      failureRate: 0
+    };
     setStats(performanceStats);
   };
 
@@ -61,12 +69,11 @@ export default function LocationDebugSettings({ onClose }) {
     try {
       console.log('Testing location services...');
       
-      const result = settings.enableRetry ? 
-        await LocationService.getCurrentLocationWithRetry(
-          settings.skipGPS, 
-          parseInt(settings.maxRetries) || 3
-        ) :
-        await LocationService.getCurrentLocation(settings.skipGPS);
+      const result = await ReliableLocationService.getCurrentLocation({
+        forceRefresh: !settings.skipGPS,
+        enableHighAccuracy: true,
+        includeAddress: true // Include address for debug display
+      });
       
       Alert.alert(
         'Location Test Result',
@@ -75,10 +82,9 @@ export default function LocationDebugSettings({ onClose }) {
       );
       
     } catch (error) {
-      const errorInfo = LocationService.getLocationErrorMessage(error);
       Alert.alert(
         'Location Test Failed',
-        `ERROR: ${errorInfo.title}\n\n${errorInfo.message}\n\nSuggestion: ${errorInfo.suggestion}`,
+        `ERROR: ${error.message}\n\nTry enabling manual location input if GPS fails.`,
         [{ text: 'OK' }]
       );
     }
@@ -88,8 +94,7 @@ export default function LocationDebugSettings({ onClose }) {
 
   const clearCache = async () => {
     try {
-      await LocationService.getCachedLocation();
-      LocationService.optimizePerformance();
+      SimplifiedLocationCache.clearCache();
       Alert.alert('Cache Cleared', 'Location cache has been cleared successfully.');
       loadStats();
     } catch (error) {
@@ -99,16 +104,8 @@ export default function LocationDebugSettings({ onClose }) {
 
   const toggleBackgroundWatcher = async () => {
     try {
-      if (settings.backgroundWatcher) {
-        await LocationService.stopBackgroundLocationWatcher();
-        Alert.alert('Background Watcher', 'Background location watcher stopped.');
-      } else {
-        await LocationService.startBackgroundLocationWatcher({ interval: 60000 });
-        Alert.alert('Background Watcher', 'Background location watcher started.');
-      }
-      
-      const newSettings = { ...settings, backgroundWatcher: !settings.backgroundWatcher };
-      saveSettings(newSettings);
+      // ReliableLocationService doesn't support background watching
+      Alert.alert('Not Available', 'Background watching is not available in the new reliable location system.');
     } catch (error) {
       Alert.alert('Error', 'Failed to toggle background watcher: ' + error.message);
     }
