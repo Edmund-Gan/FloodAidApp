@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   RefreshControl,
   Modal,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LocationContext } from '../context/LocationContext';
 import { COLORS } from '../utils/constants';

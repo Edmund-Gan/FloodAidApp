@@ -8,8 +8,8 @@ import {
   Alert,
   Dimensions,
   Modal,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import LocationService from '../services/LocationService';
