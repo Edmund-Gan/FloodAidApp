@@ -923,7 +923,7 @@ function HomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
           style={styles.container}
-          contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 80 }}
+          contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 90 }}
         >
         <View>
           <LinearGradient
@@ -983,7 +983,7 @@ function HomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 80 }}
+        contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 90 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -1428,6 +1428,57 @@ function EmergencyScreen() {
 }
 
 
+// Tab Navigator Component with Safe Area Support
+function AppTabNavigator() {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+      tabBarIcon: ({ focused, color, size }) => {
+        let iconName;
+        if (route.name === 'Home') {
+          iconName = focused ? 'home' : 'home-outline';
+        } else if (route.name === 'Live Data') {
+          iconName = focused ? 'water' : 'water-outline';
+        } else if (route.name === 'Hotspots') {
+          iconName = focused ? 'location' : 'location-outline';
+        } else if (route.name === 'Locations') {
+          iconName = focused ? 'pin' : 'pin-outline';
+        } else if (route.name === 'Profile') {
+          iconName = focused ? 'person' : 'person-outline';
+        }
+        return <Ionicons name={iconName} size={size} color={color} />;
+      },
+      tabBarActiveTintColor: '#2196F3',
+      tabBarInactiveTintColor: 'gray',
+      tabBarStyle: {
+        ...styles.tabBar,
+        paddingBottom: Math.max(insets.bottom, 5),
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
+      tabBarLabelStyle: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginBottom: 2,
+      },
+      headerShown: false,
+    })}
+          >
+            <Tab.Screen name="Home" component={HomeScreen} />
+            <Tab.Screen name="Live Data" component={LiveDataScreen} />
+            <Tab.Screen name="Hotspots" component={FloodHotspotsScreen} />
+            <Tab.Screen name="Locations" component={LocationsScreen} />
+            <Tab.Screen name="Profile" component={ProfileScreen} />
+          </Tab.Navigator>
+  );
+}
+
 // Main App Component
 export default function App() {
   // Initialize notifications when app starts
@@ -1444,35 +1495,7 @@ export default function App() {
           <LocationCompatibilityProvider>
             <NavigationContainer>
             <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-            <Tab.Navigator
-              screenOptions={({ route }) => ({
-              tabBarIcon: ({ focused, color, size }) => {
-                let iconName;
-                if (route.name === 'Home') {
-                  iconName = focused ? 'home' : 'home-outline';
-                } else if (route.name === 'Live Data') {
-                  iconName = focused ? 'water' : 'water-outline';
-                } else if (route.name === 'Hotspots') {
-                  iconName = focused ? 'location' : 'location-outline';
-                } else if (route.name === 'Locations') {
-                  iconName = focused ? 'pin' : 'pin-outline';
-                } else if (route.name === 'Profile') {
-                  iconName = focused ? 'person' : 'person-outline';
-                }
-                return <Ionicons name={iconName} size={size} color={color} />;
-              },
-              tabBarActiveTintColor: '#2196F3',
-              tabBarInactiveTintColor: 'gray',
-              tabBarStyle: styles.tabBar,
-              headerShown: false,
-            })}
-          >
-            <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Live Data" component={LiveDataScreen} />
-            <Tab.Screen name="Hotspots" component={FloodHotspotsScreen} />
-            <Tab.Screen name="Locations" component={LocationsScreen} />
-            <Tab.Screen name="Profile" component={ProfileScreen} />
-          </Tab.Navigator>
+            <AppTabNavigator />
             </NavigationContainer>
           </LocationCompatibilityProvider>
         </ReliableLocationProvider>
@@ -1485,7 +1508,7 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#CFFAFE66',
   },
   container: {
     flex: 1,
@@ -2627,11 +2650,11 @@ const styles = StyleSheet.create({
     color: '#2196F3',
   },
   
-  // Tab Bar (Bottom Navigation)
+  // Tab Bar (Bottom Navigation) - Base style, paddingBottom handled dynamically for safe area
   tabBar: {
-    height: 60,
-    paddingBottom: 5,
-    paddingTop: 5,
+    height: 85,
+    paddingTop: 8,
+    paddingHorizontal: 5,
   },
 
   // Modal Styles
