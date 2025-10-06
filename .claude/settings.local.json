@@ -73,7 +73,11 @@
       "WebFetch(domain:github.com)",
       "Bash(lsof:*)",
       "Read(///**)",
-      "Bash(npm update:*)"
+      "Bash(npm update:*)",
+      "WebFetch(domain:giscience.github.io)",
+      "WebFetch(domain:openrouteservice.org)",
+      "WebFetch(domain:ask.openrouteservice.org)",
+      "WebFetch(domain:account.heigit.org)"
     ],
     "deny": [],
     "ask": []

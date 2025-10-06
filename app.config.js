@@ -64,6 +64,7 @@ export default {
     extra: {
       openMeteoApiUrl: process.env.OPEN_METEO_API_URL || "https://api.open-meteo.com/v1",
       googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+      openRouteServiceApiKey: process.env.OPENROUTESERVICE_API_KEY
     }
   }
 };

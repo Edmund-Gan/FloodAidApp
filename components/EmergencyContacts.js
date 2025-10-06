@@ -19,10 +19,16 @@ import { ReliableLocationContext } from '../context/ReliableLocationContext';
 import EmergencyPlacesService from '../services/EmergencyPlacesService';
 import SimplifiedLocationCache from '../services/SimplifiedLocationCache';
 import ReliableLocationService from '../services/ReliableLocationService';
+import LocationSelector from './LocationSelector';
+import FloodSafeRouteViewer from './FloodSafeRouteViewer';
 
 const { width } = Dimensions.get('window');
 
-const EmergencyContacts = ({ emergencyContactsData }) => {
+const EmergencyContacts = ({
+  emergencyContactsData,
+  monitoredLocations = [],
+  currentLocationInfo = null
+}) => {
   const { userProfile } = useContext(UserContext);
   const {
     currentLocation: contextLocation,
@@ -30,50 +36,109 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
     getLocationDisplayInfo
   } = useContext(ReliableLocationContext);
   const [expanded, setExpanded] = useState(false);
-  const [selectedState, setSelectedState] = useState('SELANGOR');
-  const [showStatePicker, setShowStatePicker] = useState(false);
+  const [selectedMode, setSelectedMode] = useState('current'); // 'current', 'saved', or 'state'
+  const [selectedLocationId, setSelectedLocationId] = useState(null); // ID of saved location
+  const [selectedState, setSelectedState] = useState(null); // Manually selected state
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [activeTab, setActiveTab] = useState('callCenters'); // 'callCenters' or 'nearMe'
   const [nearbyPlaces, setNearbyPlaces] = useState({});
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
+  const [detectedState, setDetectedState] = useState('SELANGOR'); // State detected from coordinates
+  const [routeViewerVisible, setRouteViewerVisible] = useState(false);
+  const [selectedPlaceForRoute, setSelectedPlaceForRoute] = useState(null);
 
   useEffect(() => {
-    loadSelectedState();
+    loadSavedLocationSelection();
   }, []);
 
+  // Auto-detect state when location selection changes
   useEffect(() => {
-    // Auto-detect state from GPS location when available
-    if (contextLocation && !contextLocation.isManual) {
+    const location = getSelectedLocationCoordinates();
+    if (location) {
+      detectStateFromGPSLocation(location.lat, location.lon);
+    }
+  }, [selectedMode, selectedLocationId, currentLocationInfo]);
+
+  useEffect(() => {
+    // Auto-detect state from context location for current mode
+    if (selectedMode === 'current' && contextLocation && !contextLocation.isManual) {
       detectStateFromGPSLocation(contextLocation.latitude, contextLocation.longitude);
     }
-  }, [contextLocation]);
+  }, [contextLocation, selectedMode]);
 
-  const loadSelectedState = async () => {
+  // Get coordinates for the selected location (current GPS or saved location)
+  const getSelectedLocationCoordinates = () => {
+    if (selectedMode === 'saved' && selectedLocationId) {
+      // Use saved location coordinates
+      const location = monitoredLocations.find(loc => loc.id === selectedLocationId);
+      if (location && location.coordinates) {
+        return {
+          lat: location.coordinates.latitude,
+          lon: location.coordinates.longitude,
+          name: location.customLabel || location.name
+        };
+      }
+    }
+
+    // Use current GPS location (default)
+    if (currentLocationInfo) {
+      return {
+        lat: currentLocationInfo.lat,
+        lon: currentLocationInfo.lon,
+        name: currentLocationInfo.display_name || 'Current Location'
+      };
+    } else if (contextLocation) {
+      return {
+        lat: contextLocation.latitude,
+        lon: contextLocation.longitude,
+        name: 'Current Location'
+      };
+    }
+
+    return null;
+  };
+
+  const loadSavedLocationSelection = async () => {
     try {
-      const stored = await AsyncStorage.getItem('selectedEmergencyState');
+      const stored = await AsyncStorage.getItem('selectedEmergencyLocation');
       if (stored) {
-        setSelectedState(stored);
-      } else {
-        // Try to auto-detect from user location
-        const userLocation = userProfile?.location || '';
-        const detectedState = detectStateFromLocation(userLocation);
-        if (detectedState) {
-          setSelectedState(detectedState);
-          saveSelectedState(detectedState);
-        }
+        const { mode, locationId, state } = JSON.parse(stored);
+        setSelectedMode(mode);
+        setSelectedLocationId(locationId);
+        setSelectedState(state);
       }
     } catch (error) {
-      console.log('Error loading selected state:', error);
+      console.log('Error loading location selection:', error);
     }
   };
 
-  const saveSelectedState = async (state) => {
+  const saveLocationSelection = async (mode, idOrState) => {
     try {
-      await AsyncStorage.setItem('selectedEmergencyState', state);
-      setSelectedState(state);
+      let data = { mode, locationId: null, state: null };
+
+      if (mode === 'saved') {
+        data.locationId = idOrState;
+      } else if (mode === 'state') {
+        data.state = idOrState;
+      }
+
+      await AsyncStorage.setItem('selectedEmergencyLocation', JSON.stringify(data));
+      setSelectedMode(mode);
+
+      if (mode === 'saved') {
+        setSelectedLocationId(idOrState);
+        setSelectedState(null);
+      } else if (mode === 'state') {
+        setSelectedState(idOrState);
+        setSelectedLocationId(null);
+      } else {
+        setSelectedLocationId(null);
+        setSelectedState(null);
+      }
     } catch (error) {
-      console.log('Error saving selected state:', error);
+      console.log('Error saving location selection:', error);
     }
   };
 
@@ -111,7 +176,7 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
       console.log('🗺️ EmergencyContacts: Detecting state from GPS coordinates:', latitude, longitude);
 
       // Use SimplifiedLocationCache for accurate state detection
-      const detectedState = SimplifiedLocationCache.detectMalaysianState(latitude, longitude);
+      const detectedStateName = SimplifiedLocationCache.detectMalaysianState(latitude, longitude);
 
       // Map the state name to the format used in emergency contacts data
       const stateMapping = {
@@ -133,13 +198,12 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
         'Labuan': 'LABUAN'
       };
 
-      const mappedState = stateMapping[detectedState] || 'SELANGOR';
+      const mappedState = stateMapping[detectedStateName] || 'SELANGOR';
 
-      // Only auto-update if we have a different state and it exists in our data
-      if (mappedState !== selectedState && emergencyContactsData?.[mappedState]) {
-        console.log(`🎯 Auto-detected state: ${detectedState} -> ${mappedState}`);
-        setSelectedState(mappedState);
-        await saveSelectedState(mappedState);
+      // Update detected state
+      if (emergencyContactsData?.[mappedState]) {
+        console.log(`🎯 Auto-detected state: ${detectedStateName} -> ${mappedState}`);
+        setDetectedState(mappedState);
       }
 
     } catch (error) {
@@ -227,38 +291,35 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
     );
   };
 
-  // Load nearby emergency places using reliable GPS location with progressive updates
+  // Load nearby emergency places using selected location with progressive updates
   const loadNearbyPlaces = async () => {
     setLoadingLocation(true);
     setLocationError(null);
     setNearbyPlaces({}); // Clear previous results
 
     try {
-      // Try to get location from context first, then fallback to direct service call
       let location = null;
 
-      if (contextLocation && !contextLocation.isCached) {
-        // Use current context location if it's fresh
+      // Get coordinates from selected location (current GPS or saved location)
+      const selectedLocation = getSelectedLocationCoordinates();
+      if (selectedLocation) {
         location = {
-          latitude: contextLocation.latitude,
-          longitude: contextLocation.longitude,
-          accuracy: contextLocation.accuracy
+          latitude: selectedLocation.lat,
+          longitude: selectedLocation.lon,
+          accuracy: selectedMode === 'saved' ? 50 : 20 // Approximate accuracy
         };
-        console.log('📍 Using context location for emergency services');
+        console.log('📍 Using selected location for emergency services:', selectedLocation.name);
       } else {
-        // Get fresh location using reliable service
-        try {
-          const freshLocation = await getContextLocation(true, true); // Force refresh, high accuracy
+        // Fallback: try to get GPS location
+        if (contextLocation && !contextLocation.isCached) {
           location = {
-            latitude: freshLocation.latitude,
-            longitude: freshLocation.longitude,
-            accuracy: freshLocation.accuracy
+            latitude: contextLocation.latitude,
+            longitude: contextLocation.longitude,
+            accuracy: contextLocation.accuracy
           };
-          console.log('📍 Got fresh location for emergency services');
-        } catch (error) {
-          console.warn('📍 Fresh location failed, trying fallback service');
-          // Fallback to EmergencyPlacesService if context fails
-          location = await EmergencyPlacesService.getCurrentLocation();
+          console.log('📍 Using fallback GPS location for emergency services');
+        } else {
+          throw new Error('Location not available');
         }
       }
 
@@ -311,6 +372,21 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
     }
   };
 
+  // Open flood-safe route planner
+  const openFloodSafeRoute = (place) => {
+    if (!userLocation) {
+      Alert.alert(
+        'Location Required',
+        'Unable to determine your location. Please enable location services and try again.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    setSelectedPlaceForRoute(place);
+    setRouteViewerVisible(true);
+  };
+
   // Render a place item in the "Near Me" section
   const renderPlaceItem = (place, index) => {
     const distance = EmergencyPlacesService.formatDistance(place.distance);
@@ -337,13 +413,22 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.directionsButton}
-          onPress={() => openDirections(place)}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="navigate" size={18} color="#4CAF50" />
-        </TouchableOpacity>
+        <View style={styles.placeActions}>
+          <TouchableOpacity
+            style={styles.floodRouteButton}
+            onPress={() => openFloodSafeRoute(place)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="water" size={16} color="#2196F3" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.directionsButton}
+            onPress={() => openDirections(place)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="navigate" size={18} color="#4CAF50" />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -465,12 +550,19 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
       return priorityA - priorityB;
     });
 
+    const selectedLocation = getSelectedLocationCoordinates();
+    const nearMeLocation = selectedLocation ? selectedLocation.name : 'your location';
+
     return (
       <View style={styles.nearMeContent}>
         <View style={styles.locationHeader}>
-          <Ionicons name="location" size={16} color="#4CAF50" />
-          <Text style={styles.locationHeaderText}>
-            Emergency services near your location
+          <Ionicons
+            name={selectedMode === 'current' ? 'navigate-circle' : 'location'}
+            size={16}
+            color="#4CAF50"
+          />
+          <Text style={styles.locationHeaderText} numberOfLines={1}>
+            Near {nearMeLocation}
           </Text>
           <TouchableOpacity onPress={loadNearbyPlaces}>
             <Ionicons name="refresh" size={16} color="#666" />
@@ -493,57 +585,18 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
     );
   };
 
-  const renderStatePicker = () => {
-    const states = Object.keys(emergencyContactsData || {});
+  const handleLocationSelect = async (mode, locationId) => {
+    await saveLocationSelection(mode, locationId);
 
-    return (
-      <Modal
-        visible={showStatePicker}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowStatePicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select State/Territory</Text>
-              <TouchableOpacity
-                onPress={() => setShowStatePicker(false)}
-                style={styles.modalCloseButton}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
+    // If switching to state mode and currently on Near Me tab, switch to Call Centers
+    if (mode === 'state' && activeTab === 'nearMe') {
+      setActiveTab('callCenters');
+    }
 
-            <ScrollView style={styles.stateList}>
-              {states.map((state) => (
-                <TouchableOpacity
-                  key={state}
-                  style={[
-                    styles.stateItem,
-                    selectedState === state && styles.stateItemSelected
-                  ]}
-                  onPress={() => {
-                    saveSelectedState(state);
-                    setShowStatePicker(false);
-                  }}
-                >
-                  <Text style={[
-                    styles.stateText,
-                    selectedState === state && styles.stateTextSelected
-                  ]}>
-                    {state.replace(/_/g, ' ')}
-                  </Text>
-                  {selectedState === state && (
-                    <Ionicons name="checkmark" size={20} color="#4CAF50" />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-    );
+    // Reload nearby places if Near Me tab is active and not in state mode
+    if (activeTab === 'nearMe' && mode !== 'state') {
+      loadNearbyPlaces();
+    }
   };
 
   if (!emergencyContactsData) {
@@ -556,7 +609,9 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
     );
   }
 
-  const currentStateData = emergencyContactsData[selectedState];
+  // Determine which state to show: manual state selection overrides auto-detection
+  const displayStateKey = selectedMode === 'state' ? selectedState : detectedState;
+  const currentStateData = emergencyContactsData[displayStateKey];
   const contacts = currentStateData?.contacts || [];
 
   // Sort contacts by priority (emergency services first)
@@ -565,6 +620,16 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
     const bPriority = getContactType(b).priority;
     return aPriority - bPriority;
   });
+
+  // Get display name for location selector
+  const selectedLocation = getSelectedLocationCoordinates();
+  let displayLocationName;
+
+  if (selectedMode === 'state') {
+    displayLocationName = selectedState ? selectedState.replace(/_/g, ' ') : 'Select State';
+  } else {
+    displayLocationName = selectedLocation ? selectedLocation.name : 'Current Location';
+  }
 
   return (
     <View style={styles.container}>
@@ -594,10 +659,11 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
             <View style={styles.headerRight}>
               <TouchableOpacity
                 style={styles.stateSelector}
-                onPress={() => setShowStatePicker(true)}
+                onPress={() => setShowLocationSelector(true)}
               >
-                <Text style={styles.stateSelectorText}>
-                  {selectedState.replace(/_/g, ' ')}
+                <Text style={styles.stateSelectorText} numberOfLines={1}>
+                  {selectedMode === 'current' ? '📍 ' : selectedMode === 'saved' ? '🏠 ' : '🗺️ '}
+                  {displayLocationName}
                 </Text>
                 <Ionicons name="chevron-down" size={16} color="#fff" />
               </TouchableOpacity>
@@ -632,7 +698,11 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
             {/* Category Switcher */}
             <View style={styles.categoryTabs}>
               <TouchableOpacity
-                style={[styles.categoryTab, activeTab === 'callCenters' && styles.categoryTabActive]}
+                style={[
+                  styles.categoryTab,
+                  activeTab === 'callCenters' && styles.categoryTabActive,
+                  selectedMode === 'state' && styles.categoryTabFull
+                ]}
                 onPress={() => setActiveTab('callCenters')}
               >
                 <Ionicons
@@ -645,40 +715,48 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.categoryTab, activeTab === 'nearMe' && styles.categoryTabActive]}
-                onPress={() => {
-                  setActiveTab('nearMe');
-                  if (!userLocation) {
-                    loadNearbyPlaces();
-                  }
-                }}
-              >
-                <Ionicons
-                  name="location"
-                  size={16}
-                  color={activeTab === 'nearMe' ? '#4CAF50' : '#666'}
-                />
-                <Text style={[styles.categoryTabText, activeTab === 'nearMe' && styles.categoryTabTextActive]}>
-                  Near Me
-                </Text>
-              </TouchableOpacity>
+              {selectedMode !== 'state' && (
+                <TouchableOpacity
+                  style={[styles.categoryTab, activeTab === 'nearMe' && styles.categoryTabActive]}
+                  onPress={() => {
+                    setActiveTab('nearMe');
+                    if (!userLocation) {
+                      loadNearbyPlaces();
+                    }
+                  }}
+                >
+                  <Ionicons
+                    name="location"
+                    size={16}
+                    color={activeTab === 'nearMe' ? '#4CAF50' : '#666'}
+                  />
+                  <Text style={[styles.categoryTabText, activeTab === 'nearMe' && styles.categoryTabTextActive]}>
+                    Near Me
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {activeTab === 'callCenters' ? (
               <>
                 <View style={styles.headerInfo}>
                   <View style={styles.locationInfo}>
-                    <Ionicons name="location" size={16} color="#4CAF50" />
-                    <Text style={styles.locationText}>
-                      Emergency services for {selectedState.replace(/_/g, ' ')}
+                    <Ionicons
+                      name={selectedMode === 'state' ? 'map' : selectedMode === 'current' ? 'navigate-circle' : 'location'}
+                      size={16}
+                      color="#4CAF50"
+                    />
+                    <Text style={styles.locationText} numberOfLines={2}>
+                      {selectedMode === 'state'
+                        ? `Emergency services for ${displayStateKey.replace(/_/g, ' ')}`
+                        : `Near ${displayLocationName} (${displayStateKey.replace(/_/g, ' ')})`}
                     </Text>
                   </View>
                   <TouchableOpacity
                     style={styles.changeLocationButton}
-                    onPress={() => setShowStatePicker(true)}
+                    onPress={() => setShowLocationSelector(true)}
                   >
-                    <Text style={styles.changeLocationText}>Change Location</Text>
+                    <Text style={styles.changeLocationText}>Change</Text>
                     <Ionicons name="chevron-forward" size={14} color="#666" />
                   </TouchableOpacity>
                 </View>
@@ -716,7 +794,37 @@ const EmergencyContacts = ({ emergencyContactsData }) => {
         </View>
       )}
 
-      {renderStatePicker()}
+      <LocationSelector
+        visible={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        locations={monitoredLocations}
+        selectedMode={selectedMode}
+        selectedLocationId={selectedLocationId}
+        onSelectLocation={handleLocationSelect}
+        allowStateBrowsing={true}
+        stateList={Object.keys(emergencyContactsData || {})}
+        selectedState={selectedState}
+      />
+
+      {selectedPlaceForRoute && (
+        <FloodSafeRouteViewer
+          visible={routeViewerVisible}
+          onClose={() => {
+            setRouteViewerVisible(false);
+            setSelectedPlaceForRoute(null);
+          }}
+          origin={{
+            latitude: userLocation?.latitude || contextLocation?.latitude || 0,
+            longitude: userLocation?.longitude || contextLocation?.longitude || 0,
+          }}
+          destination={{
+            lat: selectedPlaceForRoute.geometry.location.lat,
+            lng: selectedPlaceForRoute.geometry.location.lng,
+          }}
+          destinationName={selectedPlaceForRoute.name}
+          state={detectedState}
+        />
+      )}
     </View>
   );
 };
@@ -978,6 +1086,42 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontWeight: '600',
   },
+  currentChosenItem: {
+    backgroundColor: 'rgba(240, 248, 255, 0.6)',
+    paddingVertical: 20,
+  },
+  currentChosenIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  currentChosenText: {
+    flex: 1,
+  },
+  currentChosenTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  currentChosenSubtitle: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
+  },
+  pickerDivider: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(248, 249, 250, 0.8)',
+  },
+  pickerDividerText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+  },
   // Category tabs styles
   categoryTabs: {
     flexDirection: 'row',
@@ -995,6 +1139,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
+  },
+  categoryTabFull: {
+    flex: 1,
   },
   categoryTabActive: {
     backgroundColor: 'rgba(255, 255, 255, 0.85)',
@@ -1104,6 +1251,20 @@ const styles = StyleSheet.create({
     color: '#666',
     marginLeft: 4,
   },
+  placeActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  floodRouteButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
+  },
   directionsButton: {
     width: 36,
     height: 36,
@@ -1111,7 +1272,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(240, 248, 255, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
   },
   moreItemsText: {
     fontSize: 12,

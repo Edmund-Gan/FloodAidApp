@@ -44,6 +44,7 @@ import { notificationService } from './utils/NotificationService';
 import EmergencyKit from './components/EmergencyKit';
 import PreparationGuidelines from './components/PreparationGuidelines';
 import EmergencyContacts from './components/EmergencyContacts';
+import LocationSelector from './components/LocationSelector';
 
 // Import FloodHotspotsScreen for Epic 3 - Using CSV data version
 import FloodHotspotsScreen from './screens/FloodHotspotsCSV';
@@ -52,7 +53,7 @@ import ProfileScreen from './screens/ProfileScreen';
 
 // Import Multi-Location Alerts Components and Context
 import MyLocationsScreen from './screens/MyLocationsScreen';
-import { ReliableLocationProvider } from './context/ReliableLocationContext';
+import { ReliableLocationProvider, useReliableLocation } from './context/ReliableLocationContext';
 import { LocationCompatibilityProvider } from './context/LocationContextCompat';
 import { UserProvider } from './context/UserContext';
 
@@ -481,21 +482,85 @@ function HomeScreen() {
   const [enableMLAlerts, setEnableMLAlerts] = useState(true);
   const [selectedFactor, setSelectedFactor] = useState(null);
   const [showFactorModal, setShowFactorModal] = useState(false);
+  const [selectedLocationMode, setSelectedLocationMode] = useState('current');
+  const [selectedLocationId, setSelectedLocationId] = useState(null);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
   const insets = useSafeAreaInsets();
 
+  // Get monitored locations from context
+  const { monitoredLocations } = useReliableLocation();
+
+  // Load saved location preference on mount
+  useEffect(() => {
+    const loadLocationPreference = async () => {
+      try {
+        const savedPreference = await AsyncStorage.getItem('selectedHomepageLocation');
+        if (savedPreference) {
+          const { mode, locationId } = JSON.parse(savedPreference);
+
+          // Validate that saved location still exists
+          if (mode === 'saved' && locationId) {
+            const locationExists = monitoredLocations.find(loc => loc.id === locationId);
+            if (locationExists) {
+              setSelectedLocationMode(mode);
+              setSelectedLocationId(locationId);
+            } else {
+              // Location was deleted, fallback to current
+              setSelectedLocationMode('current');
+              setSelectedLocationId(null);
+              await AsyncStorage.setItem('selectedHomepageLocation', JSON.stringify({ mode: 'current', locationId: null }));
+            }
+          } else {
+            setSelectedLocationMode('current');
+            setSelectedLocationId(null);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading location preference:', error);
+      }
+    };
+
+    loadLocationPreference();
+  }, [monitoredLocations]);
 
   useEffect(() => {
-    loadPrediction();
+    // Wait for location preference to load before loading prediction
+    const loadInitialData = async () => {
+      // Small delay to ensure location preference is loaded
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      if (selectedLocationMode === 'saved' && selectedLocationId) {
+        // Load prediction for saved location
+        const location = monitoredLocations.find(loc => loc.id === selectedLocationId);
+        if (location && location.coordinates) {
+          await loadPredictionWithLocation(location.coordinates.latitude, location.coordinates.longitude);
+          setLocationInfo({
+            lat: location.coordinates.latitude,
+            lon: location.coordinates.longitude,
+            display_name: location.customLabel || location.name,
+            isDev: false
+          });
+        } else {
+          // Location not found, fallback to current
+          await loadPrediction();
+        }
+      } else {
+        // Load prediction for current location
+        await loadPrediction();
+      }
+    };
+
+    loadInitialData();
     setupFloodAlertMonitoring();
     const interval = setInterval(updateCountdown, 1000);
-    
+
     return () => {
       clearInterval(interval);
       floodAlertService.stopAllMonitoring();
       // Clear weather service cache on unmount
       realTimeWeatherService.clearCache();
     };
-  }, []);
+  }, [selectedLocationMode, selectedLocationId]);
 
   const setupFloodAlertMonitoring = async () => {
     try {
@@ -638,6 +703,40 @@ function HomeScreen() {
   const handleCloseFactorModal = () => {
     setShowFactorModal(false);
     setSelectedFactor(null);
+  };
+
+  const handleLocationSelect = async (mode, locationId) => {
+    try {
+      // Save preference to AsyncStorage
+      await AsyncStorage.setItem('selectedHomepageLocation', JSON.stringify({ mode, locationId }));
+
+      // Update state
+      setSelectedLocationMode(mode);
+      setSelectedLocationId(locationId);
+
+      // Reload prediction with new location
+      if (mode === 'current') {
+        // Use GPS location
+        await loadPrediction();
+      } else if (mode === 'saved' && locationId) {
+        // Use saved location coordinates
+        const location = monitoredLocations.find(loc => loc.id === locationId);
+        if (location && location.coordinates) {
+          await loadPredictionWithLocation(location.coordinates.latitude, location.coordinates.longitude);
+
+          // Update locationInfo to display the selected location name
+          setLocationInfo({
+            lat: location.coordinates.latitude,
+            lon: location.coordinates.longitude,
+            display_name: location.customLabel || location.name,
+            isDev: false
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error handling location selection:', error);
+      Alert.alert('Error', 'Failed to switch location. Please try again.');
+    }
   };
 
   useEffect(() => {
@@ -858,10 +957,21 @@ function HomeScreen() {
     }
   };
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     console.log(`🔄 Pull-to-refresh triggered`);
     setRefreshing(true);
-    loadPrediction();
+
+    // Respect selected location mode
+    if (selectedLocationMode === 'saved' && selectedLocationId) {
+      const location = monitoredLocations.find(loc => loc.id === selectedLocationId);
+      if (location && location.coordinates) {
+        await loadPredictionWithLocation(location.coordinates.latitude, location.coordinates.longitude);
+      } else {
+        await loadPrediction();
+      }
+    } else {
+      await loadPrediction();
+    }
   };
 
 
@@ -907,6 +1017,15 @@ function HomeScreen() {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  // Helper function to get appropriate icon for location type
+  const getLocationIcon = (subtitle) => {
+    const type = subtitle?.toLowerCase() || '';
+    if (type.includes('home')) return 'home';
+    if (type.includes('office') || type.includes('work')) return 'briefcase';
+    if (type.includes('school')) return 'school';
+    return 'location';
   };
 
   if (loading) {
@@ -1015,7 +1134,35 @@ function HomeScreen() {
         )}
       </View>
 
-
+      {/* Location Selector Button */}
+      <TouchableOpacity
+        style={styles.locationSelectorButton}
+        onPress={() => setShowLocationSelector(true)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.locationSelectorContent}>
+          <View style={styles.locationSelectorIcon}>
+            <Ionicons
+              name={selectedLocationMode === 'current' ? 'navigate-circle' : getLocationIcon(
+                monitoredLocations.find(loc => loc.id === selectedLocationId)?.subtitle
+              )}
+              size={20}
+              color="#2196F3"
+            />
+          </View>
+          <View style={styles.locationSelectorText}>
+            <Text style={styles.locationSelectorLabel}>Viewing</Text>
+            <Text style={styles.locationSelectorValue} numberOfLines={1}>
+              {selectedLocationMode === 'current'
+                ? 'Current Location'
+                : monitoredLocations.find(loc => loc.id === selectedLocationId)?.customLabel ||
+                  monitoredLocations.find(loc => loc.id === selectedLocationId)?.name ||
+                  'Current Location'}
+            </Text>
+          </View>
+          <Ionicons name="chevron-down" size={20} color="#666" />
+        </View>
+      </TouchableOpacity>
 
       {/* Enhanced Risk Assessment Card */}
       <View style={styles.enhancedRiskCard}>
@@ -1265,7 +1412,11 @@ function HomeScreen() {
 
       <PreparationGuidelines />
 
-      <EmergencyContacts emergencyContactsData={emergencyContactsData} />
+      <EmergencyContacts
+        emergencyContactsData={emergencyContactsData}
+        monitoredLocations={monitoredLocations}
+        currentLocationInfo={locationInfo}
+      />
 
       <TouchableOpacity
         style={styles.primaryButton}
@@ -1313,6 +1464,15 @@ function HomeScreen() {
         visible={showFactorModal}
         factor={selectedFactor}
         onClose={handleCloseFactorModal}
+      />
+
+      <LocationSelector
+        visible={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        locations={monitoredLocations}
+        selectedMode={selectedLocationMode}
+        selectedLocationId={selectedLocationId}
+        onSelectLocation={handleLocationSelect}
       />
     </ScrollView>
     </SafeAreaView>
@@ -1570,6 +1730,45 @@ const styles = StyleSheet.create({
     color: '#374151',
     textAlign: 'center',
     fontWeight: '500',
+  },
+  locationSelectorButton: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
+    marginBottom: 15,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  locationSelectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationSelectorIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E3F2FD',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  locationSelectorText: {
+    flex: 1,
+  },
+  locationSelectorLabel: {
+    fontSize: 12,
+    color: '#666666',
+    marginBottom: 2,
+  },
+  locationSelectorValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000000',
   },
   appTitle: {
     fontSize: 24,
