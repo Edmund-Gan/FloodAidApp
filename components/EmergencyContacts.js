@@ -888,6 +888,8 @@ const styles = StyleSheet.create({
   headerRight: {
     alignItems: 'center',
     flexDirection: 'row',
+    flex: 1,
+    minWidth: 0,
   },
   stateSelector: {
     flexDirection: 'row',
@@ -897,12 +899,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     marginRight: 8,
+    maxWidth: '70%',
   },
   stateSelectorText: {
     fontSize: 11,
     color: '#fff',
     fontWeight: '500',
     marginRight: 4,
+    flex: 1,
   },
   expandIcon: {
     marginLeft: 4,

@@ -16,8 +16,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ReliableLocationService from '../services/ReliableLocationService';
 import ChildPersonalizationService from '../services/ChildPersonalizationService';
+import StoreFinderService from '../services/StoreFinderService';
 import ChildSummaryBanner from './ChildSummaryBanner';
 import ComfortItemsTracker from './ComfortItemsTracker';
+import FloodSafeRouteViewer from './FloodSafeRouteViewer';
 import { UserContext } from '../context/UserContext';
 
 const { width } = Dimensions.get('window');
@@ -29,6 +31,10 @@ const EmergencyKit = ({ emergencyKitData }) => {
   const [loading, setLoading] = useState(true);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [storeFinderModal, setStoreFinderModal] = useState({ visible: false, item: null });
+  const [nearbyStores, setNearbyStores] = useState([]);
+  const [loadingStores, setLoadingStores] = useState(false);
+  const [selectedStoreForRoute, setSelectedStoreForRoute] = useState(null);
+  const [routeViewerVisible, setRouteViewerVisible] = useState(false);
 
   useEffect(() => {
     loadProgress();
@@ -67,65 +73,81 @@ const EmergencyKit = ({ emergencyKitData }) => {
     }
   };
 
-  const getShopCategories = (whereToShop) => {
-    if (!whereToShop) return [];
-
-    const shopMapping = {
-      'Grocery store': { searchTerm: 'grocery store', icon: 'storefront-outline' },
-      'bulk stores': { searchTerm: 'warehouse store', icon: 'cube-outline' },
-      'camping stores': { searchTerm: 'outdoor store', icon: 'hardware-chip-outline' },
-      'Pharmacy': { searchTerm: 'pharmacy', icon: 'medical-outline' },
-      'department stores': { searchTerm: 'department store', icon: 'business-outline' },
-      'Office supply stores': { searchTerm: 'office supply store', icon: 'document-outline' },
-      'Hardware store': { searchTerm: 'hardware store', icon: 'hammer-outline' },
-      'Electronics': { searchTerm: 'electronics store', icon: 'phone-portrait-outline' },
-      'Any store with electronics': { searchTerm: 'electronics store', icon: 'phone-portrait-outline' },
-      'Sporting goods': { searchTerm: 'sporting goods store', icon: 'fitness-outline' },
-      'Bank': { searchTerm: 'bank', icon: 'card-outline' },
-      'ATM': { searchTerm: 'ATM', icon: 'card-outline' },
-      'Outdoor stores': { searchTerm: 'outdoor store', icon: 'hardware-chip-outline' }
-    };
-
-    const categories = [];
-    const shopText = whereToShop.toLowerCase();
-
-    Object.keys(shopMapping).forEach(key => {
-      if (shopText.includes(key.toLowerCase())) {
-        categories.push({
-          ...shopMapping[key],
-          category: key
-        });
-      }
-    });
-
-    // Remove duplicates based on searchTerm
-    return categories.filter((category, index, self) =>
-      index === self.findIndex(c => c.searchTerm === category.searchTerm)
-    );
-  };
-
-  const openGoogleMaps = (searchTerm) => {
-    const query = encodeURIComponent(searchTerm);
-    let url;
-
-    if (currentLocation) {
-      // Use precise location if available
-      const { latitude, longitude } = currentLocation;
-      url = `https://www.google.com/maps/search/${query}/@${latitude},${longitude},15z`;
-      console.log('📍 EmergencyKit: Opening Google Maps with precise location');
-    } else {
-      // Fallback to general area search (will work without precise location)
-      url = `https://www.google.com/maps/search/${query}+near+me`;
-      console.log('📍 EmergencyKit: Opening Google Maps with general area search');
+  const findNearbyStores = async (item) => {
+    if (!currentLocation) {
+      Alert.alert(
+        'Location Required',
+        'Unable to determine your location. Please enable location services and try again.',
+        [{ text: 'OK' }]
+      );
+      return;
     }
 
+    setLoadingStores(true);
+    setStoreFinderModal({ visible: true, item });
+    setNearbyStores([]);
+
+    try {
+      const categories = StoreFinderService.parseStoreCategories(item.whereToShop);
+
+      if (categories.length === 0) {
+        Alert.alert('No Stores', 'No store categories found for this item.');
+        setLoadingStores(false);
+        return;
+      }
+
+      // Search for the first category (can be enhanced to search all)
+      const stores = await StoreFinderService.findNearbyStores(
+        currentLocation,
+        categories[0],
+        { radius: 5000, maxResults: 20 }
+      );
+
+      // Add distance to each store
+      const storesWithDistance = stores.map(store => ({
+        ...store,
+        distance: StoreFinderService.calculateDistance(
+          currentLocation.latitude,
+          currentLocation.longitude,
+          store.location.lat,
+          store.location.lng
+        )
+      }));
+
+      // Sort by distance
+      storesWithDistance.sort((a, b) => a.distance - b.distance);
+
+      setNearbyStores(storesWithDistance);
+    } catch (error) {
+      console.error('Error finding stores:', error);
+      Alert.alert('Error', 'Failed to find nearby stores. Please try again.');
+    } finally {
+      setLoadingStores(false);
+    }
+  };
+
+  const openDirections = (store) => {
+    const { lat, lng } = store.location;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
     Linking.openURL(url).catch(() => {
-      Alert.alert('Error', 'Unable to open Google Maps. Please try again or search manually.');
+      Alert.alert('Error', 'Unable to open Google Maps for directions.');
     });
   };
 
-  const showStoreFinder = (item) => {
-    setStoreFinderModal({ visible: true, item });
+  const openFloodSafeRoute = (store) => {
+    if (!currentLocation) {
+      Alert.alert(
+        'Location Required',
+        'Unable to determine your location for flood-safe routing.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    setSelectedStoreForRoute(store);
+    setRouteViewerVisible(true);
+    setStoreFinderModal({ visible: false, item: null });
   };
 
   const loadProgress = async () => {
@@ -526,10 +548,10 @@ const EmergencyKit = ({ emergencyKitData }) => {
               {item.whereToShop && (
                 <TouchableOpacity
                   style={styles.findStoresButton}
-                  onPress={() => showStoreFinder(item)}
+                  onPress={() => findNearbyStores(item)}
                 >
                   <Ionicons name="map-outline" size={14} color="#4CAF50" />
-                  <Text style={styles.findStoresText}>Find Stores</Text>
+                  <Text style={styles.findStoresText}>Find Nearby Stores</Text>
                 </TouchableOpacity>
               )}
               {item.mobilityNote && (
@@ -700,43 +722,95 @@ const EmergencyKit = ({ emergencyKitData }) => {
             {storeFinderModal.item && (
               <View style={styles.modalBody}>
                 <Text style={styles.modalItemTitle}>{storeFinderModal.item.originalItem}</Text>
-                <Text style={styles.modalSubtitle}>Available at these store types:</Text>
+                <Text style={styles.modalSubtitle}>
+                  {loadingStores
+                    ? 'Searching nearby stores...'
+                    : `Found ${nearbyStores.length} nearby store${nearbyStores.length !== 1 ? 's' : ''}`}
+                </Text>
 
-                <ScrollView style={styles.storeList}>
-                  {getShopCategories(storeFinderModal.item.whereToShop).map((store, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.storeOption}
-                      onPress={() => {
-                        openGoogleMaps(store.searchTerm);
-                        setStoreFinderModal({ visible: false, item: null });
-                      }}
-                    >
-                      <View style={styles.storeIconContainer}>
-                        <Ionicons name={store.icon} size={24} color="#4CAF50" />
-                      </View>
-                      <View style={styles.storeDetails}>
-                        <Text style={styles.storeCategory}>{store.category}</Text>
-                        <Text style={styles.storeAction}>Tap to find nearby on Google Maps</Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={20} color="#ccc" />
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-
-                {!currentLocation && (
-                  <View style={styles.locationWarning}>
-                    <Ionicons name="information-circle-outline" size={16} color="#2196F3" />
-                    <Text style={styles.locationWarningText}>
-                      No precise location - will search your general area
-                    </Text>
+                {loadingStores ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#4CAF50" />
                   </View>
+                ) : (
+                  <ScrollView style={styles.storeList}>
+                    {nearbyStores.length > 0 ? (
+                      nearbyStores.map((store, index) => (
+                        <View key={store.id || index} style={styles.storeCard}>
+                          <View style={styles.storeHeader}>
+                            <View style={styles.storeInfo}>
+                              <Text style={styles.storeName}>{store.name}</Text>
+                              <Text style={styles.storeAddress}>{store.address}</Text>
+                              <View style={styles.storeMetaRow}>
+                                <Text style={styles.storeDistance}>
+                                  <Ionicons name="location-outline" size={12} color="#666" /> {store.distance} km
+                                </Text>
+                                {store.rating && (
+                                  <Text style={styles.storeRating}>
+                                    <Ionicons name="star" size={12} color="#FFB300" /> {store.rating}
+                                  </Text>
+                                )}
+                                {store.isOpen !== undefined && (
+                                  <Text style={[styles.storeStatus, store.isOpen && styles.storeOpen]}>
+                                    {store.isOpen ? 'Open' : 'Closed'}
+                                  </Text>
+                                )}
+                              </View>
+                            </View>
+                          </View>
+                          <View style={styles.storeActions}>
+                            <TouchableOpacity
+                              style={styles.storeActionButton}
+                              onPress={() => openFloodSafeRoute(store)}
+                            >
+                              <Ionicons name="water" size={16} color="#2196F3" />
+                              <Text style={styles.storeActionText}>Flood-Safe Route</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.storeActionButton, styles.directionsButtonGreen]}
+                              onPress={() => openDirections(store)}
+                            >
+                              <Ionicons name="navigate" size={16} color="#4CAF50" />
+                              <Text style={[styles.storeActionText, { color: '#4CAF50' }]}>Directions</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      ))
+                    ) : (
+                      <View style={styles.noStoresContainer}>
+                        <Ionicons name="storefront-outline" size={48} color="#ccc" />
+                        <Text style={styles.noStoresText}>No stores found nearby</Text>
+                        <Text style={styles.noStoresSubtext}>Try searching in a different area or category</Text>
+                      </View>
+                    )}
+                  </ScrollView>
                 )}
               </View>
             )}
           </View>
         </View>
       </Modal>
+
+      {/* Flood-Safe Route Viewer */}
+      {selectedStoreForRoute && (
+        <FloodSafeRouteViewer
+          visible={routeViewerVisible}
+          onClose={() => {
+            setRouteViewerVisible(false);
+            setSelectedStoreForRoute(null);
+          }}
+          origin={{
+            latitude: currentLocation?.latitude || 0,
+            longitude: currentLocation?.longitude || 0,
+          }}
+          destination={{
+            lat: selectedStoreForRoute.location.lat,
+            lng: selectedStoreForRoute.location.lng,
+          }}
+          destinationName={selectedStoreForRoute.name}
+          state={userProfile.emergencyPreferences?.selectedState}
+        />
+      )}
     </View>
   );
 };
@@ -1115,6 +1189,96 @@ const styles = StyleSheet.create({
     color: '#1976d2',
     marginLeft: 8,
     flex: 1,
+  },
+  storeCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  storeHeader: {
+    marginBottom: 10,
+  },
+  storeInfo: {
+    flex: 1,
+  },
+  storeName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#495057',
+    marginBottom: 4,
+  },
+  storeAddress: {
+    fontSize: 13,
+    color: '#6c757d',
+    marginBottom: 6,
+  },
+  storeMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  storeDistance: {
+    fontSize: 12,
+    color: '#666',
+    marginRight: 8,
+  },
+  storeRating: {
+    fontSize: 12,
+    color: '#666',
+    marginRight: 8,
+  },
+  storeStatus: {
+    fontSize: 11,
+    color: '#dc3545',
+    fontWeight: '500',
+  },
+  storeOpen: {
+    color: '#28a745',
+  },
+  storeActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  storeActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(227, 242, 253, 0.8)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  directionsButtonGreen: {
+    backgroundColor: 'rgba(232, 245, 232, 0.8)',
+  },
+  storeActionText: {
+    fontSize: 13,
+    color: '#2196F3',
+    fontWeight: '500',
+    marginLeft: 6,
+  },
+  noStoresContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  noStoresText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#495057',
+    marginTop: 12,
+  },
+  noStoresSubtext: {
+    fontSize: 13,
+    color: '#6c757d',
+    marginTop: 4,
+    textAlign: 'center',
   },
 });
 
