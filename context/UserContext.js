@@ -1,5 +1,6 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorageHelper from '../utils/AsyncStorageHelper';
 
 export const UserContext = createContext();
 
@@ -108,9 +109,28 @@ export const UserProvider = ({ children }) => {
     loadAppUsage();
   }, []);
 
-  // Save user data to AsyncStorage whenever they change
+  // Debounce timer ref to prevent rapid consecutive writes
+  const saveProfileTimer = useRef(null);
+
+  // Save user data to AsyncStorage with debouncing (500ms)
+  // This prevents iOS sync issues from rapid consecutive writes
   useEffect(() => {
-    saveUserProfile();
+    // Clear existing timer
+    if (saveProfileTimer.current) {
+      clearTimeout(saveProfileTimer.current);
+    }
+
+    // Set new debounced save
+    saveProfileTimer.current = setTimeout(() => {
+      saveUserProfile();
+    }, 500); // 500ms debounce
+
+    // Cleanup on unmount
+    return () => {
+      if (saveProfileTimer.current) {
+        clearTimeout(saveProfileTimer.current);
+      }
+    };
   }, [userProfile]);
 
   useEffect(() => {
@@ -142,9 +162,26 @@ export const UserProvider = ({ children }) => {
 
   const saveUserProfile = async () => {
     try {
-      await AsyncStorage.setItem('userProfile', JSON.stringify(userProfile));
+      // Use AsyncStorageHelper for reliable writes with retry on iOS
+      await AsyncStorageHelper.setItem(
+        'userProfile',
+        JSON.stringify(userProfile),
+        {
+          priority: 'high', // User profile is important
+          verify: true // Verify write succeeded
+        }
+      );
+      console.log('✅ UserContext: User profile saved successfully');
     } catch (error) {
-      console.log('Error saving user profile:', error);
+      console.error('❌ UserContext: Error saving user profile:', error);
+
+      // Fallback to direct AsyncStorage if helper fails
+      try {
+        await AsyncStorage.setItem('userProfile', JSON.stringify(userProfile));
+        console.log('✅ UserContext: User profile saved via fallback');
+      } catch (fallbackError) {
+        console.error('❌ UserContext: Fallback save also failed:', fallbackError);
+      }
     }
   };
 

@@ -12,8 +12,9 @@
  * - Maintains same interface for existing components
  */
 
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorageHelper from '../utils/AsyncStorageHelper';
 import ReliableLocationService from '../services/ReliableLocationService';
 import SimplifiedLocationCache from '../services/SimplifiedLocationCache';
 import FloodPredictionModel from '../services/FloodPredictionModel';
@@ -62,10 +63,41 @@ export const ReliableLocationProvider = ({ children }) => {
     }
   ]);
 
+  // Refs for saving monitored locations with debouncing
+  const saveMonitoredTimer = useRef(null);
+  const hasLoadedInitial = useRef(false);
+
   // Initialize location system
   useEffect(() => {
     initializeLocationSystem();
   }, []);
+
+  // Save monitored locations to AsyncStorage with debouncing (iOS reliability fix)
+  useEffect(() => {
+    // Skip first render during initial load from AsyncStorage
+    // This prevents overwriting with default state before loadMonitoredLocations completes
+    if (!hasLoadedInitial.current) {
+      hasLoadedInitial.current = true;
+      return;
+    }
+
+    // Clear existing timer
+    if (saveMonitoredTimer.current) {
+      clearTimeout(saveMonitoredTimer.current);
+    }
+
+    // Debounced save (500ms) to batch rapid changes
+    saveMonitoredTimer.current = setTimeout(() => {
+      saveMonitoredLocations();
+    }, 500);
+
+    // Cleanup timer on unmount
+    return () => {
+      if (saveMonitoredTimer.current) {
+        clearTimeout(saveMonitoredTimer.current);
+      }
+    };
+  }, [monitoredLocations]);
 
   /**
    * Initialize the location system with cached data and permissions
@@ -354,10 +386,37 @@ export const ReliableLocationProvider = ({ children }) => {
     try {
       const storedLocations = await AsyncStorage.getItem('monitoredLocations');
       if (storedLocations) {
-        setMonitoredLocations(JSON.parse(storedLocations));
+        const parsed = JSON.parse(storedLocations);
+        setMonitoredLocations(parsed);
+        console.log(`📍 Loaded ${parsed.length} monitored locations from storage`);
       }
     } catch (error) {
-      console.log('Error loading monitored locations:', error);
+      console.error('❌ Error loading monitored locations:', error);
+    }
+  };
+
+  const saveMonitoredLocations = async () => {
+    try {
+      // Use AsyncStorageHelper for iOS reliability with retry
+      await AsyncStorageHelper.setItem(
+        'monitoredLocations',
+        JSON.stringify(monitoredLocations),
+        {
+          priority: 'high', // Monitored locations are important
+          verify: true // Verify write succeeded (iOS needs this)
+        }
+      );
+      console.log(`✅ ReliableLocationContext: Saved ${monitoredLocations.length} monitored locations`);
+    } catch (error) {
+      console.error('❌ ReliableLocationContext: Error saving monitored locations:', error);
+
+      // Fallback to direct AsyncStorage if helper fails
+      try {
+        await AsyncStorage.setItem('monitoredLocations', JSON.stringify(monitoredLocations));
+        console.log('✅ ReliableLocationContext: Saved monitored locations via fallback');
+      } catch (fallbackError) {
+        console.error('❌ ReliableLocationContext: Fallback save also failed:', fallbackError);
+      }
     }
   };
 

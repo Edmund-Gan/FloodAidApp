@@ -5,6 +5,7 @@ import SimplifiedLocationCache from './SimplifiedLocationCache';
 import ReliableLocationService from './ReliableLocationService';
 import embeddedMLService from './EmbeddedMLService';
 import modelOverrideService from '../utils/ModelOverrideService';
+import mlBackendService from './MLBackendService';
 
 /**
  * FloodPredictionModel - Integrates with ML training model for flood prediction
@@ -513,93 +514,167 @@ class FloodPredictionModel {
   }
 
   /**
-   * Calculate flood probability using Embedded 31-feature ML model
-   * Uses embedded JavaScript ML service instead of external API
+   * Calculate flood probability using ML Backend Server (Python) with fallback to Embedded ML
+   * Priority: Backend ML (74 features + SHAP) > Embedded ML (31 features) > Statistical Model
    */
   static async calculateFloodProbability(weatherData, state, location) {
-    console.log('🚀 Calling Embedded 31-feature ML model...');
-    
+    console.log('🚀 Starting ML prediction (Backend [74-feat + SHAP] → Embedded [31-feat] → Statistical)...');
+
+    // Strategy 1: Try Backend ML Server (Python with XGBoost/LightGBM + 74 features + SHAP)
     try {
-      // Use embedded ML service instead of external API
-      const embeddedResponse = await embeddedMLService.predictFloodRisk(
+      console.log('📡 Attempting Backend ML Server prediction with 74-feature SHAP model...');
+      console.log('📡 Backend will fetch its own weather data internally (not using 31-feature weatherData)');
+
+      const backendResponse = await mlBackendService.predictFloodRisk(
         location.lat,
         location.lon,
-        new Date().toISOString().split('T')[0],
-        weatherData
+        new Date().toISOString().split('T')[0]
       );
-      
-      if (embeddedResponse?.success) {
-        console.log('Embedded ML Results:', {
-          probability: `${(embeddedResponse.flood_probability * 100).toFixed(1)}%`,
-          risk_level: embeddedResponse.risk_level,
-          confidence: embeddedResponse.confidence,
-          confidence_type: typeof embeddedResponse.confidence,
-          confidence_percentage: `${(embeddedResponse.confidence * 100).toFixed(1)}%`,
-          model_version: '3.0-Embedded',
-          f1_score: embeddedResponse.prediction_details?.f1_score || 0.8095,
-          improvement: '38.35%'
+
+      if (backendResponse?.success) {
+        console.log('✅ Backend ML Results:', {
+          probability: `${(backendResponse.flood_probability * 100).toFixed(1)}%`,
+          risk_level: backendResponse.risk_level,
+          confidence: backendResponse.confidence,
+          model_used: backendResponse.prediction_details?.model_used || 'XGBoost',
+          f1_score: backendResponse.confidence || 0.8095,
+          has_shap_explanations: !!backendResponse.feature_explanations
         });
-        
+
+        // Log SHAP explanations if available
+        if (backendResponse.feature_explanations) {
+          console.log('✅ SHAP-based explanations available:', {
+            method: backendResponse.feature_explanations.explanation_method,
+            risk_increasing: backendResponse.feature_explanations.risk_increasing?.length || 0,
+            risk_decreasing: backendResponse.feature_explanations.risk_decreasing?.length || 0
+          });
+        }
+
         return {
-          probability: embeddedResponse.flood_probability,
-          confidence: embeddedResponse.confidence,
+          probability: backendResponse.flood_probability,
+          confidence: backendResponse.confidence,
           model_details: {
-            version: '3.0-Embedded',
-            f1_score: embeddedResponse.prediction_details?.f1_score || 0.8095,
-            type: embeddedResponse.prediction_details?.model_used || 'Embedded Rule-Based Enhanced',
-            api_source: false,
-            embedded: true,
-            features_count: 31,
-            improvement: embeddedResponse.api_info?.performance_improvement || '38.35%',
-            monsoon_aware: true
+            version: 'Backend-ML-1.0',
+            f1_score: backendResponse.confidence || 0.8095,
+            type: backendResponse.prediction_details?.model_used || 'XGBoost Backend',
+            api_source: true,
+            embedded: false,
+            backend: true,
+            features_count: backendResponse.prediction_details?.features_count || 74,
+            improvement: 'Backend ML Server with SHAP Explanations'
           },
           embedded_data: {
-            weather_summary: embeddedResponse.weather_summary,
-            location_info: embeddedResponse.location_info,
-            prediction_details: embeddedResponse.prediction_details,
-            api_info: embeddedResponse.api_info,
-            contributing_factors: embeddedResponse.contributing_factors
+            weather_summary: backendResponse.weather_summary,
+            location_info: backendResponse.location_info,
+            prediction_details: backendResponse.prediction_details,
+            api_info: backendResponse.api_info,
+            contributing_factors: backendResponse.contributing_factors,
+            feature_explanations: backendResponse.feature_explanations,  // Include SHAP explanations
+            monsoon_info: backendResponse.monsoon_info
           }
         };
       } else {
-        console.warn('Embedded ML failed, falling back to statistical model...');
-        throw new Error(`Embedded ML error: ${embeddedResponse?.error || 'Unknown error'}`);
+        throw new Error(`Backend ML error: ${backendResponse?.error || 'Unknown error'}`);
       }
-      
-    } catch (error) {
-      console.error('Error calling Embedded ML:', error);
-      
-      // Fallback to enhanced statistical model
+
+    } catch (backendError) {
+      console.error('❌ Backend ML (74-feature SHAP) unavailable, details:', {
+        message: backendError.message,
+        type: backendError.constructor.name,
+        code: backendError.code
+      });
+      console.warn('⚠️ Falling back to Embedded ML (31-feature, no SHAP):', backendError.message);
+
+      // Strategy 2: Fallback to Embedded ML Service (JavaScript with 31-feature weatherData)
       try {
-        console.log('Attempting enhanced statistical fallback...');
-        const statisticalResult = this.getStatisticalPrediction(weatherData);
-        
-        console.log('Statistical Fallback Results:', {
-          probability: `${(statisticalResult.probability * 100).toFixed(1)}%`,
-          model_type: 'Enhanced Statistical'
-        });
-        
-        return {
-          probability: statisticalResult.probability,
-          confidence: statisticalResult.confidence,
-          model_details: {
-            version: '3.0-Statistical-Fallback',
-            f1_score: 0.72,
-            type: 'Enhanced Statistical Model',
-            api_source: false,
-            embedded: true,
-            fallback_used: true,
-            features_count: Object.keys(weatherData.features || {}).length
-          }
-        };
-        
-      } catch (statisticalError) {
-        console.error('❌ Statistical fallback also failed:', statisticalError);
+        console.log('🔄 Attempting Embedded ML prediction (31-feature model)...');
+        console.log('🔄 Using 31-feature weatherData from Open-Meteo');
+
+        const embeddedResponse = await embeddedMLService.predictFloodRisk(
+          location.lat,
+          location.lon,
+          new Date().toISOString().split('T')[0],
+          weatherData
+        );
+
+        if (embeddedResponse?.success) {
+          console.log('✅ Embedded ML Results:', {
+            probability: `${(embeddedResponse.flood_probability * 100).toFixed(1)}%`,
+            risk_level: embeddedResponse.risk_level,
+            confidence: embeddedResponse.confidence,
+            model_version: '3.0-Embedded',
+            f1_score: embeddedResponse.prediction_details?.f1_score || 0.8095,
+          });
+
+          return {
+            probability: embeddedResponse.flood_probability,
+            confidence: embeddedResponse.confidence,
+            model_details: {
+              version: '3.0-Embedded',
+              f1_score: embeddedResponse.prediction_details?.f1_score || 0.8095,
+              type: embeddedResponse.prediction_details?.model_used || 'Embedded Rule-Based Enhanced',
+              api_source: false,
+              embedded: true,
+              backend: false,
+              features_count: 31,
+              improvement: embeddedResponse.api_info?.performance_improvement || '38.35%',
+              monsoon_aware: true
+            },
+            embedded_data: {
+              weather_summary: embeddedResponse.weather_summary,
+              location_info: embeddedResponse.location_info,
+              prediction_details: embeddedResponse.prediction_details,
+              api_info: embeddedResponse.api_info,
+              contributing_factors: embeddedResponse.contributing_factors
+            }
+          };
+        } else {
+          throw new Error(`Embedded ML error: ${embeddedResponse?.error || 'Unknown error'}`);
+        }
+
+      } catch (embeddedError) {
+        console.warn('⚠️ Embedded ML failed, falling back to Statistical model:', embeddedError.message);
+
+        // Strategy 3: Fallback to Statistical Model (last resort)
+        try {
+          console.log('🔄 Attempting Statistical model prediction...');
+          const statisticalResult = this.getStatisticalPrediction(weatherData);
+
+          console.log('✅ Statistical Fallback Results:', {
+            probability: `${(statisticalResult.probability * 100).toFixed(1)}%`,
+            model_type: 'Enhanced Statistical'
+          });
+
+          return {
+            probability: statisticalResult.probability,
+            confidence: statisticalResult.confidence,
+            model_details: {
+              version: '3.0-Statistical-Fallback',
+              f1_score: 0.72,
+              type: 'Enhanced Statistical Model',
+              api_source: false,
+              embedded: true,
+              backend: false,
+              fallback_used: true,
+              features_count: Object.keys(weatherData.features || {}).length
+            }
+          };
+
+        } catch (statisticalError) {
+          console.error('❌ Statistical fallback also failed:', statisticalError);
+          throw new Error(`All ML methods failed: Backend, Embedded, Statistical`);
+        }
       }
-      
-      console.log('⚠️ All ML methods unavailable - prediction will show N/A values');
-      throw new Error(`All ML methods unavailable: ${error.message}`);
     }
+  }
+
+  /**
+   * Get ML API endpoint (supports legacy code compatibility)
+   * @returns {string} ML backend URL
+   */
+  static getMLAPIEndpoint() {
+    // Use MLBackendService to get the correct backend URL
+    return mlBackendService.getBackendURL();
   }
 
   /**
@@ -994,7 +1069,40 @@ class FloodPredictionModel {
    * Now returns structured data for interactive UI components
    */
   static getEnhancedContributingFactors(weatherData, prediction) {
-    // Check if we have contributing factors from embedded ML service
+    // PRIORITY 1: Check if we have SHAP-based explanations from backend ML
+    if (prediction.embedded_data?.feature_explanations?.risk_increasing ||
+        prediction.embedded_data?.feature_explanations?.risk_decreasing) {
+      const featureExplanations = prediction.embedded_data.feature_explanations;
+
+      console.log('✅ Using SHAP-based feature explanations from Backend ML');
+      console.log(`   Method: ${featureExplanations.explanation_method || 'SHAP'}`);
+      console.log(`   Risk-increasing factors: ${featureExplanations.risk_increasing?.length || 0}`);
+      console.log(`   Protective factors: ${featureExplanations.risk_decreasing?.length || 0}`);
+
+      // Return SHAP-based structured data
+      return {
+        structured: true,
+        factors: [
+          ...(featureExplanations.risk_increasing || []),
+          ...(featureExplanations.risk_decreasing || [])
+        ],
+        riskFactors: featureExplanations.risk_increasing || [],
+        protectiveFactors: featureExplanations.risk_decreasing || [],
+        explanation_method: featureExplanations.explanation_method || 'SHAP (Backend ML)',
+        legacy_text: [
+          ...(featureExplanations.risk_increasing || []),
+          ...(featureExplanations.risk_decreasing || [])
+        ].slice(0, 5).map(factor => {
+          const featureText = factor.feature?.title && factor.feature?.description
+            ? `${factor.feature.title} - ${factor.feature.description}`
+            : (typeof factor.feature === 'string' ? factor.feature : 'Unknown factor');
+
+          return `${factor.impact_level} impact: ${featureText}`;
+        })
+      };
+    }
+
+    // PRIORITY 2: Check if we have contributing factors from embedded ML service
     if (prediction.embedded_data?.contributing_factors && prediction.embedded_data.contributing_factors.length > 0) {
       // Return structured factor data directly for use with RiskFactorIndicator components
       const factors = prediction.embedded_data.contributing_factors;
@@ -1030,16 +1138,17 @@ class FloodPredictionModel {
       });
       
       // Return structured data with separated factors
+      // Return more factors to allow App.js to dynamically filter based on risk level
       return {
         structured: true,
-        factors: sortedFactors.slice(0, 6), // All factors for compatibility
-        riskFactors: riskFactors.slice(0, 3), // Top 3 risk-increasing factors
-        protectiveFactors: protectiveFactors.slice(0, 3), // Top 3 protective factors
+        factors: sortedFactors.slice(0, 10), // All factors for compatibility
+        riskFactors: riskFactors.slice(0, 8), // Up to 8 risk-increasing factors (App.js will filter)
+        protectiveFactors: protectiveFactors.slice(0, 5), // Up to 5 protective factors (App.js will filter)
         legacy_text: sortedFactors.slice(0, 5).map(factor => {
-          const featureText = factor.feature?.title && factor.feature?.description 
+          const featureText = factor.feature?.title && factor.feature?.description
             ? `${factor.feature.title} - ${factor.feature.description}`
             : (typeof factor.feature === 'string' ? factor.feature : 'Unknown factor');
-          
+
           return `${factor.impact_level} impact: ${featureText}`;
         })
       };
@@ -1643,27 +1752,37 @@ class FloodPredictionModel {
   }
 
   /**
-   * Get weather data with enhanced fallback
+   * Get weather data with enhanced fallback (31-feature data for Embedded ML fallback only)
+   * NOTE: Backend ML service fetches its own 74-feature data internally
    */
   static async getWeatherDataWithFallback(lat, lon, debugId) {
-    console.log(`🌤️ [${debugId}]: Getting weather data (enhanced API)...`);
-    
+    console.log(`🌤️ [${debugId}]: Getting 31-feature weather data (for Embedded ML fallback)...`);
+    console.log(`🌤️ [${debugId}]: NOTE: Backend ML will fetch its own 74-feature data separately`);
+
     try {
+      console.log(`🌐 [${debugId}]: Calling apiService.getTrainingModelData(${lat}, ${lon}, 7)`);
       const weatherData = await apiService.getTrainingModelData(lat, lon, 7);
       if (weatherData) {
-        console.log(`✅ [${debugId}]: Enhanced weather data obtained`);
+        console.log(`✅ [${debugId}]: 31-feature weather data obtained successfully`);
+        console.log(`✅ [${debugId}]: Weather data keys:`, Object.keys(weatherData));
         return weatherData;
       }
       throw new Error('No weather data returned');
     } catch (weatherError) {
-      console.warn(`⚠️ [${debugId}]: Enhanced weather API failed, trying fallback:`, weatherError.message);
-      
+      console.error(`❌ [${debugId}]: Weather API error details:`, {
+        message: weatherError.message,
+        type: weatherError.constructor.name,
+        code: weatherError.code,
+        stack: weatherError.stack
+      });
+      console.warn(`⚠️ [${debugId}]: Enhanced weather API failed, trying mock fallback:`, weatherError.message);
+
       try {
         const fallbackData = await apiService.getMockTrainingModelData(lat, lon, 7);
-        console.log(`✅ [${debugId}]: Using enhanced mock weather data`);
+        console.log(`✅ [${debugId}]: Using 31-feature mock weather data`);
         return fallbackData;
       } catch (mockError) {
-        console.error(`❌ [${debugId}]: All weather sources failed:`, mockError);
+        console.error(`❌ [${debugId}]: Mock data generation failed:`, mockError);
         throw new Error('Failed to fetch weather data from all sources');
       }
     }

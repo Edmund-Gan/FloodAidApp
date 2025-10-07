@@ -20,9 +20,10 @@ class MalaysiaStateService {
 
   /**
    * Load and process Malaysia GeoJSON data
+   * @param {boolean} skipRiskCalculation - Skip flood risk calculation for faster geometry loading
    * @returns {Promise<Array>} - Array of processed state data
    */
-  async loadMalaysiaStates() {
+  async loadMalaysiaStates(skipRiskCalculation = false) {
     if (this.loading) {
       console.log('🔄 State data loading already in progress...');
       return this.statesData || [];
@@ -37,31 +38,39 @@ class MalaysiaStateService {
     this.loading = true;
 
     try {
-      console.log('🗺️ Loading Malaysia state data for flood risk maps...');
+      console.log(`🗺️ Loading Malaysia state data ${skipRiskCalculation ? '(geometry only)' : '(with flood risk)'}...`);
 
       // Use the GeoJSONProcessor to get accurate polygon data
-      console.log('🗺️ Processing Malaysia state polygons with accurate boundaries...');
       const malaysiaStatesData = await this.geoJSONProcessor.createMalaysiaStateData();
 
       // Add initial risk data to each state using state-specific defaults
       this.statesData = malaysiaStatesData.map(state => {
-        const defaultRisk = this.getDefaultRiskData(state);
-        console.log(`🎨 ${state.name}: ${(defaultRisk.floodProbability * 100).toFixed(0)}% risk, ${defaultRisk.riskLevel} level, ${defaultRisk.color} color`);
-
-        return {
-          ...state,
-          riskData: {
-            ...defaultRisk,
-            lastUpdated: new Date().toISOString()
-          }
-        };
+        // Only add default risk data if we're NOT skipping risk calculation
+        if (!skipRiskCalculation) {
+          const defaultRisk = this.getDefaultRiskData(state);
+          return {
+            ...state,
+            riskData: {
+              ...defaultRisk,
+              lastUpdated: new Date().toISOString()
+            }
+          };
+        } else {
+          // No riskData when skipping - will trigger gray color in map
+          return {
+            ...state,
+            riskData: null
+          };
+        }
       });
       this.lastUpdated = Date.now();
 
-      console.log(`✅ Successfully loaded ${this.statesData.length} Malaysian states with color-coded risk levels`);
+      console.log(`✅ Successfully loaded ${this.statesData.length} Malaysian states`);
 
-      // Start initial flood risk calculation
-      await this.updateAllStatesFloodRisk();
+      // Only calculate flood risk if not skipped (for progressive loading)
+      if (!skipRiskCalculation) {
+        await this.updateAllStatesFloodRisk();
+      }
 
       return this.statesData;
 
@@ -99,28 +108,62 @@ class MalaysiaStateService {
   }
 
   /**
-   * Update flood risk for all states
+   * Update flood risk for all states with batching to prevent backend overload
    */
   async updateAllStatesFloodRisk() {
     if (!this.statesData) return;
 
-    console.log('🔄 Updating flood risk for all Malaysian states...');
+    console.log('🔄 Updating flood risk for all Malaysian states with batch processing...');
 
-    const updatePromises = this.statesData.map(async (state) => {
-      try {
-        const riskData = await this.calculateStateFloodRisk(state);
-        state.riskData = {
-          ...state.riskData,
-          ...riskData,
-          lastUpdated: new Date().toISOString()
-        };
-      } catch (error) {
-        console.warn(`⚠️ Failed to update ${state.name} flood risk:`, error.message);
-        // Keep existing risk data if update fails
+    const BATCH_SIZE = 4; // Process 4 states at a time
+    const BATCH_DELAY = 1000; // 1 second delay between batches
+
+    // Process states in batches
+    for (let i = 0; i < this.statesData.length; i += BATCH_SIZE) {
+      const batch = this.statesData.slice(i, i + BATCH_SIZE);
+      console.log(`📊 Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(this.statesData.length / BATCH_SIZE)}: ${batch.map(s => s.name).join(', ')}`);
+
+      const batchPromises = batch.map(async (state) => {
+        try {
+          const riskData = await this.calculateStateFloodRisk(state);
+          state.riskData = {
+            ...state.riskData,
+            ...riskData,
+            lastUpdated: new Date().toISOString()
+          };
+          console.log(`✅ ${state.name}: ${(riskData.floodProbability * 100).toFixed(0)}% risk updated`);
+        } catch (error) {
+          console.warn(`⚠️ Failed to update ${state.name} flood risk:`, error.message);
+          // Mark as N/A instead of using fallback
+          state.riskData = {
+            floodProbability: null,
+            riskLevel: 'N/A',
+            color: '#CCCCCC', // Gray color for N/A
+            confidence: null,
+            factors: ['Data unavailable - backend timeout or error'],
+            weatherSummary: {
+              temperature: null,
+              rainfall: null,
+              humidity: null,
+              windSpeed: null
+            },
+            lastUpdated: new Date().toISOString(),
+            isNA: true,
+            error: error.message
+          };
+          console.log(`❌ ${state.name}: Marked as N/A`);
+        }
+      });
+
+      await Promise.allSettled(batchPromises);
+
+      // Add delay between batches (except after the last batch)
+      if (i + BATCH_SIZE < this.statesData.length) {
+        console.log(`⏳ Waiting ${BATCH_DELAY}ms before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
       }
-    });
+    }
 
-    await Promise.allSettled(updatePromises);
     console.log('✅ Flood risk update completed for all states');
   }
 
@@ -128,69 +171,66 @@ class MalaysiaStateService {
    * Calculate flood risk for a specific state
    * @param {Object} state - State data object
    * @returns {Promise<Object>} - Risk data object
+   * @throws {Error} - Throws error if calculation fails (no fallback)
    */
   async calculateStateFloodRisk(state) {
-    try {
-      console.log(`🧮 Calculating flood risk for ${state.name}...`);
+    console.log(`🧮 Calculating flood risk for ${state.name}...`);
 
-      // Validate state center coordinates
-      if (!state.center ||
-          typeof state.center.latitude !== 'number' ||
-          typeof state.center.longitude !== 'number' ||
-          isNaN(state.center.latitude) ||
-          isNaN(state.center.longitude)) {
-        console.warn(`⚠️ Invalid coordinates for ${state.name}, using default risk`);
-        return this.getDefaultRiskData(state);
-      }
-
-      // Get weather data for the state capital
-      const weatherData = await apiService.getTrainingModelData(
-        state.center.latitude,
-        state.center.longitude,
-        1 // 1 day forecast
-      );
-
-      if (!weatherData || !weatherData.features) {
-        console.warn(`⚠️ No weather data for ${state.name}, using default risk`);
-        return this.getDefaultRiskData(state);
-      }
-
-      // Use the existing flood prediction model with proper coordinate format
-      const location = {
-        lat: state.center.latitude,
-        lon: state.center.longitude
-      };
-
-      console.log(`📍 Using coordinates for ${state.name}: ${location.lat}, ${location.lon}`);
-
-      const prediction = await FloodPredictionModel.calculateFloodProbability(
-        weatherData,
-        state.name,
-        location
-      );
-
-      const probability = prediction.probability || 0.2;
-      const riskLevel = getRiskLevel(probability);
-      const color = getRiskColor(probability);
-
-      return {
-        floodProbability: probability,
-        riskLevel: riskLevel,
-        color: color,
-        confidence: prediction.confidence || 0.7,
-        factors: prediction.embedded_data?.contributing_factors || [],
-        weatherSummary: {
-          temperature: Math.round(weatherData.current?.temperature || 28),
-          rainfall: Math.round(weatherData.features?.rain_sum || 0),
-          humidity: Math.round(weatherData.features?.humidity_avg || 75),
-          windSpeed: Math.round(weatherData.features?.wind_speed_max || 10)
-        }
-      };
-
-    } catch (error) {
-      console.error(`❌ Error calculating risk for ${state.name}:`, error);
-      return this.getDefaultRiskData(state);
+    // Validate state center coordinates
+    if (!state.center ||
+        typeof state.center.latitude !== 'number' ||
+        typeof state.center.longitude !== 'number' ||
+        isNaN(state.center.latitude) ||
+        isNaN(state.center.longitude)) {
+      throw new Error(`Invalid coordinates for ${state.name}`);
     }
+
+    // Get weather data for the state capital
+    const weatherData = await apiService.getTrainingModelData(
+      state.center.latitude,
+      state.center.longitude,
+      1 // 1 day forecast
+    );
+
+    if (!weatherData || !weatherData.features) {
+      throw new Error(`No weather data available for ${state.name}`);
+    }
+
+    // Use the existing flood prediction model with proper coordinate format
+    const location = {
+      lat: state.center.latitude,
+      lon: state.center.longitude
+    };
+
+    console.log(`📍 Using coordinates for ${state.name}: ${location.lat}, ${location.lon}`);
+
+    const prediction = await FloodPredictionModel.calculateFloodProbability(
+      weatherData,
+      state.name,
+      location
+    );
+
+    const probability = prediction.probability;
+    if (probability === null || probability === undefined || isNaN(probability)) {
+      throw new Error(`Invalid prediction probability for ${state.name}`);
+    }
+
+    const riskLevel = getRiskLevel(probability);
+    const color = getRiskColor(probability);
+
+    return {
+      floodProbability: probability,
+      riskLevel: riskLevel,
+      color: color,
+      confidence: prediction.confidence || 0.7,
+      factors: prediction.embedded_data?.contributing_factors || [],
+      weatherSummary: {
+        temperature: Math.round(weatherData.current?.temperature || 28),
+        rainfall: Math.round(weatherData.features?.rain_sum || 0),
+        humidity: Math.round(weatherData.features?.humidity_avg || 75),
+        windSpeed: Math.round(weatherData.features?.wind_speed_max || 10)
+      }
+    };
   }
 
   /**

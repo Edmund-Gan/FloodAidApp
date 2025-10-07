@@ -17,6 +17,7 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReliableLocation } from '../context/ReliableLocationContext';
 import { UserContext } from '../context/UserContext';
 import AddressSearchInput from '../components/AddressSearchInput';
@@ -65,6 +66,7 @@ export default function MyLocationsScreen({ navigation }) {
     updateLocationCustomLabel
   } = useReliableLocation();
   const { logFeatureUsage } = useContext(UserContext);
+  const insets = useSafeAreaInsets();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [mapPickerVisible, setMapPickerVisible] = useState(false);
@@ -275,7 +277,7 @@ export default function MyLocationsScreen({ navigation }) {
 
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>My Locations</Text>
         <TouchableOpacity 
@@ -548,7 +550,7 @@ export default function MyLocationsScreen({ navigation }) {
         onCancel={() => setMapPickerVisible(false)}
         initialAddress={newLocation.name}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -562,7 +564,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 20,
     paddingBottom: 20,
     backgroundColor: COLORS.SURFACE,
   },

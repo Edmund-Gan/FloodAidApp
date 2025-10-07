@@ -1,7 +1,8 @@
 class OpenMeteoService {
   constructor() {
-    this.baseUrl = 'https://api.open-meteo.com/v1';
-    this.elevationUrl = 'https://customer-api.open-meteo.com/v1/elevation';
+    // Using Open-Meteo FREE tier endpoints (no API key required)
+    this.forecastUrl = 'https://api.open-meteo.com/v1/forecast';
+    this.archiveUrl = 'https://archive-api.open-meteo.com/v1/archive';
     this.floodUrl = 'https://flood-api.open-meteo.com/v1/flood';
     this.cache = new Map();
     this.cacheTimeout = 10 * 60 * 1000; // 10 minutes
@@ -9,13 +10,14 @@ class OpenMeteoService {
 
   /**
    * Get elevation data for a location
+   * Uses FREE forecast API - elevation is included in the response
    * @param {number} latitude - Latitude coordinate
    * @param {number} longitude - Longitude coordinate
    * @returns {Promise} - Elevation data
    */
   async getElevationData(latitude, longitude) {
     const cacheKey = `elevation_${latitude}_${longitude}`;
-    
+
     if (this.cache.has(cacheKey)) {
       const cached = this.cache.get(cacheKey);
       if (Date.now() - cached.timestamp < this.cacheTimeout) {
@@ -24,20 +26,24 @@ class OpenMeteoService {
     }
 
     try {
-      const response = await fetch(`${this.elevationUrl}?latitude=${latitude}&longitude=${longitude}`);
-      
+      // Use free forecast API - it includes elevation in the response
+      // Minimal request with just one required parameter to get elevation
+      const response = await fetch(
+        `${this.forecastUrl}?latitude=${latitude}&longitude=${longitude}&current=temperature_2m`
+      );
+
       if (!response.ok) {
-        throw new Error(`Elevation API error: ${response.status}`);
+        throw new Error(`Forecast API error: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       const elevationData = {
-        elevation: data.elevation?.[0] || 0,
+        elevation: data.elevation || 0,  // Elevation is directly in the response
         latitude: latitude,
         longitude: longitude,
         timestamp: new Date().toISOString(),
-        source: 'Open Meteo Elevation API'
+        source: 'Open Meteo Forecast API (Free Tier)'
       };
 
       // Cache the result
@@ -249,7 +255,7 @@ class OpenMeteoService {
   async getComprehensiveWeatherData(latitude, longitude, forecastDays = 3) {
     try {
       const response = await fetch(
-        `${this.baseUrl}/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,precipitation,relative_humidity_2m,wind_speed_10m,pressure_msl&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_hours&forecast_days=${forecastDays}`
+        `${this.forecastUrl}?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,precipitation,relative_humidity_2m,wind_speed_10m,pressure_msl&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_hours&forecast_days=${forecastDays}`
       );
       
       if (!response.ok) {

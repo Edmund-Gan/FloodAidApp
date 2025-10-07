@@ -67,16 +67,11 @@ const { width, height } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
 
 // Google Maps API Key Configuration
-const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.googleMapsApiKey || 
+const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.googleMapsApiKey ||
                             Constants.manifest?.extra?.googleMapsApiKey ||
                             'YOUR_API_KEY_HERE';
 
-
-
-// API Configuration
-const API_BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://192.168.1.100:8000/api'  // Local development
-  : 'https://floodaid-api.malaysia.gov.my/api';  // Production
+// Note: API configuration is handled in services/MLBackendService.js
 
 // Generate dynamic risk descriptions based on prediction data
 const getRiskDescription = (prediction, locationInfo) => {
@@ -145,8 +140,30 @@ const getRiskDescription = (prediction, locationInfo) => {
   }
   
   const finalDescription = randomDescription + confidenceText;
-  
+
   return finalDescription;
+};
+
+// Dynamic factor display limits based on flood risk level
+// Low risk: Show fewer threats (1-2), more protective factors (4-5)
+// High risk: Show more threats (6-8), fewer protective factors (1-2)
+const getFactorDisplayLimits = (floodProbability) => {
+  if (floodProbability <= 0.3) {
+    // Very Low Risk: Minimal threats, emphasize protective factors
+    return { threats: 1, protective: 5 };
+  } else if (floodProbability <= 0.5) {
+    // Low Risk: Few threats, many protective factors
+    return { threats: 2, protective: 4 };
+  } else if (floodProbability <= 0.7) {
+    // Medium Risk: Balanced display
+    return { threats: 4, protective: 3 };
+  } else if (floodProbability <= 0.85) {
+    // High Risk: More threats, fewer protective
+    return { threats: 6, protective: 2 };
+  } else {
+    // Very High Risk: Maximum threats, minimal protective
+    return { threats: 8, protective: 1 };
+  }
 };
 
 
@@ -1041,7 +1058,7 @@ function HomeScreen() {
   // Handle null prediction data to prevent crashes
   if (!prediction) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
           style={styles.container}
           contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 90 }}
@@ -1101,7 +1118,7 @@ function HomeScreen() {
 
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: (insets?.bottom || 0) + 90 }}
@@ -1328,17 +1345,23 @@ function HomeScreen() {
             {/* Check if we have structured factors with separated risk/protective factors */}
             {prediction.contributing_factors?.structured && (
               prediction.contributing_factors.riskFactors || prediction.contributing_factors.protectiveFactors
-            ) ? (
+            ) ? (() => {
+              // Dynamic filtering based on flood probability
+              const displayLimits = getFactorDisplayLimits(prediction.flood_probability || 0.5);
+              const threatsToShow = (prediction.contributing_factors.riskFactors || []).slice(0, displayLimits.threats);
+              const protectiveToShow = (prediction.contributing_factors.protectiveFactors || []).slice(0, displayLimits.protective);
+
+              return (
               <View>
                 {/* Potential Threats Section */}
-                {prediction.contributing_factors.riskFactors?.length > 0 && (
+                {threatsToShow.length > 0 && (
                   <View>
                     <View style={styles.threatsSectionHeader}>
                       <View style={styles.threatsIndicator} />
                       <Text style={styles.threatsSectionTitle}>Potential Threats:</Text>
                     </View>
                     <View style={styles.threatsContainer}>
-                      {prediction.contributing_factors.riskFactors.map((factor, index) => (
+                      {threatsToShow.map((factor, index) => (
                         <TouchableOpacity
                           key={factor.raw_feature || `risk-${index}`}
                           style={styles.threatItem}
@@ -1347,23 +1370,23 @@ function HomeScreen() {
                         >
                           <Ionicons name="alert-circle" size={16} color="#D32F2F" />
                           <Text style={styles.threatItemText}>
-                            {factor.feature?.title || factor.technical_name || 'Unknown factor'}
+                            {factor.feature?.title || factor.technical_name || 'Weather condition'}
                           </Text>
                         </TouchableOpacity>
                       ))}
                     </View>
                   </View>
                 )}
-                
+
                 {/* Safety Features Section */}
-                {prediction.contributing_factors.protectiveFactors?.length > 0 && (
+                {protectiveToShow.length > 0 && (
                   <View style={styles.safetySection}>
                     <View style={styles.safetySectionHeader}>
                       <View style={styles.safetyIndicator} />
-                      <Text style={styles.safetySectionTitle}>Protective:</Text>
+                      <Text style={styles.safetySectionTitle}>Protective Factors:</Text>
                     </View>
                     <View style={styles.safetyContainer}>
-                      {prediction.contributing_factors.protectiveFactors.map((factor, index) => (
+                      {protectiveToShow.map((factor, index) => (
                         <TouchableOpacity
                           key={factor.raw_feature || `protective-${index}`}
                           style={styles.safetyItem}
@@ -1372,7 +1395,7 @@ function HomeScreen() {
                         >
                           <Ionicons name="checkmark-circle" size={16} color="#388E3C" />
                           <Text style={styles.safetyItemText}>
-                            {factor.feature?.title || factor.technical_name || 'Unknown factor'}
+                            {factor.feature?.title || factor.technical_name || 'Weather condition'}
                           </Text>
                         </TouchableOpacity>
                       ))}
@@ -1380,7 +1403,8 @@ function HomeScreen() {
                   </View>
                 )}
               </View>
-            ) : (
+              );
+            })() : (
               /* Fallback to legacy text format */
               <View>
                 <View style={styles.threatsSectionHeader}>
@@ -1658,7 +1682,7 @@ export default function App() {
         <ReliableLocationProvider>
           <LocationCompatibilityProvider>
             <NavigationContainer>
-            <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+            <StatusBar barStyle="dark-content" backgroundColor="#fff" translucent={false} />
             <AppTabNavigator />
             </NavigationContainer>
           </LocationCompatibilityProvider>

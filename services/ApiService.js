@@ -848,6 +848,38 @@ class ApiService {
     }
   }
 
+  /**
+   * Check if an error is retryable
+   */
+  isRetryableError(error) {
+    // Network errors, timeouts, and temporary server errors are retryable
+    const retryableConditions = [
+      error.code === 'ENOTFOUND',
+      error.code === 'ECONNRESET',
+      error.code === 'ECONNREFUSED',
+      error.code === 'ETIMEDOUT',
+      error.message.includes('Network Error'),
+      error.message.includes('timeout'),
+      error.response?.status >= 500, // Server errors
+      error.response?.status === 429, // Rate limiting
+    ];
+
+    return retryableConditions.some(condition => condition);
+  }
+
+  /**
+   * Get default river data when API is unavailable
+   */
+  getDefaultRiverData() {
+    return {
+      river_discharge: 15.0, // Default discharge in m³/s
+      water_level: 2.5, // Default water level in meters
+      reservoir_level: 75.0, // Default reservoir level as percentage
+      timestamp: Date.now(),
+      source: 'default'
+    };
+  }
+
   // Cache Management
   async cacheData(key, data) {
     try {
@@ -1212,38 +1244,6 @@ class DatabaseService {
       console.error('Clear Data Error:', error);
       return false;
     }
-  }
-
-  /**
-   * Check if an error is retryable
-   */
-  isRetryableError(error) {
-    // Network errors, timeouts, and temporary server errors are retryable
-    const retryableConditions = [
-      error.code === 'ENOTFOUND',
-      error.code === 'ECONNRESET',
-      error.code === 'ECONNREFUSED',
-      error.code === 'ETIMEDOUT',
-      error.message.includes('Network Error'),
-      error.message.includes('timeout'),
-      error.response?.status >= 500, // Server errors
-      error.response?.status === 429, // Rate limiting
-    ];
-
-    return retryableConditions.some(condition => condition);
-  }
-
-  /**
-   * Get default river data when API is unavailable
-   */
-  getDefaultRiverData() {
-    return {
-      river_discharge: 15.0, // Default discharge in m³/s
-      water_level: 2.5, // Default water level in meters
-      reservoir_level: 75.0, // Default reservoir level as percentage
-      timestamp: Date.now(),
-      source: 'default'
-    };
   }
 }
 

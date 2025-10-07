@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Keyboard,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
@@ -32,8 +34,16 @@ export default function AddressSearchInput({
   const activeRequestRef = useRef(null);
   const searchCacheRef = useRef(new Map());
   const sessionTokenRef = useRef(null);
+  const isSelectingRef = useRef(false); // Prevent search during address selection
 
   useEffect(() => {
+    // Skip search if user is currently selecting an address
+    // This prevents the race condition where setSearchText triggers a new search
+    if (isSelectingRef.current) {
+      console.log('⏭️ Skipping search - address selection in progress');
+      return;
+    }
+
     // Simplified trigger: just need 3+ characters for faster response
     if (searchText.trim().length >= 3) {
       if (searchTimeoutRef.current) {
@@ -168,10 +178,28 @@ export default function AddressSearchInput({
       return;
     }
 
+    // Set flag BEFORE any state changes to prevent race condition
+    isSelectingRef.current = true;
+    console.log('📍 Address selection started - blocking new searches');
+
+    // Clear any pending search timeout immediately
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = null;
+    }
+
+    // Hide suggestions first to prevent flicker
+    setShowSuggestions(false);
     setIsLoading(true);
     setSelectedAddress(suggestion);
+
+    // Dismiss keyboard on iOS immediately for better UX
+    if (Platform.OS === 'ios') {
+      Keyboard.dismiss();
+    }
+
+    // Set search text (this won't trigger useEffect because isSelectingRef is true)
     setSearchText(suggestion.mainText);
-    setShowSuggestions(false);
 
     try {
       const placeDetails = await getPlaceDetails(suggestion.placeId);
@@ -201,6 +229,8 @@ export default function AddressSearchInput({
         if (onAddressSelected) {
           onAddressSelected(locationData);
         }
+
+        console.log('✅ Address selection completed successfully');
       } else {
         throw new Error('Unable to get place details');
       }
@@ -216,6 +246,11 @@ export default function AddressSearchInput({
       );
     } finally {
       setIsLoading(false);
+      // Reset selection flag after a small delay to ensure state updates complete
+      setTimeout(() => {
+        isSelectingRef.current = false;
+        console.log('🔓 Address selection complete - searches re-enabled');
+      }, 100);
     }
   };
 

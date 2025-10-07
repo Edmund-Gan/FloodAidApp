@@ -17,7 +17,8 @@ import MalaysiaStateService from '../services/MalaysiaStateService';
 const { width, height } = Dimensions.get('window');
 
 export default function FloodRiskMapView({ style, onStateSelected }) {
-  const [loading, setLoading] = useState(true);
+  const [mapLoading, setMapLoading] = useState(true);
+  const [riskDataLoading, setRiskDataLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statesData, setStatesData] = useState([]);
   const [selectedState, setSelectedState] = useState(null);
@@ -26,7 +27,11 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
   const mapRef = useRef(null);
 
   useEffect(() => {
-    loadMapData();
+    const loadData = async () => {
+      await loadMapGeometry();
+      await loadRiskData();
+    };
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -38,36 +43,58 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
     }
   }, [statesData, mapRegion]);
 
-  const loadMapData = async () => {
+  const loadMapGeometry = async () => {
     try {
-      setLoading(true);
+      setMapLoading(true);
       setError(null);
 
-      console.log('🗺️ Loading flood risk map data...');
+      console.log('🗺️ Loading map geometry...');
 
-      // Load Malaysia states with flood risk data
-      const states = await MalaysiaStateService.loadMalaysiaStates();
+      // Load Malaysia states (geometry only, skip risk calculation for faster loading)
+      const states = await MalaysiaStateService.loadMalaysiaStates(true);
 
       if (states && states.length > 0) {
         setStatesData(states);
         setMapRegion(MalaysiaStateService.getWestMalaysiaRegion());
-        console.log(`✅ Loaded ${states.length} states for flood risk map`);
-
-        // Log the risk data for verification
-        states.forEach(state => {
-          if (state.riskData) {
-            console.log(`📊 ${state.name}: ${(state.riskData.floodProbability * 100).toFixed(0)}% (${state.riskData.riskLevel})`);
-          }
-        });
+        console.log(`✅ Loaded ${states.length} states geometry`);
       } else {
         throw new Error('No state data available');
       }
 
     } catch (loadError) {
-      console.error('❌ Error loading map data:', loadError);
+      console.error('❌ Error loading map geometry:', loadError);
       setError('Unable to load flood risk map data');
     } finally {
-      setLoading(false);
+      setMapLoading(false);
+    }
+  };
+
+  const loadRiskData = async () => {
+    try {
+      setRiskDataLoading(true);
+
+      console.log('📊 Loading flood risk data...');
+
+      // Fetch fresh risk data for all states
+      await MalaysiaStateService.refreshAllStates();
+      const updatedStates = MalaysiaStateService.getAllStates();
+      setStatesData(updatedStates);
+
+      // Log the risk data for verification
+      updatedStates.forEach(state => {
+        if (state.riskData) {
+          console.log(`📊 ${state.name}: ${(state.riskData.floodProbability * 100).toFixed(0)}% (${state.riskData.riskLevel})`);
+        }
+      });
+
+      console.log('✅ Flood risk data loaded successfully');
+
+    } catch (riskError) {
+      console.error('⚠️ Error loading risk data:', riskError);
+      // Don't set error state - map is still usable with neutral colors
+      console.log('Map will display with neutral colors');
+    } finally {
+      setRiskDataLoading(false);
     }
   };
 
@@ -76,16 +103,8 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
       setRefreshing(true);
       console.log('🔄 Refreshing flood risk data...');
 
-      await MalaysiaStateService.refreshAllStates();
-      const updatedStates = MalaysiaStateService.getAllStates();
-      setStatesData(updatedStates);
-
-      // Log updated risk data for verification
-      updatedStates.forEach(state => {
-        if (state.riskData) {
-          console.log(`🔄 ${state.name}: ${(state.riskData.floodProbability * 100).toFixed(0)}% (${state.riskData.riskLevel}) - ${state.riskData.color}`);
-        }
-      });
+      // Only refresh risk data, not geometry
+      await loadRiskData();
 
       console.log('✅ Flood risk data refreshed successfully');
     } catch (refreshError) {
@@ -122,14 +141,17 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
   const getPolygonFillColor = (state) => {
     const opacity = 0.6;
 
+    // Show neutral gray while risk data is loading
+    if (riskDataLoading || !state.riskData) {
+      return 'rgba(200, 200, 200, 0.3)';
+    }
+
     // Ensure we always have a valid color, with fallback hierarchy
     let color = RISK_COLORS.Low; // Default fallback
 
     if (state.riskData?.color) {
       color = state.riskData.color;
-      console.log(`🎨 Map rendering ${state.name}: ${(state.riskData.floodProbability * 100).toFixed(0)}% risk, color: ${color}`);
     } else {
-      console.warn(`⚠️ No riskData for ${state.name}, using fallback color: ${color}`);
       // Assign different colors for visual debugging
       const fallbackColors = {
         'Kedah': RISK_COLORS.Moderate,
@@ -138,7 +160,6 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
         'Selangor': RISK_COLORS.High
       };
       color = fallbackColors[state.name] || RISK_COLORS.Low;
-      console.log(`🔧 Using fallback color for ${state.name}: ${color}`);
     }
 
     // Convert hex to rgba with error handling
@@ -153,7 +174,6 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
       const b = parseInt(hex.substr(4, 2), 16);
 
       const fillColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
-      console.log(`✅ Final fill color for ${state.name}: ${fillColor}`);
       return fillColor;
     } catch (error) {
       console.error(`❌ Color conversion error for ${state.name}:`, error);
@@ -214,8 +234,6 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
   };
 
   const validateAndFormatCoordinates = (polygon, stateName, polygonIndex) => {
-    console.log(`🔍 Processing coordinates for ${stateName} polygon ${polygonIndex}`);
-
     // The new AccurateGeoJSONProcessor returns coordinates directly as arrays of {latitude, longitude} objects
     let coordinates = polygon;
 
@@ -247,18 +265,6 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
     if (validCoordinates.length < 3) {
       console.warn(`⚠️ Too few valid coordinates for ${stateName} polygon ${polygonIndex}: got ${validCoordinates.length}, need at least 3`);
       return null;
-    }
-
-    console.log(`✅ Successfully validated ${validCoordinates.length} coordinates for ${stateName} polygon ${polygonIndex}`);
-
-    // Calculate and log polygon bounds for debugging
-    const bounds = calculatePolygonBounds(validCoordinates);
-    if (bounds) {
-      console.log(`📏 ${stateName} polygon bounds:`, {
-        center: `${bounds.center.latitude.toFixed(4)}, ${bounds.center.longitude.toFixed(4)}`,
-        span: `${bounds.span.latitudeDelta.toFixed(4)} x ${bounds.span.longitudeDelta.toFixed(4)}`,
-        range: `lat: ${bounds.minLat.toFixed(4)} to ${bounds.maxLat.toFixed(4)}, lon: ${bounds.minLon.toFixed(4)} to ${bounds.maxLon.toFixed(4)}`
-      });
     }
 
     return validCoordinates;
@@ -300,39 +306,25 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
       longitudeDelta: (overallBounds.maxLon - overallBounds.minLon) * 1.1
     };
 
-    console.log(`🗺️ Map coverage analysis for ${validStatesCount} valid states:`);
-    console.log(`📊 Current region:`, mapRegion);
-    console.log(`📊 Required region:`, requiredRegion);
-    console.log(`📊 All polygons bounds:`, {
-      range: `lat: ${overallBounds.minLat.toFixed(4)} to ${overallBounds.maxLat.toFixed(4)}, lon: ${overallBounds.minLon.toFixed(4)} to ${overallBounds.maxLon.toFixed(4)}`
-    });
-
     // Check if current region covers all polygons
     const regionCoverageOk = mapRegion.latitude - mapRegion.latitudeDelta/2 <= overallBounds.minLat &&
                             mapRegion.latitude + mapRegion.latitudeDelta/2 >= overallBounds.maxLat &&
                             mapRegion.longitude - mapRegion.longitudeDelta/2 <= overallBounds.minLon &&
                             mapRegion.longitude + mapRegion.longitudeDelta/2 >= overallBounds.maxLon;
 
-    if (regionCoverageOk) {
-      console.log(`✅ Map region properly covers all polygon boundaries`);
-    } else {
-      console.warn(`⚠️ Map region may not fully cover all polygon boundaries`);
+    if (!regionCoverageOk) {
+      console.warn(`⚠️ Map region may not fully cover all polygon boundaries for ${validStatesCount} states`);
     }
   };
 
   const renderStatePolygons = () => {
-    console.log(`🗺️ Rendering polygons for ${statesData.length} states`);
-
     return statesData.map((state, index) => {
-      console.log(`🏛️ Processing state: ${state.name}, coordinates available: ${!!state.coordinates}`);
-
       if (!state.coordinates || !Array.isArray(state.coordinates)) {
         console.warn(`⚠️ No coordinates data for state: ${state.name}, using fallback square`);
 
         // Use fallback coordinates as last resort
         const fallbackCoords = generateFallbackCoordinates(state);
         if (fallbackCoords) {
-          console.log(`🟪 Using fallback 0.4° square for ${state.name}`);
           return (
             <Polygon
               key={`${state.id}_fallback`}
@@ -348,11 +340,8 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
         return null;
       }
 
-      console.log(`📐 State ${state.name} has ${state.coordinates.length} coordinate arrays`);
-
       // Handle multiple polygons per state (for islands, etc.)
       const polygons = state.coordinates.map((polygon, polygonIndex) => {
-        console.log(`🔄 Processing polygon ${polygonIndex} for ${state.name}`);
         const coordinates = validateAndFormatCoordinates(polygon, state.name, polygonIndex);
 
         if (!coordinates) {
@@ -360,13 +349,9 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
           return null;
         }
 
-        console.log(`✅ Successfully created polygon for ${state.name} with ${coordinates.length} points`);
-
         // Get the colors for this polygon
         const fillColor = getPolygonFillColor(state);
         const strokeColor = getPolygonStrokeColor(state);
-
-        console.log(`🖌️ Polygon ${polygonIndex} for ${state.name} - Fill: ${fillColor}, Stroke: ${strokeColor}`);
 
         return (
           <Polygon
@@ -383,10 +368,9 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
 
       // If no valid polygons, use fallback (should rarely happen now)
       if (polygons.length === 0) {
-        console.warn(`⚠️ All polygons invalid for ${state.name}, using fallback square (this should be rare)`);
+        console.warn(`⚠️ All polygons invalid for ${state.name}, using fallback square`);
         const fallbackCoords = generateFallbackCoordinates(state);
         if (fallbackCoords) {
-          console.log(`🟪 Final fallback square for ${state.name}`);
           return (
             <Polygon
               key={`${state.id}_fallback`}
@@ -401,25 +385,36 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
         }
       }
 
-      console.log(`✅ State ${state.name} rendered ${polygons.length} valid polygons`);
       return polygons;
     }).filter(statePolygons => statePolygons !== null); // Remove any null state polygon sets
   };
 
   const renderStateMarkers = () => {
-    return statesData.map((state) => (
-      <Marker
-        key={`marker_${state.id}`}
-        coordinate={state.center}
-        onPress={() => handleStatePress(state)}
-      >
-        <View style={[styles.markerContainer, { backgroundColor: state.riskData.color }]}>
-          <Text style={styles.markerText}>
-            {Math.round(state.riskData.floodProbability * 100)}%
-          </Text>
-        </View>
-      </Marker>
-    ));
+    return statesData.map((state) => {
+      // Handle null riskData or N/A states
+      const isNA = !state.riskData ||
+                   state.riskData?.isNA ||
+                   state.riskData?.floodProbability === null;
+
+      const displayText = isNA ? 'N/A' : `${Math.round(state.riskData.floodProbability * 100)}%`;
+
+      // Use gray color when riskData is null (loading state)
+      const markerColor = state.riskData?.color || '#CCCCCC';
+
+      return (
+        <Marker
+          key={`marker_${state.id}`}
+          coordinate={state.center}
+          onPress={() => handleStatePress(state)}
+        >
+          <View style={[styles.markerContainer, { backgroundColor: markerColor }]}>
+            <Text style={styles.markerText}>
+              {displayText}
+            </Text>
+          </View>
+        </Marker>
+      );
+    });
   };
 
   const renderRiskLegend = () => (
@@ -449,11 +444,11 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
   );
 
 
-  if (loading) {
+  if (mapLoading) {
     return (
       <View style={[styles.container, styles.centered, style]}>
         <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-        <Text style={styles.loadingText}>Loading flood risk map...</Text>
+        <Text style={styles.loadingText}>Loading map geometry...</Text>
       </View>
     );
   }
@@ -510,6 +505,13 @@ export default function FloodRiskMapView({ style, onStateSelected }) {
         </MapView>
 
         {renderRiskLegend()}
+
+        {riskDataLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+            <Text style={styles.overlayText}>Calculating flood risk...</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -621,5 +623,26 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: COLORS.TEXT_ON_PRIMARY,
     fontWeight: '600'
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  overlayText: {
+    fontSize: 12,
+    color: COLORS.TEXT_PRIMARY,
+    marginLeft: 8,
+    fontWeight: '500'
   }
 });

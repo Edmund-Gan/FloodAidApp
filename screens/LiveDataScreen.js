@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { UserContext } from '../context/UserContext';
 import { COLORS } from '../utils/constants';
 import RealTimeWeatherService from '../services/RealTimeWeatherService';
@@ -219,8 +219,8 @@ export default function LiveDataScreen() {
   };
 
   // Visual forecast components
-  const renderPrecipitationBar = (amount) => {
-    // Don't show bars for dry days
+  const renderWaterDropIndicator = (amount) => {
+    // Don't show drops for dry days
     if (amount === 0) {
       return (
         <View style={styles.precipitationBarContainer}>
@@ -229,21 +229,26 @@ export default function LiveDataScreen() {
       );
     }
 
-    const segments = getPrecipitationSegments(amount);
-    const barColor = getPrecipitationBarColor(amount);
+    const filledDrops = getWaterDropsFilled(amount);
+    const totalDrops = 5;
 
     return (
       <View style={styles.precipitationBarContainer}>
-        <View style={styles.precipitationBar}>
-          {segments.map((filled, index) => (
-            <View
-              key={index}
-              style={[
-                styles.precipitationSegment,
-                { backgroundColor: filled ? barColor : '#E0E0E0' }
-              ]}
-            />
-          ))}
+        <View style={styles.waterDropRow}>
+          {[...Array(totalDrops)].map((_, index) => {
+            const isFilled = index < filledDrops;
+            const dropColor = isFilled ? getWaterDropColor(amount, index) : '#E0E0E0';
+
+            return (
+              <Ionicons
+                key={index}
+                name={isFilled ? "water" : "water-outline"}
+                size={14}
+                color={dropColor}
+                style={styles.waterDrop}
+              />
+            );
+          })}
         </View>
         <Text style={styles.precipitationAmount}>{amount}mm</Text>
       </View>
@@ -315,11 +320,14 @@ export default function LiveDataScreen() {
     return 'rainy-outline'; // Light/Drizzle
   };
 
-  const getPrecipitationSegments = (amount) => {
-    const segments = 5;
-    const maxPerSegment = 10; // 10mm per segment
-    const filledSegments = Math.min(segments, Math.ceil(amount / maxPerSegment));
-    return Array(segments).fill(false).map((_, i) => i < filledSegments);
+  const getWaterDropsFilled = (amount) => {
+    // 0-10mm = 1 drop, 11-20mm = 2 drops, 21-30mm = 3 drops, 31-40mm = 4 drops, 40mm+ = 5 drops
+    if (amount <= 0) return 0;
+    if (amount <= 10) return 1;
+    if (amount <= 20) return 2;
+    if (amount <= 30) return 3;
+    if (amount <= 40) return 4;
+    return 5; // 40mm+
   };
 
   const getProbabilityLabel = (probability) => {
@@ -348,11 +356,32 @@ export default function LiveDataScreen() {
     };
   };
 
-  const getPrecipitationBarColor = (amount) => {
-    if (amount >= 20) return '#1565C0'; // Heavy rain - darkest blue
-    if (amount >= 10) return '#1E88E5'; // Moderate rain - darker blue
-    if (amount > 0) return '#42A5F5';   // Light rain - medium blue
-    return '#E3F2FD'; // No rain - very light blue
+  const getWaterDropColor = (amount, index) => {
+    // Color gradient based on rain intensity
+    // Light rain (1-10mm): Light blue
+    // Moderate rain (11-20mm): Medium blue, gradient
+    // Heavy rain (21-30mm): Darker blue, stronger gradient
+    // Very heavy (31-40mm): Dark blue
+    // Extreme (40mm+): Darkest blue
+
+    if (amount <= 10) return '#42A5F5'; // Light blue for all drops
+    if (amount <= 20) {
+      // Gradient from light to medium blue
+      return index === 0 ? '#42A5F5' : '#1E88E5';
+    }
+    if (amount <= 30) {
+      // Gradient from medium to dark blue
+      const colors = ['#42A5F5', '#1E88E5', '#1976D2'];
+      return colors[Math.min(index, 2)];
+    }
+    if (amount <= 40) {
+      // Gradient to darker blue
+      const colors = ['#1E88E5', '#1976D2', '#1565C0', '#1565C0'];
+      return colors[Math.min(index, 3)];
+    }
+    // Extreme rain - darkest blue with gradient
+    const colors = ['#1976D2', '#1565C0', '#0D47A1', '#0D47A1', '#0D47A1'];
+    return colors[Math.min(index, 4)];
   };
 
   // Calculate proper bottom padding to account for tab bar and safe area
@@ -362,17 +391,18 @@ export default function LiveDataScreen() {
   ];
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={scrollContentStyle}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor={COLORS.PRIMARY}
-        />
-      }
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.BACKGROUND }} edges={['top']}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={scrollContentStyle}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.PRIMARY}
+          />
+        }
+      >
       <View style={styles.headerRow}>
         <View style={styles.headingContainer}>
           <Text style={styles.pageTitle}>Live Weather Dashboard</Text>
@@ -538,7 +568,7 @@ export default function LiveDataScreen() {
                                 />
                               </View>
                               <View style={styles.forecastPrecipSection}>
-                                {renderPrecipitationBar(day.precipitation)}
+                                {renderWaterDropIndicator(day.precipitation)}
                               </View>
                               <View style={styles.forecastProbabilitySection}>
                                 {renderProbabilityBadge(day.probability)}
@@ -580,7 +610,7 @@ export default function LiveDataScreen() {
                                 />
                               </View>
                               <View style={styles.compactPrecipSection}>
-                                {renderPrecipitationBar(day.precipitation)}
+                                {renderWaterDropIndicator(day.precipitation)}
                               </View>
                               <View style={styles.compactProbabilitySection}>
                                 {renderProbabilityBadge(day.probability)}
@@ -634,6 +664,7 @@ export default function LiveDataScreen() {
         </>
       ) : null}
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -641,7 +672,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.BACKGROUND,
-    paddingTop: 50,
   },
   scrollContent: {
     paddingBottom: 40,
@@ -927,7 +957,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderBottomColor: '#E0E0E0',
     borderBottomWidth: 1,
   },
@@ -1037,6 +1067,15 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
   },
+  waterDropRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  waterDrop: {
+    marginHorizontal: 1,
+  },
   probabilityBadge: {
     width: 30,
     height: 30,
@@ -1092,11 +1131,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   forecastPrecipSection: {
-    flex: 3,
+    flex: 2.5,
     alignItems: 'center',
   },
   forecastProbabilitySection: {
-    flex: 1,
+    flex: 1.2,
     alignItems: 'center',
   },
   precipitationAmount: {
@@ -1119,11 +1158,12 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_SECONDARY,
   },
   probabilityLabel: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
-    minWidth: 70,
+    minWidth: 50,
+    maxWidth: 80,
     alignItems: 'center',
   },
   // Dry day layouts
@@ -1164,12 +1204,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    gap: 16,
+    gap: 10,
   },
   rainyDayCompact: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    gap: 12,
+    gap: 8,
   },
 });

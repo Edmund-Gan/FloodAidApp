@@ -873,24 +873,39 @@ class EmbeddedMLService {
       case 'is_december': return month === 12 ? { title: "Peak Northeast Monsoon", description: "December historically shows highest flood activity" } : { title: "December pattern influence", description: "Peak monsoon season patterns" };
       
       default:
-        // Generic fallback for any unmapped features
+        // Smart fallback with pattern-based descriptions for unmapped features
         const readableName = featureName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        if (isHighContribution) {
-          return {
-            title: readableName,
-            description: "Major contributing factor to current flood risk assessment"
-          };
-        } else if (isMediumContribution) {
-          return {
-            title: readableName,
-            description: "Contributing factor in flood risk calculation"
-          };
+
+        // Determine category-specific description based on feature name patterns
+        let categoryDescription = "";
+        if (featureName.includes('temp') || featureName.includes('temperature')) {
+          categoryDescription = "Temperature patterns affect atmospheric conditions and rainfall intensity";
+        } else if (featureName.includes('wind')) {
+          categoryDescription = "Wind conditions influence storm movement and precipitation patterns";
+        } else if (featureName.includes('rain') || featureName.includes('precip')) {
+          categoryDescription = "Rainfall measurements directly impact flood development in your area";
+        } else if (featureName.includes('monsoon')) {
+          categoryDescription = "Monsoon patterns significantly affect seasonal flood risk";
+        } else if (featureName.includes('river') || featureName.includes('discharge')) {
+          categoryDescription = "Water levels affect drainage capacity and flood potential";
+        } else if (featureName.includes('elevation') || featureName.includes('altitude')) {
+          categoryDescription = "Ground elevation affects how quickly water accumulates";
+        } else if (featureName.includes('humidity') || featureName.includes('moisture')) {
+          categoryDescription = "Atmospheric moisture levels influence rainfall development";
+        } else if (featureName.includes('pressure')) {
+          categoryDescription = "Atmospheric pressure affects weather system stability";
         } else {
-          return {
-            title: readableName,
-            description: "Minor influence on flood prediction"
-          };
+          categoryDescription = isHighContribution
+            ? "Major contributing factor to current flood risk assessment"
+            : isMediumContribution
+            ? "Contributing factor in flood risk calculation"
+            : "Minor influence on flood prediction";
         }
+
+        return {
+          title: readableName,
+          description: categoryDescription
+        };
     }
   }
 
@@ -1145,8 +1160,41 @@ class EmbeddedMLService {
         if (value > 100) return `Elevated location at ${Math.round(value)}m provides natural protection`;
         return `Low elevation of ${Math.round(value)}m increases vulnerability`;
 
+      case 'rain_sum':
+        if (value > 30) return `Heavy rain (${value}mm) significantly increases flood risk`;
+        if (value > 10) return `Moderate rain (${value}mm) elevates flood potential`;
+        return `Light rain (${value}mm) poses minimal flood threat`;
+
+      case 'wind_speed_max':
+        if (value > 40) return `Very strong winds (${Math.round(value)} km/h) intensify storm conditions`;
+        if (value > 20) return `Strong winds (${Math.round(value)} km/h) may worsen weather systems`;
+        return `Calm winds (${Math.round(value)} km/h) indicate stable conditions`;
+
+      case 'river_discharge':
+        if (value > 5) return `High river levels (${value.toFixed(1)} m³/s) significantly increase flood risk`;
+        if (value > 2) return `Elevated river discharge (${value.toFixed(1)} m³/s) raises flood potential`;
+        return `Normal river levels (${value.toFixed(1)} m³/s) pose minimal threat`;
+
+      case 'monsoon_intensity':
+        if (value > 0.6) return `Very intense monsoon (${Math.round(value * 100)}%) brings severe flood risk`;
+        if (value > 0.3) return `Active monsoon (${Math.round(value * 100)}%) increases flood likelihood`;
+        return `Weak monsoon (${Math.round(value * 100)}%) reduces flood risk`;
+
       default:
-        return `${this.getReadableFeatureName(featureName)} contributing to flood risk assessment`;
+        // More specific fallback based on feature name patterns
+        if (featureName.includes('temp')) {
+          return `Temperature conditions (${value}°C) affect atmospheric stability and rainfall patterns`;
+        } else if (featureName.includes('wind')) {
+          return `Wind patterns affect storm system movement and intensity`;
+        } else if (featureName.includes('precipitation') || featureName.includes('rain')) {
+          return `Rainfall patterns influence flood development in your area`;
+        } else if (featureName.includes('monsoon')) {
+          return `Seasonal monsoon patterns significantly impact regional flood risk`;
+        } else if (featureName.includes('river')) {
+          return `Waterway conditions affect flood risk through drainage capacity`;
+        } else {
+          return `Environmental conditions affect overall flood risk assessment`;
+        }
     }
   }
 

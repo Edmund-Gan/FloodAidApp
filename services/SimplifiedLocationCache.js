@@ -10,6 +10,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorageHelper from '../utils/AsyncStorageHelper';
 
 class SimplifiedLocationCache {
   static memoryCache = new Map();
@@ -82,9 +83,16 @@ class SimplifiedLocationCache {
     this.memoryCache.set('gps_current', cacheEntry);
     this.lastCacheTime = Date.now();
 
-    // Store in AsyncStorage
+    // Store in AsyncStorage with AsyncStorageHelper for iOS reliability
     try {
-      await AsyncStorage.setItem('gps_location_cache', JSON.stringify(cacheEntry));
+      await AsyncStorageHelper.setItem(
+        'gps_location_cache',
+        JSON.stringify(cacheEntry),
+        {
+          priority: 'high', // GPS location is critical
+          verify: true // Verify write on iOS
+        }
+      );
 
       const malaysiaInfo = this._validateMalaysiaLocation(location.latitude, location.longitude);
       console.log(`📦 GPS location cached: ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)} ${malaysiaInfo.inMalaysia ? '🇲🇾' : '🌏'}`);
@@ -96,7 +104,16 @@ class SimplifiedLocationCache {
       return true;
     } catch (error) {
       console.error('❌ Failed to cache GPS location:', error);
-      return false;
+
+      // Fallback to direct AsyncStorage
+      try {
+        await AsyncStorage.setItem('gps_location_cache', JSON.stringify(cacheEntry));
+        console.log('✅ GPS location cached via fallback');
+        return true;
+      } catch (fallbackError) {
+        console.error('❌ Fallback GPS cache also failed:', fallbackError);
+        return false;
+      }
     }
   }
 
@@ -115,12 +132,28 @@ class SimplifiedLocationCache {
     this.manualLocationCache.set('manual_current', cacheEntry);
 
     try {
-      await AsyncStorage.setItem('manual_location_cache', JSON.stringify(cacheEntry));
+      await AsyncStorageHelper.setItem(
+        'manual_location_cache',
+        JSON.stringify(cacheEntry),
+        {
+          priority: 'high', // Manual selection is important
+          verify: true // Verify write on iOS
+        }
+      );
       console.log(`📍 Manual location cached: ${location.address || `${location.latitude}, ${location.longitude}`}`);
       return true;
     } catch (error) {
       console.error('❌ Failed to cache manual location:', error);
-      return false;
+
+      // Fallback to direct AsyncStorage
+      try {
+        await AsyncStorage.setItem('manual_location_cache', JSON.stringify(cacheEntry));
+        console.log('✅ Manual location cached via fallback');
+        return true;
+      } catch (fallbackError) {
+        console.error('❌ Fallback manual cache also failed:', fallbackError);
+        return false;
+      }
     }
   }
 
