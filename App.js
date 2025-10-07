@@ -44,6 +44,7 @@ import { notificationService } from './utils/NotificationService';
 import EmergencyKit from './components/EmergencyKit';
 import PreparationGuidelines from './components/PreparationGuidelines';
 import EmergencyContacts from './components/EmergencyContacts';
+import FloodRecoveryPlan from './components/FloodRecoveryPlan';
 import LocationSelector from './components/LocationSelector';
 
 // Import FloodHotspotsScreen for Epic 3 - Using CSV data version
@@ -60,6 +61,7 @@ import { UserProvider } from './context/UserContext';
 // Import emergency data
 const emergencyKitData = require('./emergency_kit.json');
 const emergencyContactsData = require('./emergency_contact.json');
+const floodRecoveryGuideData = require('./flood_recovery_guide.json');
 
 const { width, height } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
@@ -1417,6 +1419,8 @@ function HomeScreen() {
         monitoredLocations={monitoredLocations}
         currentLocationInfo={locationInfo}
       />
+
+      <FloodRecoveryPlan recoveryGuideData={floodRecoveryGuideData} />
 
       <TouchableOpacity
         style={styles.primaryButton}
