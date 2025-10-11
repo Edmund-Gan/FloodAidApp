@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import {
   View,
   Text,
@@ -631,6 +631,20 @@ const EmergencyContacts = ({
     displayLocationName = selectedLocation ? selectedLocation.name : 'Current Location';
   }
 
+  // Memoize origin and destination to prevent infinite loop in FloodSafeRouteViewer
+  const memoizedOrigin = useMemo(() => ({
+    latitude: userLocation?.latitude || contextLocation?.latitude || 0,
+    longitude: userLocation?.longitude || contextLocation?.longitude || 0,
+  }), [userLocation?.latitude, userLocation?.longitude, contextLocation?.latitude, contextLocation?.longitude]);
+
+  const memoizedDestination = useMemo(() => {
+    if (!selectedPlaceForRoute) return null;
+    return {
+      lat: selectedPlaceForRoute.geometry.location.lat,
+      lng: selectedPlaceForRoute.geometry.location.lng,
+    };
+  }, [selectedPlaceForRoute?.geometry?.location?.lat, selectedPlaceForRoute?.geometry?.location?.lng]);
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -806,21 +820,15 @@ const EmergencyContacts = ({
         selectedState={selectedState}
       />
 
-      {selectedPlaceForRoute && (
+      {selectedPlaceForRoute && memoizedDestination && (
         <FloodSafeRouteViewer
           visible={routeViewerVisible}
           onClose={() => {
             setRouteViewerVisible(false);
             setSelectedPlaceForRoute(null);
           }}
-          origin={{
-            latitude: userLocation?.latitude || contextLocation?.latitude || 0,
-            longitude: userLocation?.longitude || contextLocation?.longitude || 0,
-          }}
-          destination={{
-            lat: selectedPlaceForRoute.geometry.location.lat,
-            lng: selectedPlaceForRoute.geometry.location.lng,
-          }}
+          origin={memoizedOrigin}
+          destination={memoizedDestination}
           destinationName={selectedPlaceForRoute.name}
           state={detectedState}
         />

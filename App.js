@@ -166,6 +166,130 @@ const getFactorDisplayLimits = (floodProbability) => {
   }
 };
 
+// Helper function to get factor color and icon based on impact and direction
+const getFactorVisualProps = (factor) => {
+  // Handle string factors (legacy format)
+  if (typeof factor === 'string') {
+    // Parse impact level from string (e.g., "High impact: ...")
+    const impactMatch = factor.match(/^(High|Medium|Low) impact:/i);
+    const impactLevel = impactMatch ? impactMatch[1] : 'Medium';
+
+    // Check if string contains protective keywords
+    const lowerFactor = factor.toLowerCase();
+    const isProtective =
+      lowerFactor.includes('good') ||
+      lowerFactor.includes('safe') ||
+      lowerFactor.includes('normal') ||
+      lowerFactor.includes('stable') ||
+      lowerFactor.includes('capacity remaining') ||
+      lowerFactor.includes('within') && lowerFactor.includes('limits') ||
+      lowerFactor.includes('no risk') ||
+      lowerFactor.includes('low risk') ||
+      lowerFactor.includes('minimal') ||
+      lowerFactor.includes('only') && lowerFactor.includes('mm') ||
+      lowerFactor.includes('well within') ||
+      lowerFactor.includes('not at risk') ||
+      lowerFactor.includes('can handle more');
+
+    if (isProtective) {
+      return {
+        color: impactLevel === 'High' ? '#4CAF50' : impactLevel === 'Medium' ? '#66BB6A' : '#81C784',
+        icon: impactLevel === 'High' ? 'shield-checkmark-outline' : 'checkmark-circle-outline',
+        impactLevel: impactLevel,
+        isProtective: true
+      };
+    }
+
+    // Risk-increasing for string factors
+    return {
+      color: impactLevel === 'High' ? '#F44336' : impactLevel === 'Medium' ? '#FF9800' : '#FFC107',
+      icon: impactLevel === 'High' ? 'alert-circle-outline' : 'warning-outline',
+      impactLevel: impactLevel,
+      isProtective: false
+    };
+  }
+
+  // Handle structured factor objects
+  const impactLevel = factor.impact_level || 'Medium';
+  const riskDirection = factor.risk_direction || 'Increases';
+
+  // Get feature text for additional checking
+  const featureTitle = (factor.feature?.title || '').toLowerCase();
+  const featureDesc = (factor.feature?.description || '').toLowerCase();
+  const combinedText = `${featureTitle} ${featureDesc} ${riskDirection}`.toLowerCase();
+
+  // Comprehensive protective factor detection
+  const isProtective =
+    // Check risk_direction field
+    riskDirection.toLowerCase().includes('decrease') ||
+    riskDirection.toLowerCase().includes('protect') ||
+    riskDirection.toLowerCase().includes('reduc') ||
+    riskDirection.toLowerCase().includes('mitigat') ||
+    // Check for positive safety indicators
+    combinedText.includes('good') ||
+    combinedText.includes('safe') ||
+    combinedText.includes('normal') ||
+    combinedText.includes('stable') ||
+    combinedText.includes('capacity remaining') ||
+    (combinedText.includes('within') && combinedText.includes('limit')) ||
+    combinedText.includes('no risk') ||
+    combinedText.includes('low risk') ||
+    combinedText.includes('minimal') ||
+    (combinedText.includes('only') && combinedText.includes('mm')) ||
+    combinedText.includes('well within') ||
+    combinedText.includes('not at risk') ||
+    combinedText.includes('can handle') ||
+    combinedText.includes('no flood') ||
+    combinedText.includes('no warning') ||
+    combinedText.includes('below threshold') ||
+    combinedText.includes('light') ||
+    combinedText.includes('calm') ||
+    combinedText.includes('dry');
+
+  let color, icon;
+
+  if (isProtective) {
+    // Green spectrum for protective factors
+    switch (impactLevel) {
+      case 'High':
+        color = '#4CAF50'; // Strong green
+        icon = 'shield-checkmark-outline';
+        break;
+      case 'Medium':
+        color = '#66BB6A'; // Medium green
+        icon = 'checkmark-circle-outline';
+        break;
+      case 'Low':
+        color = '#81C784'; // Light green
+        icon = 'checkmark-outline';
+        break;
+      default:
+        color = '#66BB6A';
+        icon = 'checkmark-circle-outline';
+    }
+  } else {
+    // Red/Orange spectrum for risk-increasing factors
+    switch (impactLevel) {
+      case 'High':
+        color = '#F44336'; // Red
+        icon = 'alert-circle-outline';
+        break;
+      case 'Medium':
+        color = '#FF9800'; // Orange
+        icon = 'warning-outline';
+        break;
+      case 'Low':
+        color = '#FFC107'; // Amber
+        icon = 'information-circle-outline';
+        break;
+      default:
+        color = '#FF9800';
+        icon = 'warning-outline';
+    }
+  }
+
+  return { color, icon, impactLevel, isProtective };
+};
 
 // Detailed Flood Prediction Modal Component
 function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose }) {
@@ -261,14 +385,24 @@ function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose 
           (prediction.contributing_factors?.structured && prediction.contributing_factors.legacy_text ?
             prediction.contributing_factors.legacy_text :
             (Array.isArray(prediction.contributing_factors) ? prediction.contributing_factors : [])
-          ).map((factor, index) => (
-            <View key={index} style={styles.factorDetailItem}>
-              <Ionicons name="warning-outline" size={20} color="#FF9800" />
-              <Text style={styles.factorDetailText}>
-                {typeof factor === 'string' ? factor : factor?.feature?.title || 'Unknown factor'}
-              </Text>
-            </View>
-          ))
+          ).map((factor, index) => {
+            // Get color and icon based on factor impact and direction
+            const visualProps = getFactorVisualProps(factor);
+            const factorText = typeof factor === 'string'
+              ? factor
+              : (factor?.feature?.title && factor?.feature?.description
+                  ? `${factor.impact_level} impact: ${factor.feature.title} - ${factor.feature.description}`
+                  : factor?.feature?.title || 'Unknown factor');
+
+            return (
+              <View key={index} style={styles.factorDetailItem}>
+                <Ionicons name={visualProps.icon} size={20} color={visualProps.color} />
+                <Text style={[styles.factorDetailText, { color: visualProps.color }]}>
+                  {factorText}
+                </Text>
+              </View>
+            );
+          })
         )}
       </View>
 
@@ -277,20 +411,30 @@ function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose 
           <Text style={styles.detailSectionTitle}>Risk Indicators</Text>
           <View style={styles.indicatorGrid}>
             <View style={styles.indicatorItem}>
-              <Ionicons 
-                name={prediction.risk_indicators.heavy_rain_warning ? "warning" : "checkmark-circle"} 
-                size={24} 
-                color={prediction.risk_indicators.heavy_rain_warning ? "#FF9800" : "#4CAF50"} 
+              <Ionicons
+                name={prediction.risk_indicators.heavy_rain_warning ? "warning" : "checkmark-circle"}
+                size={24}
+                color={prediction.risk_indicators.heavy_rain_warning ? "#FF9800" : "#4CAF50"}
               />
-              <Text style={styles.indicatorText}>Heavy Rain</Text>
+              <Text style={[
+                styles.indicatorText,
+                { color: prediction.risk_indicators.heavy_rain_warning ? "#FF9800" : "#4CAF50" }
+              ]}>
+                {prediction.risk_indicators.heavy_rain_warning ? "Heavy Rain Detected" : "No Heavy Rain"}
+              </Text>
             </View>
             <View style={styles.indicatorItem}>
-              <Ionicons 
-                name={prediction.risk_indicators.high_humidity_warning ? "warning" : "checkmark-circle"} 
-                size={24} 
-                color={prediction.risk_indicators.high_humidity_warning ? "#FF9800" : "#4CAF50"} 
+              <Ionicons
+                name={prediction.risk_indicators.high_humidity_warning ? "warning" : "checkmark-circle"}
+                size={24}
+                color={prediction.risk_indicators.high_humidity_warning ? "#FF9800" : "#4CAF50"}
               />
-              <Text style={styles.indicatorText}>High Humidity</Text>
+              <Text style={[
+                styles.indicatorText,
+                { color: prediction.risk_indicators.high_humidity_warning ? "#FF9800" : "#4CAF50" }
+              ]}>
+                {prediction.risk_indicators.high_humidity_warning ? "High Humidity Detected" : "Normal Humidity"}
+              </Text>
             </View>
           </View>
         </View>

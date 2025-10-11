@@ -79,7 +79,8 @@
       "WebFetch(domain:ask.openrouteservice.org)",
       "WebFetch(domain:account.heigit.org)",
       "Bash(curl -s -I \"https://floodaid-backend-497410110873.asia-southeast1.run.app/api/health\")",
-      "Bash(curl -s \"https://floodaid-backend-497410110873.asia-southeast1.run.app/api/health\")"
+      "Bash(curl -s \"https://floodaid-backend-497410110873.asia-southeast1.run.app/api/health\")",
+      "Bash(unzip:*)"
     ],
     "deny": [],
     "ask": []

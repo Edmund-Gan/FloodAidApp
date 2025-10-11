@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DeveloperMode from './DeveloperMode';
 import LocationDebugSettings from './LocationDebugSettings';
 import { COLORS } from '../utils/constants';
+import { isDeveloperModeEnabled } from '../config/DeveloperSettings';
 
 /**
  * DEVELOPER MODE INTEGRATION
@@ -19,8 +20,8 @@ const DeveloperModeButton = ({ onAlertGenerated }) => {
   const [showDeveloperMode, setShowDeveloperMode] = useState(false);
   const [showLocationDebug, setShowLocationDebug] = useState(false);
 
-  // Only show in development builds
-  if (!__DEV__) {
+  // Only show when developer mode is enabled (platform-specific)
+  if (!isDeveloperModeEnabled()) {
     return null;
   }
 

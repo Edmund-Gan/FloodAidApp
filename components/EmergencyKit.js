@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import {
   View,
   Text,
@@ -567,6 +567,20 @@ const EmergencyKit = ({ emergencyKitData }) => {
     );
   };
 
+  // Memoize origin and destination to prevent infinite loop in FloodSafeRouteViewer
+  const memoizedOrigin = useMemo(() => ({
+    latitude: currentLocation?.latitude || 0,
+    longitude: currentLocation?.longitude || 0,
+  }), [currentLocation?.latitude, currentLocation?.longitude]);
+
+  const memoizedDestination = useMemo(() => {
+    if (!selectedStoreForRoute) return null;
+    return {
+      lat: selectedStoreForRoute.location.lat,
+      lng: selectedStoreForRoute.location.lng,
+    };
+  }, [selectedStoreForRoute?.location.lat, selectedStoreForRoute?.location.lng]);
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -792,21 +806,15 @@ const EmergencyKit = ({ emergencyKitData }) => {
       </Modal>
 
       {/* Flood-Safe Route Viewer */}
-      {selectedStoreForRoute && (
+      {selectedStoreForRoute && memoizedDestination && (
         <FloodSafeRouteViewer
           visible={routeViewerVisible}
           onClose={() => {
             setRouteViewerVisible(false);
             setSelectedStoreForRoute(null);
           }}
-          origin={{
-            latitude: currentLocation?.latitude || 0,
-            longitude: currentLocation?.longitude || 0,
-          }}
-          destination={{
-            lat: selectedStoreForRoute.location.lat,
-            lng: selectedStoreForRoute.location.lng,
-          }}
+          origin={memoizedOrigin}
+          destination={memoizedDestination}
           destinationName={selectedStoreForRoute.name}
           state={userProfile.emergencyPreferences?.selectedState}
         />

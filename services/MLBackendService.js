@@ -6,65 +6,38 @@
 
 import Constants from 'expo-constants';
 
-// Backend configuration
-const isDevelopment = __DEV__;
-
 // Backend URL configuration
-// IMPORTANT: iOS always uses production HTTPS URL to avoid App Transport Security (ATS) issues
-// iOS blocks insecure HTTP connections by default, even to localhost
-//
-// URL Strategy:
-// - iOS (all modes): Always uses production HTTPS (bypasses ATS restrictions)
-// - Android dev: Uses http://10.0.2.2:5001 (emulator localhost equivalent)
-// - Android prod: Uses production HTTPS
-// - Physical devices: Can use ngrok tunnel (HTTPS) for local testing
+// All platforms (iOS and Android, dev and prod) use the same production URL
+// This ensures consistent behavior across all environments
 const BACKEND_CONFIG = {
-  // iOS - NOT USED (iOS always forced to production to bypass ATS)
-  ios: 'http://localhost:5001',
-
-  // Android Emulator uses 10.0.2.2 instead of localhost
-  android: 'http://10.0.2.2:5001',
-
-  // Production (Google Cloud Run deployment)
+  // Production backend (Google Cloud Run deployment)
   production: 'https://floodaid-backend-497410110873.asia-southeast1.run.app',
 
-  // Ngrok tunnel (for testing on physical devices with HTTPS)
-  ngrok: null  // Set this when using ngrok: 'https://your-subdomain.ngrok.io'
+  // Optional: Ngrok tunnel URL for local backend testing
+  // Set this when using ngrok: 'https://your-subdomain.ngrok.io'
+  ngrok: null
 };
 
 /**
- * Get the appropriate backend URL based on environment
+ * Get the backend URL
+ * Returns production URL unless ngrok is configured for local testing
  */
 const getBackendURL = () => {
-  // If ngrok URL is set, use it (for testing on physical devices)
+  // If ngrok URL is set, use it (for local backend testing)
   if (BACKEND_CONFIG.ngrok) {
+    console.log('🌐 Using ngrok tunnel for local testing');
     return BACKEND_CONFIG.ngrok;
   }
 
-  // iOS ALWAYS uses production HTTPS to avoid App Transport Security (ATS) issues
-  // iOS blocks insecure HTTP connections to localhost by default
-  const isIOS = Constants.platform?.ios;
-  if (isIOS) {
-    console.log('🍎 iOS detected - forcing production HTTPS URL to bypass ATS restrictions');
-    return BACKEND_CONFIG.production;
-  }
-
-  // Production mode for other platforms
-  if (!isDevelopment) {
-    return BACKEND_CONFIG.production;
-  }
-
-  // Development mode - Android uses localhost equivalent (10.0.2.2)
-  const platform = 'android';
-  return BACKEND_CONFIG[platform];
+  // All platforms use production URL
+  return BACKEND_CONFIG.production;
 };
 
 const ML_BACKEND_URL = getBackendURL();
 
 // Log the backend URL being used for debugging
 console.log(`📡 ML Backend URL configured: ${ML_BACKEND_URL}`);
-console.log(`   Platform: ${Constants.platform?.ios ? 'iOS' : 'Android'}`);
-console.log(`   Mode: ${isDevelopment ? 'Development' : 'Production'}`);
+console.log(`   All platforms using unified production backend`);
 
 // Request timeout (60 seconds) - increased to handle batched state processing
 const REQUEST_TIMEOUT = 60000;
