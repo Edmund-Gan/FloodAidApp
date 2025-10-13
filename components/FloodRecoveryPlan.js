@@ -689,6 +689,11 @@ const FloodRecoveryPlan = ({ recoveryGuideData }) => {
     );
   }
 
+  const totalStepsCount = getRelevantCategories().reduce((total, category) => {
+    return total + (category.steps?.length || 0);
+  }, 0);
+  const completedStepsCount = Object.values(completedSteps).filter(Boolean).length;
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -703,48 +708,21 @@ const FloodRecoveryPlan = ({ recoveryGuideData }) => {
           style={styles.headerGradient}
         >
           <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="medical" size={28} color="#fff" />
-              </View>
-              <View style={styles.headerText}>
-                <Text style={styles.headerTitle}>Flood Recovery Plan</Text>
-                <Text style={styles.headerSubtitle}>
-                  {assessmentStarted
-                    ? customTimeline
-                      ? `${customTimeline.totalDays}-day personalized recovery plan`
-                      : 'Complete your damage assessment'
-                    : 'Post-flood recovery guidance'}
-                </Text>
-              </View>
+            <Ionicons name="water" size={32} color="#fff" style={styles.headerIcon} />
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>Access Your Recovery Guide</Text>
+              <Text style={styles.headerSubtitle} numberOfLines={2}>
+                {assessmentStarted && customTimeline
+                  ? `${customTimeline.totalDays}-day personalized recovery plan, ${completedStepsCount} Steps Done, ${customTimeline.needsProfessionalHelp.length} Pro Help`
+                  : 'Post-flood recovery guidance'}
+              </Text>
             </View>
             <Ionicons
               name={expanded ? 'chevron-up' : 'chevron-down'}
-              size={24}
+              size={28}
               color="#fff"
             />
           </View>
-
-          {assessmentStarted && customTimeline && (
-            <View style={styles.quickStats}>
-              <View style={styles.quickStat}>
-                <Text style={styles.quickStatNumber}>{customTimeline.totalDays}</Text>
-                <Text style={styles.quickStatLabel}>Days</Text>
-              </View>
-              <View style={styles.quickStat}>
-                <Text style={styles.quickStatNumber}>
-                  {Object.values(completedSteps).filter(Boolean).length}
-                </Text>
-                <Text style={styles.quickStatLabel}>Steps Done</Text>
-              </View>
-              <View style={styles.quickStat}>
-                <Text style={styles.quickStatNumber}>
-                  {customTimeline.needsProfessionalHelp.length}
-                </Text>
-                <Text style={styles.quickStatLabel}>Pro Help</Text>
-              </View>
-            </View>
-          )}
         </LinearGradient>
       </TouchableOpacity>
 
@@ -767,12 +745,7 @@ const FloodRecoveryPlan = ({ recoveryGuideData }) => {
               </TouchableOpacity>
             </View>
           ) : (
-            <ScrollView
-              style={styles.scrollContent}
-              contentContainerStyle={styles.scrollContentContainer}
-              showsVerticalScrollIndicator={false}
-              nestedScrollEnabled={true}
-            >
+            <>
               {renderDamageAssessmentForm()}
               {customTimeline && renderTimelineOverview()}
               {customTimeline && renderRecoveryCategories()}
@@ -782,7 +755,7 @@ const FloodRecoveryPlan = ({ recoveryGuideData }) => {
                   Recovery plan personalized for your household and damage assessment
                 </Text>
               </View>
-            </ScrollView>
+            </>
           )}
         </View>
       )}
@@ -811,64 +784,35 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerGradient: {
-    padding: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
   },
   headerContent: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
   },
-  headerLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerIcon: {
+    marginRight: 16,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  headerText: {
+  headerTextContainer: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: 16,
-  },
-  quickStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  quickStat: {
-    alignItems: 'center',
-  },
-  quickStatNumber: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
+    marginBottom: 4,
   },
-  quickStatLabel: {
-    fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: 2,
+  headerSubtitle: {
+    fontSize: 13,
+    color: '#fff',
+    fontWeight: '500',
+    lineHeight: 18,
   },
   content: {
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    paddingBottom: 20,
   },
   welcomeScreen: {
     padding: 32,
@@ -904,12 +848,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
-  },
-  scrollContent: {
-    maxHeight: 600,
-  },
-  scrollContentContainer: {
-    paddingBottom: 20,
   },
   assessmentForm: {
     padding: 16,
@@ -1352,4 +1290,8 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FloodRecoveryPlan;
+// Memoized to prevent unnecessary re-renders when parent re-renders
+export default React.memo(FloodRecoveryPlan, (prevProps, nextProps) => {
+  // Only re-render if recoveryGuideData changes
+  return prevProps.recoveryGuideData === nextProps.recoveryGuideData;
+});

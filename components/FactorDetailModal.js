@@ -1,13 +1,14 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  Modal, 
-  TouchableOpacity, 
-  ScrollView, 
-  Dimensions 
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import RiskFactorIcon from './RiskFactorIcon';
 
 const { width } = Dimensions.get('window');
 
@@ -59,120 +60,146 @@ const FactorDetailModal = ({ visible, factor, onClose }) => {
   const getActionableAdvice = (factor) => {
     const featureName = factor.raw_feature;
     const impactLevel = factor.impact_level;
-    
+
     const advice = {
       rain_sum: {
         High: [
-          'Monitor local weather alerts closely',
-          'Prepare emergency supplies and evacuation plan',
-          'Avoid low-lying areas and flood-prone roads',
-          'Keep sandbags or flood barriers ready if available'
+          { text: 'Monitor local weather alerts closely', icon: 'search' },
+          { text: 'Review emergency preparation guidelines', icon: 'document-text' },
+          { text: 'Check your emergency kit is ready', icon: 'checkbox' }
         ],
         Medium: [
-          'Stay updated on weather conditions',
-          'Check drainage around your property',
-          'Keep emergency contacts readily available'
+          { text: 'Stay updated on weather conditions', icon: 'search' },
+          { text: 'Review preparation guidelines', icon: 'document-text' },
+          { text: 'Check drainage around property', icon: 'checkbox' }
         ],
         Low: [
-          'Continue normal activities but stay weather-aware',
-          'Monitor conditions if forecast changes'
+          { text: 'Monitor conditions if forecast changes', icon: 'search' },
+          { text: 'Review emergency contacts', icon: 'document-text' },
+          { text: 'Stay weather-aware', icon: 'checkbox' }
+        ]
+      },
+      precipitation_sum: {
+        High: [
+          { text: 'Check rainfall alerts in your area', icon: 'search' },
+          { text: 'Review flood preparation guide', icon: 'document-text' },
+          { text: 'Prepare evacuation plan', icon: 'checkbox' }
+        ],
+        Medium: [
+          { text: 'Monitor precipitation forecasts', icon: 'search' },
+          { text: 'Review safety guidelines', icon: 'document-text' },
+          { text: 'Check property drainage', icon: 'checkbox' }
+        ],
+        Low: [
+          { text: 'Stay informed on weather updates', icon: 'search' },
+          { text: 'Review emergency procedures', icon: 'document-text' },
+          { text: 'Maintain awareness', icon: 'checkbox' }
         ]
       },
       wind_speed_max: {
         High: [
-          'Secure outdoor furniture and objects',
-          'Avoid coastal areas due to storm surge risk',
-          'Stay indoors during peak wind periods'
+          { text: 'Monitor wind speed warnings', icon: 'search' },
+          { text: 'Review storm safety procedures', icon: 'document-text' },
+          { text: 'Secure outdoor objects', icon: 'checkbox' }
         ],
         Medium: [
-          'Be cautious of falling branches or debris',
-          'Monitor wind conditions if traveling'
+          { text: 'Check wind forecasts', icon: 'search' },
+          { text: 'Review safety guidelines', icon: 'document-text' },
+          { text: 'Be cautious of debris', icon: 'checkbox' }
         ],
         Low: [
-          'Normal precautions for windy weather'
+          { text: 'Monitor wind conditions', icon: 'search' },
+          { text: 'Review basic precautions', icon: 'document-text' },
+          { text: 'Stay alert', icon: 'checkbox' }
         ]
       },
       river_discharge: {
         High: [
-          'Avoid areas near rivers and streams',
-          'Do not attempt to cross flooded roads',
-          'Monitor local evacuation notices'
+          { text: 'Check river level alerts', icon: 'search' },
+          { text: 'Review evacuation procedures', icon: 'document-text' },
+          { text: 'Avoid flood-prone areas', icon: 'checkbox' }
         ],
         Medium: [
-          'Stay away from riverbanks and bridges',
-          'Monitor water levels in your area'
+          { text: 'Monitor water levels', icon: 'search' },
+          { text: 'Review safety guidelines', icon: 'document-text' },
+          { text: 'Stay away from riverbanks', icon: 'checkbox' }
         ],
         Low: [
-          'Normal river conditions - stay alert'
+          { text: 'Check river conditions', icon: 'search' },
+          { text: 'Review emergency contacts', icon: 'document-text' },
+          { text: 'Maintain awareness', icon: 'checkbox' }
         ]
       },
       monsoon_intensity: {
         High: [
-          'This is peak monsoon season - highest flood risk period',
-          'Prepare for extended periods of heavy rainfall',
-          'Stock up on essential supplies for 3-7 days'
+          { text: 'Monitor monsoon weather alerts', icon: 'search' },
+          { text: 'Review extended preparation guide', icon: 'document-text' },
+          { text: 'Stock 3-7 days of supplies', icon: 'checkbox' }
         ],
         Medium: [
-          'Monsoon season is active - elevated flood risk',
-          'Monitor daily weather forecasts closely'
+          { text: 'Check daily weather forecasts', icon: 'search' },
+          { text: 'Review monsoon safety guide', icon: 'document-text' },
+          { text: 'Prepare for heavy rainfall', icon: 'checkbox' }
         ],
         Low: [
-          'Lower monsoon activity - maintain awareness'
+          { text: 'Monitor monsoon activity', icon: 'search' },
+          { text: 'Review basic guidelines', icon: 'document-text' },
+          { text: 'Stay informed', icon: 'checkbox' }
         ]
       },
       elevation: {
         High: [
-          'Your location has natural flood protection',
-          'Still monitor conditions for flash flooding'
+          { text: 'Monitor flash flood warnings', icon: 'search' },
+          { text: 'Review drainage guidelines', icon: 'document-text' },
+          { text: 'Check surrounding low areas', icon: 'checkbox' }
         ],
         Medium: [
-          'Moderate flood protection from elevation',
-          'Be aware of drainage and low-lying nearby areas'
+          { text: 'Check local flood conditions', icon: 'search' },
+          { text: 'Review safety procedures', icon: 'document-text' },
+          { text: 'Monitor nearby drainage', icon: 'checkbox' }
         ],
         Low: [
-          'Low elevation increases flood vulnerability',
-          'Have evacuation plan for higher ground',
-          'Prepare flood barriers or sandbags'
+          { text: 'Monitor elevation-based risks', icon: 'search' },
+          { text: 'Review evacuation plan', icon: 'document-text' },
+          { text: 'Prepare flood barriers', icon: 'checkbox' }
         ]
       }
     };
 
     return advice[featureName]?.[impactLevel] || [
-      'Monitor weather conditions regularly',
-      'Stay informed through official channels',
-      'Prepare basic emergency supplies'
+      { text: 'Monitor weather conditions regularly', icon: 'search' },
+      { text: 'Review emergency guidelines', icon: 'document-text' },
+      { text: 'Prepare basic supplies', icon: 'checkbox' }
     ];
   };
 
-  const renderProgressBar = (thresholdInfo) => {
-    if (!thresholdInfo) return null;
-
-    const { value, low, high, color, unit } = thresholdInfo;
-    const maxValue = high * 1.5; // Show scale beyond high threshold
-    const percentage = Math.min((value / maxValue) * 100, 100);
-    const lowPercentage = (low / maxValue) * 100;
-    const highPercentage = (high / maxValue) * 100;
-
-    return (
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${percentage}%`, backgroundColor: color }]} />
-          <View style={[styles.threshold, { left: `${lowPercentage}%` }]}>
-            <Text style={styles.thresholdText}>Low</Text>
-          </View>
-          <View style={[styles.threshold, { left: `${highPercentage}%` }]}>
-            <Text style={styles.thresholdText}>High</Text>
-          </View>
-        </View>
-        <Text style={styles.progressValue}>
-          Current: {value.toFixed(1)}{unit}
-        </Text>
-      </View>
-    );
+  const getWhyItMatters = (factor) => {
+    // Use backend-provided explanation with fallback chain
+    // Backend now provides comprehensive, context-aware "Why it Matters" explanations
+    // that differentiate between protective and threatening factors
+    return factor.why_it_matters ||
+           factor.feature?.description ||
+           'This factor influences your flood risk by contributing to the overall environmental conditions in your area. Monitor this factor as part of your flood preparedness.';
   };
 
   const thresholdInfo = getThresholdInfo(factor);
   const advice = getActionableAdvice(factor);
+  const whyItMatters = getWhyItMatters(factor);
+
+  const getImpactBadgeColor = (impactLevel) => {
+    switch (impactLevel) {
+      case 'High':
+        return { backgroundColor: '#FFE0B2', color: '#E65100' };
+      case 'Medium':
+        return { backgroundColor: '#FFF9C4', color: '#F57C00' };
+      case 'Low':
+        return { backgroundColor: '#C8E6C9', color: '#2E7D32' };
+      default:
+        return { backgroundColor: '#E0E0E0', color: '#616161' };
+    }
+  };
+
+  const badgeColors = getImpactBadgeColor(factor.impact_level);
 
   return (
     <Modal
@@ -182,103 +209,70 @@ const FactorDetailModal = ({ visible, factor, onClose }) => {
       onRequestClose={onClose}
     >
       <View style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="#666" />
+            <Ionicons name="close" size={28} color="#333" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Risk Factor Details</Text>
           <View style={styles.placeholder} />
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Factor Title and Impact */}
-          <View style={styles.factorHeader}>
-            <View style={styles.factorTitleRow}>
-              <Text style={styles.factorTitle}>
+          {/* Factor Card with Icon and Impact Badge */}
+          <View style={styles.factorCard}>
+            <RiskFactorIcon factorType={factor.raw_feature} size={80} />
+            <View style={styles.factorInfo}>
+              <Text style={styles.factorName}>
                 {factor.feature?.title || factor.technical_name}
               </Text>
-              <View style={[styles.impactBadge, { 
-                backgroundColor: factor.impact_level === 'High' ? '#ffebee' : 
-                                factor.impact_level === 'Medium' ? '#fff8e1' : '#e8f5e8'
-              }]}>
-                <Text style={[styles.impactText, {
-                  color: factor.impact_level === 'High' ? '#d32f2f' : 
-                         factor.impact_level === 'Medium' ? '#f57c00' : '#388e3c'
-                }]}>
+              <View style={[styles.impactBadge, { backgroundColor: badgeColors.backgroundColor }]}>
+                <Text style={[styles.impactText, { color: badgeColors.color }]}>
                   {factor.impact_level} Impact
                 </Text>
               </View>
             </View>
-            <Text style={styles.factorDescription}>
-              {factor.feature?.description || 'Contributing to current flood risk assessment'}
-            </Text>
           </View>
 
-          {/* Current Status and Threshold */}
-          {thresholdInfo && (
-            <View style={styles.statusSection}>
-              <Text style={styles.sectionTitle}>Current Status</Text>
-              <View style={styles.statusRow}>
-                <Text style={styles.statusLabel}>Level:</Text>
-                <Text style={[styles.statusValue, { color: thresholdInfo.color }]}>
-                  {thresholdInfo.status}
-                </Text>
+          {/* Why it Matters Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Why it Matters</Text>
+            <Text style={styles.sectionDescription}>{whyItMatters}</Text>
+          </View>
+
+          {/* Risk Contribution Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Risk Contribution</Text>
+            <View style={styles.riskContributionBar}>
+              <View style={styles.progressBarBackground}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    { width: `${Math.min(factor.contribution_score * 100, 100)}%` }
+                  ]}
+                >
+                  <Text style={styles.progressBarText}>
+                    {Math.min(factor.contribution_score * 100, 100).toFixed(0)}%
+                  </Text>
+                </View>
               </View>
-              {renderProgressBar(thresholdInfo)}
             </View>
-          )}
-
-          {/* Contribution Details */}
-          <View style={styles.contributionSection}>
-            <Text style={styles.sectionTitle}>Contribution Analysis</Text>
-            <View style={styles.contributionRow}>
-              <Text style={styles.contributionLabel}>Risk Direction:</Text>
-              <Text style={[styles.contributionValue, {
-                color: factor.risk_direction === 'Increases' ? '#f44336' : '#4caf50'
-              }]}>
-                {factor.risk_direction} Risk
+            {thresholdInfo && (
+              <Text style={styles.currentValueText}>
+                Current Value: {thresholdInfo.value.toFixed(1)}{thresholdInfo.unit}
               </Text>
-            </View>
-            <View style={styles.contributionRow}>
-              <Text style={styles.contributionLabel}>Contribution Score:</Text>
-              <Text style={styles.contributionValue}>
-                {(factor.contribution_score * 100).toFixed(2)}%
-              </Text>
-            </View>
-            <View style={styles.contributionRow}>
-              <Text style={styles.contributionLabel}>Model Importance:</Text>
-              <Text style={styles.contributionValue}>
-                {(factor.importance * 100).toFixed(2)}%
-              </Text>
-            </View>
+            )}
           </View>
 
-          {/* Actionable Advice */}
-          <View style={styles.adviceSection}>
-            <Text style={styles.sectionTitle}>Recommended Actions</Text>
+          {/* How to Prepare Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>How to Prepare</Text>
             {advice.map((item, index) => (
-              <View key={index} style={styles.adviceItem}>
-                <Ionicons name="checkmark-circle" size={16} color="#4caf50" />
-                <Text style={styles.adviceText}>{item}</Text>
+              <View key={index} style={styles.prepareItem}>
+                <Text style={styles.prepareItemText}>{item.text}</Text>
+                <Ionicons name={item.icon} size={24} color="#666" />
               </View>
             ))}
-          </View>
-
-          {/* Technical Details */}
-          <View style={styles.technicalSection}>
-            <Text style={styles.sectionTitle}>Technical Information</Text>
-            <View style={styles.technicalRow}>
-              <Text style={styles.technicalLabel}>Feature Name:</Text>
-              <Text style={styles.technicalValue}>{factor.raw_feature}</Text>
-            </View>
-            <View style={styles.technicalRow}>
-              <Text style={styles.technicalLabel}>Current Value:</Text>
-              <Text style={styles.technicalValue}>{factor.feature_value?.toFixed(3)}</Text>
-            </View>
-            <View style={styles.technicalRow}>
-              <Text style={styles.technicalLabel}>Ranking:</Text>
-              <Text style={styles.technicalValue}>#{factor.rank} most important</Text>
-            </View>
           </View>
         </ScrollView>
       </View>
@@ -289,172 +283,135 @@ const FactorDetailModal = ({ visible, factor, onClose }) => {
 const styles = {
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F5',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#E0E0E0',
   },
   closeButton: {
-    padding: 8,
+    padding: 4,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#333',
   },
   placeholder: {
-    width: 40,
+    width: 36,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
-  factorHeader: {
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+  factorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  factorTitleRow: {
+  factorInfo: {
+    flex: 1,
+    marginLeft: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  factorTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+  factorName: {
+    fontSize: 18,
+    fontWeight: '600',
     color: '#333',
     flex: 1,
     marginRight: 12,
   },
   impactBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   impactText: {
     fontSize: 12,
     fontWeight: '600',
   },
-  factorDescription: {
-    fontSize: 16,
+  section: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 12,
+  },
+  sectionDescription: {
+    fontSize: 15,
     color: '#666',
     lineHeight: 22,
   },
-  statusSection: {
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+  riskContributionBar: {
     marginBottom: 12,
   },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  progressBarBackground: {
+    height: 40,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 20,
+    overflow: 'hidden',
+    justifyContent: 'center',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#FFB74D',
+    borderRadius: 20,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    minWidth: 60,
   },
-  statusLabel: {
+  progressBarText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  currentValueText: {
     fontSize: 14,
     color: '#666',
-  },
-  statusValue: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  progressContainer: {
+    textAlign: 'center',
     marginTop: 8,
   },
-  progressBar: {
-    height: 8,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 4,
-    position: 'relative',
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  threshold: {
-    position: 'absolute',
-    top: -20,
-    alignItems: 'center',
-  },
-  thresholdText: {
-    fontSize: 10,
-    color: '#666',
-  },
-  progressValue: {
-    fontSize: 14,
-    color: '#333',
-    textAlign: 'center',
-  },
-  contributionSection: {
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  contributionRow: {
+  prepareItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  contributionLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  contributionValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  adviceSection: {
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#F0F0F0',
   },
-  adviceItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  adviceText: {
-    fontSize: 14,
+  prepareItemText: {
+    fontSize: 15,
     color: '#333',
-    marginLeft: 8,
     flex: 1,
+    marginRight: 12,
     lineHeight: 20,
-  },
-  technicalSection: {
-    paddingVertical: 16,
-    marginBottom: 32,
-  },
-  technicalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  technicalLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  technicalValue: {
-    fontSize: 14,
-    color: '#333',
-    fontFamily: 'monospace',
   },
 };
 

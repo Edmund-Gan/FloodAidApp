@@ -659,152 +659,119 @@ const EmergencyContacts = ({
           style={styles.headerGradient}
         >
           <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="shield-checkmark" size={28} color="#fff" />
-              </View>
-              <View style={styles.headerText}>
-                <Text style={styles.headerTitle}>Emergency Contacts</Text>
-                <Text style={styles.headerSubtitle}>
-                  Nearby emergency services
-                </Text>
-              </View>
-            </View>
-            <View style={styles.headerRight}>
-              <TouchableOpacity
-                style={styles.stateSelector}
-                onPress={() => setShowLocationSelector(true)}
-              >
-                <Text style={styles.stateSelectorText} numberOfLines={1}>
-                  {selectedMode === 'current' ? '📍 ' : selectedMode === 'saved' ? '🏠 ' : '🗺️ '}
-                  {displayLocationName}
-                </Text>
-                <Ionicons name="chevron-down" size={16} color="#fff" />
-              </TouchableOpacity>
-              <Ionicons
-                name={expanded ? 'chevron-up' : 'chevron-down'}
-                size={24}
-                color="#fff"
-                style={styles.expandIcon}
-              />
-            </View>
-          </View>
-
-          {!expanded && (
-            <View style={styles.quickContact}>
-              <Ionicons name="call" size={14} color="#fff" />
-              <Text style={styles.quickContactText}>
-                Tap to expand - {contacts.length} emergency contacts
+            <Ionicons name="shield-checkmark" size={32} color="#fff" style={styles.headerIcon} />
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>Manage Emergency Contacts</Text>
+              <Text style={styles.headerSubtitle}>
+                Nearby services, Tap to expand - {contacts.length} contacts
               </Text>
             </View>
-          )}
+            <Ionicons
+              name={expanded ? 'chevron-up' : 'chevron-down'}
+              size={28}
+              color="#fff"
+            />
+          </View>
         </LinearGradient>
       </TouchableOpacity>
 
       {expanded && (
         <View style={styles.content}>
-          <ScrollView
-            style={styles.scrollContent}
-            contentContainerStyle={styles.scrollContentContainer}
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled={true}
-          >
-            {/* Category Switcher */}
-            <View style={styles.categoryTabs}>
+          {/* Category Switcher */}
+          <View style={styles.categoryTabs}>
+            <TouchableOpacity
+              style={[
+                styles.categoryTab,
+                activeTab === 'callCenters' && styles.categoryTabActive,
+                selectedMode === 'state' && styles.categoryTabFull
+              ]}
+              onPress={() => setActiveTab('callCenters')}
+            >
+              <Ionicons
+                name="call"
+                size={16}
+                color={activeTab === 'callCenters' ? '#4CAF50' : '#666'}
+              />
+              <Text style={[styles.categoryTabText, activeTab === 'callCenters' && styles.categoryTabTextActive]}>
+                Call Centers
+              </Text>
+            </TouchableOpacity>
+
+            {selectedMode !== 'state' && (
               <TouchableOpacity
-                style={[
-                  styles.categoryTab,
-                  activeTab === 'callCenters' && styles.categoryTabActive,
-                  selectedMode === 'state' && styles.categoryTabFull
-                ]}
-                onPress={() => setActiveTab('callCenters')}
+                style={[styles.categoryTab, activeTab === 'nearMe' && styles.categoryTabActive]}
+                onPress={() => {
+                  setActiveTab('nearMe');
+                  if (!userLocation) {
+                    loadNearbyPlaces();
+                  }
+                }}
               >
                 <Ionicons
-                  name="call"
+                  name="location"
                   size={16}
-                  color={activeTab === 'callCenters' ? '#4CAF50' : '#666'}
+                  color={activeTab === 'nearMe' ? '#4CAF50' : '#666'}
                 />
-                <Text style={[styles.categoryTabText, activeTab === 'callCenters' && styles.categoryTabTextActive]}>
-                  Call Centers
+                <Text style={[styles.categoryTabText, activeTab === 'nearMe' && styles.categoryTabTextActive]}>
+                  Near Me
                 </Text>
               </TouchableOpacity>
+            )}
+          </View>
 
-              {selectedMode !== 'state' && (
-                <TouchableOpacity
-                  style={[styles.categoryTab, activeTab === 'nearMe' && styles.categoryTabActive]}
-                  onPress={() => {
-                    setActiveTab('nearMe');
-                    if (!userLocation) {
-                      loadNearbyPlaces();
-                    }
-                  }}
-                >
+          {activeTab === 'callCenters' ? (
+            <>
+              <View style={styles.headerInfo}>
+                <View style={styles.locationInfo}>
                   <Ionicons
-                    name="location"
+                    name={selectedMode === 'state' ? 'map' : selectedMode === 'current' ? 'navigate-circle' : 'location'}
                     size={16}
-                    color={activeTab === 'nearMe' ? '#4CAF50' : '#666'}
+                    color="#4CAF50"
                   />
-                  <Text style={[styles.categoryTabText, activeTab === 'nearMe' && styles.categoryTabTextActive]}>
-                    Near Me
+                  <Text style={styles.locationText} numberOfLines={2}>
+                    {selectedMode === 'state'
+                      ? `Emergency services for ${displayStateKey.replace(/_/g, ' ')}`
+                      : `Near ${displayLocationName} (${displayStateKey.replace(/_/g, ' ')})`}
                   </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.changeLocationButton}
+                  onPress={() => setShowLocationSelector(true)}
+                >
+                  <Text style={styles.changeLocationText}>Change</Text>
+                  <Ionicons name="chevron-forward" size={14} color="#666" />
                 </TouchableOpacity>
-              )}
+              </View>
+
+              <View style={styles.contactsList}>
+                {sortedContacts.map((contact, index) => renderContactItem(contact, index))}
+              </View>
+            </>
+          ) : (
+            <View style={styles.nearMeContainer}>
+              {renderNearMeContent()}
             </View>
+          )}
 
-            {activeTab === 'callCenters' ? (
-              <>
-                <View style={styles.headerInfo}>
-                  <View style={styles.locationInfo}>
-                    <Ionicons
-                      name={selectedMode === 'state' ? 'map' : selectedMode === 'current' ? 'navigate-circle' : 'location'}
-                      size={16}
-                      color="#4CAF50"
-                    />
-                    <Text style={styles.locationText} numberOfLines={2}>
-                      {selectedMode === 'state'
-                        ? `Emergency services for ${displayStateKey.replace(/_/g, ' ')}`
-                        : `Near ${displayLocationName} (${displayStateKey.replace(/_/g, ' ')})`}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.changeLocationButton}
-                    onPress={() => setShowLocationSelector(true)}
-                  >
-                    <Text style={styles.changeLocationText}>Change</Text>
-                    <Ionicons name="chevron-forward" size={14} color="#666" />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.contactsList}>
-                  {sortedContacts.map((contact, index) => renderContactItem(contact, index))}
-                </View>
-              </>
-            ) : (
-              <View style={styles.nearMeContainer}>
-                {renderNearMeContent()}
-              </View>
-            )}
-
-            {currentStateData?.sources && (
-              <View style={styles.sourcesSection}>
-                <Text style={styles.sourcesTitle}>Sources</Text>
-                {currentStateData.sources.map((source, index) => (
-                  <Text key={index} style={styles.sourceText}>
-                    • {source}
-                  </Text>
-                ))}
-              </View>
-            )}
-
-            <View style={styles.footer}>
-              <View style={styles.warningBox}>
-                <Ionicons name="alert-circle" size={16} color="#FF9800" />
-                <Text style={styles.warningText}>
-                  In life-threatening emergencies, always call 999 first
+          {currentStateData?.sources && (
+            <View style={styles.sourcesSection}>
+              <Text style={styles.sourcesTitle}>Sources</Text>
+              {currentStateData.sources.map((source, index) => (
+                <Text key={index} style={styles.sourceText}>
+                  • {source}
                 </Text>
-              </View>
+              ))}
             </View>
-          </ScrollView>
+          )}
+
+          <View style={styles.footer}>
+            <View style={styles.warningBox}>
+              <Ionicons name="alert-circle" size={16} color="#FF9800" />
+              <Text style={styles.warningText}>
+                In life-threatening emergencies, always call 999 first
+              </Text>
+            </View>
+          </View>
         </View>
       )}
 
@@ -858,87 +825,33 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerGradient: {
-    padding: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
   },
   headerContent: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+  headerIcon: {
+    marginRight: 16,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  headerText: {
+  headerTextContainer: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.9)',
-  },
-  headerRight: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flex: 1,
-    minWidth: 0,
-  },
-  stateSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 8,
-    maxWidth: '70%',
-  },
-  stateSelectorText: {
-    fontSize: 11,
     color: '#fff',
     fontWeight: '500',
-    marginRight: 4,
-    flex: 1,
-  },
-  expandIcon: {
-    marginLeft: 4,
-  },
-  quickContact: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickContactText: {
-    fontSize: 12,
-    color: '#fff',
-    marginLeft: 4,
   },
   content: {
-    maxHeight: 400,
-    flex: 1,
-  },
-  scrollContent: {
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    flexGrow: 1,
-  },
-  scrollContentContainer: {
-    flexGrow: 1,
     paddingBottom: 20,
   },
   headerInfo: {
@@ -1357,4 +1270,12 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EmergencyContacts;
+// Memoized to prevent unnecessary re-renders when parent re-renders
+export default React.memo(EmergencyContacts, (prevProps, nextProps) => {
+  // Only re-render if critical props change
+  return (
+    prevProps.emergencyContactsData === nextProps.emergencyContactsData &&
+    prevProps.monitoredLocations === nextProps.monitoredLocations &&
+    prevProps.currentLocationInfo === nextProps.currentLocationInfo
+  );
+});

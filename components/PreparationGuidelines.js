@@ -388,105 +388,67 @@ const PreparationGuidelines = () => {
           style={styles.headerGradient}
         >
           <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="time" size={28} color="#fff" />
-              </View>
-              <View style={styles.headerText}>
-                <Text style={styles.headerTitle}>Preparation Guidelines</Text>
-                <Text style={styles.headerSubtitle}>
-                  {preparationSections.length}-step personalized plan
-                  {userProfile.hasChildren && ` with child safety measures`}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.headerRight}>
-              <View style={styles.progressContainer}>
-                <Text style={styles.progressText}>{completedCount}/{totalSections}</Text>
-                <Text style={styles.progressLabel}>{progressPercentage}%</Text>
-              </View>
-              <Ionicons
-                name={expanded ? 'chevron-up' : 'chevron-down'}
-                size={24}
-                color="#fff"
-              />
-            </View>
-          </View>
-
-          <View style={styles.progressBarContainer}>
-            <View style={styles.progressBarBackground}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  { width: `${progressPercentage}%` }
-                ]}
-              />
-            </View>
-          </View>
-
-          {!expanded && totalEstimatedTime > 0 && (
-            <View style={styles.timeEstimate}>
-              <Ionicons name="time-outline" size={14} color="#fff" />
-              <Text style={styles.timeText}>
+            <Ionicons name="time" size={32} color="#fff" style={styles.headerIcon} />
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>Follow the {preparationSections.length}-Step Plan</Text>
+              <Text style={styles.headerSubtitle}>
                 Est. {totalEstimatedTime} min total
               </Text>
             </View>
-          )}
+            <Ionicons
+              name={expanded ? 'chevron-up' : 'chevron-down'}
+              size={28}
+              color="#fff"
+            />
+          </View>
         </LinearGradient>
       </TouchableOpacity>
 
       {expanded && (
         <View style={styles.content}>
-          <ScrollView
-            style={styles.scrollContent}
-            contentContainerStyle={styles.scrollContentContainer}
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled={true}
-          >
-            <View style={styles.summaryCard}>
-              <View style={styles.summaryHeader}>
-                <Text style={styles.summaryTitle}>Flood Preparedness Checklist</Text>
-                <Text style={styles.summarySubtitle}>
-                  Complete these essential preparation steps to ensure your family's safety
-                  {userProfile.hasChildren && ', including child-specific safety measures'}
-                </Text>
-              </View>
-
-              <View style={styles.summaryStats}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{completedCount}</Text>
-                  <Text style={styles.statLabel}>Completed</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{totalSections - completedCount}</Text>
-                  <Text style={styles.statLabel}>Remaining</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{totalEstimatedTime}m</Text>
-                  <Text style={styles.statLabel}>Est. Time</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Child Summary Banner */}
-            <ChildSummaryBanner
-              userProfile={userProfile}
-              showTimeAdjustment={true}
-              estimatedTime={totalEstimatedTime}
-            />
-
-            <View style={styles.sectionsContainer}>
-              {preparationSections.map(renderPreparationSection)}
-            </View>
-
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
-                Preparation guidelines based on Malaysian emergency management best practices
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryHeader}>
+              <Text style={styles.summaryTitle}>Flood Preparedness Checklist</Text>
+              <Text style={styles.summarySubtitle}>
+                Complete these essential preparation steps to ensure your family's safety
+                {userProfile.hasChildren && ', including child-specific safety measures'}
               </Text>
             </View>
-          </ScrollView>
+
+            <View style={styles.summaryStats}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{completedCount}</Text>
+                <Text style={styles.statLabel}>Completed</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{totalSections - completedCount}</Text>
+                <Text style={styles.statLabel}>Remaining</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{totalEstimatedTime}m</Text>
+                <Text style={styles.statLabel}>Est. Time</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Child Summary Banner */}
+          <ChildSummaryBanner
+            userProfile={userProfile}
+            showTimeAdjustment={true}
+            estimatedTime={totalEstimatedTime}
+          />
+
+          <View style={styles.sectionsContainer}>
+            {preparationSections.map(renderPreparationSection)}
+          </View>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              Preparation guidelines based on Malaysian emergency management best practices
+            </Text>
+          </View>
         </View>
       )}
     </View>
@@ -510,92 +472,33 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerGradient: {
-    padding: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
   },
   headerContent: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+  headerIcon: {
+    marginRight: 16,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  headerText: {
+  headerTextContainer: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.9)',
-  },
-  headerRight: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  progressContainer: {
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  progressText: {
-    fontSize: 16,
-    fontWeight: 'bold',
     color: '#fff',
-  },
-  progressLabel: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.9)',
-  },
-  progressBarContainer: {
-    marginBottom: 8,
-  },
-  progressBarBackground: {
-    height: 6,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 3,
-  },
-  timeEstimate: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timeText: {
-    fontSize: 12,
-    color: '#fff',
-    marginLeft: 4,
+    fontWeight: '500',
   },
   content: {
-    maxHeight: 500,
-    flex: 1,
-  },
-  scrollContent: {
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    flexGrow: 1,
-  },
-  scrollContentContainer: {
-    flexGrow: 1,
     paddingBottom: 20,
   },
   summaryCard: {
@@ -770,4 +673,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PreparationGuidelines;
+// Memoized to prevent unnecessary re-renders when parent re-renders
+export default React.memo(PreparationGuidelines);

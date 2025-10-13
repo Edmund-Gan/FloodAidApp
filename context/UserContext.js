@@ -21,11 +21,9 @@ export const UserProvider = ({ children }) => {
     hasToddlers: false, // children 2-5 years
     hasSchoolChildren: true, // children 6-12 years
     hasTeens: false, // children 13-17 years
-    healthConditions: [],
     riskTolerance: 'moderate', // low, moderate, high
     language: 'en', // en, ms
     setupComplete: true,
-    specialMedicalNeeds: false,
     mobilityAssistance: false,
     emergencyPreferences: {
       selectedState: 'SELANGOR',
@@ -339,11 +337,9 @@ export const UserProvider = ({ children }) => {
         hasToddlers: false,
         hasSchoolChildren: false,
         hasTeens: false,
-        healthConditions: [],
         riskTolerance: 'moderate',
         language: 'en',
         setupComplete: false,
-        specialMedicalNeeds: false,
         mobilityAssistance: false,
         emergencyPreferences: {
           selectedState: 'SELANGOR',

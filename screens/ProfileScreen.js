@@ -24,7 +24,6 @@ export default function ProfileScreen() {
   const [notifications, setNotifications] = useState(notificationSettings.floodAlerts);
   const [locationServices, setLocationServices] = useState(true);
   const [mobilityAssistance, setMobilityAssistance] = useState(userProfile.mobilityAssistance);
-  const [specialMedicalNeeds, setSpecialMedicalNeeds] = useState(userProfile.specialMedicalNeeds);
   const [householdMembers, setHouseholdMembers] = useState(userProfile.familySize.toString());
   const [children, setChildren] = useState(userProfile.childrenAges ? userProfile.childrenAges.length.toString() : '0');
 
@@ -36,7 +35,6 @@ export default function ProfileScreen() {
   useEffect(() => {
     setNotifications(notificationSettings.floodAlerts);
     setMobilityAssistance(userProfile.mobilityAssistance);
-    setSpecialMedicalNeeds(userProfile.specialMedicalNeeds);
     setHouseholdMembers(userProfile.familySize.toString());
     setChildren(userProfile.childrenAges ? userProfile.childrenAges.length.toString() : '0');
     setTempChildAges(userProfile.childrenAges || []);
@@ -51,11 +49,6 @@ export default function ProfileScreen() {
   const updateMobilityAssistanceSettings = (value) => {
     setMobilityAssistance(value);
     updateUserProfile({ mobilityAssistance: value });
-  };
-
-  const updateSpecialMedicalNeedsSettings = (value) => {
-    setSpecialMedicalNeeds(value);
-    updateUserProfile({ specialMedicalNeeds: value });
   };
 
   const updateHouseholdMembersSettings = (value) => {
@@ -281,14 +274,6 @@ export default function ProfileScreen() {
             )}
 
             {renderChildrenRow()}
-
-            {renderToggleRow(
-              'medical-outline',
-              'Special Medical Needs',
-              'Anyone requires special medical attention',
-              specialMedicalNeeds,
-              updateSpecialMedicalNeedsSettings
-            )}
           </View>
         </View>
 

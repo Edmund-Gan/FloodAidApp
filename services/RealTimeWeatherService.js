@@ -249,7 +249,7 @@ class RealTimeWeatherService {
     const avgHumidity = hourly.relative_humidity_2m.slice(0, 24).reduce((sum, h) => sum + (h || 0), 0) / 24;
 
     return {
-      heavyRain: maxRain24h > 20, // Heavy rain threshold: 20mm/day
+      heavyRain: maxRain24h > 30, // Heavy rain threshold: 30mm/day (aligned with intensity classification)
       extremeRain: maxRain24h > 50, // Extreme rain threshold: 50mm/day
       highHumidity: avgHumidity > 85 // High humidity threshold: 85%
     };
@@ -294,14 +294,20 @@ class RealTimeWeatherService {
   }
 
   /**
-   * Get rain intensity description
-   * @param {number} rain - Rain amount in mm
+   * Get rain intensity description based on meteorological standards
+   * @param {number} rain - Rain amount in mm/day
    * @returns {string} - Intensity description
+   *
+   * Classification based on standard meteorological thresholds:
+   * - Drizzle: < 2.5mm/day
+   * - Light: 2.5-10mm/day
+   * - Moderate: 10-30mm/day
+   * - Heavy: 30mm+/day
    */
   getRainIntensity(rain) {
-    if (rain >= 50) return 'Heavy';
-    if (rain >= 20) return 'Moderate';
-    if (rain >= 5) return 'Light';
+    if (rain >= 30) return 'Heavy';
+    if (rain >= 10) return 'Moderate';
+    if (rain >= 2.5) return 'Light';
     return 'Drizzle';
   }
 

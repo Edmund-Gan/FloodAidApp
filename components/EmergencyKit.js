@@ -96,11 +96,11 @@ const EmergencyKit = ({ emergencyKitData }) => {
         return;
       }
 
-      // Search for the first category (can be enhanced to search all)
+      // Search for the first category (limited to 10 results to reduce memory usage)
       const stores = await StoreFinderService.findNearbyStores(
         currentLocation,
         categories[0],
-        { radius: 5000, maxResults: 20 }
+        { radius: 5000, maxResults: 10 }
       );
 
       // Add distance to each store
@@ -438,8 +438,7 @@ const EmergencyKit = ({ emergencyKitData }) => {
   const getPersonalizedItems = () => {
     if (!emergencyKitData?.Items) return [];
 
-    const { familySize = 1, hasChildren, healthConditions = [], mobilityAssistance = false } = userProfile;
-    const hasSpecialMedical = healthConditions.length > 0;
+    const { familySize = 1, hasChildren, mobilityAssistance = false } = userProfile;
 
     // Get base emergency kit items
     const baseItems = emergencyKitData.Items.map((item, index) => {
@@ -447,7 +446,7 @@ const EmergencyKit = ({ emergencyKitData }) => {
       const adjustedPrepTime = calculatePrepTime(item['Base Prep Time'], mobilityAssistance, item['Mobility Considerations']);
 
       let mobilityNote = '';
-      if (item['Mobility Considerations'] && (mobilityAssistance || hasSpecialMedical)) {
+      if (item['Mobility Considerations'] && mobilityAssistance) {
         mobilityNote = item['Mobility Considerations'];
       }
 
@@ -470,12 +469,25 @@ const EmergencyKit = ({ emergencyKitData }) => {
     return [...baseItems, ...childItems];
   };
 
-  const personalizedItems = getPersonalizedItems();
-  const priorityGroups = {
+  // Memoize personalized items to avoid recalculation on every render
+  const personalizedItems = useMemo(() => getPersonalizedItems(), [
+    emergencyKitData,
+    userProfile.familySize,
+    userProfile.hasChildren,
+    userProfile.mobilityAssistance,
+    userProfile.hasInfants,
+    userProfile.hasToddlers,
+    userProfile.hasSchoolChildren,
+    userProfile.hasTeens,
+    userProfile.childrenDetails
+  ]);
+
+  // Memoize priority groups to avoid refiltering on every render
+  const priorityGroups = useMemo(() => ({
     HIGH: personalizedItems.filter(item => item.priority === 'HIGH'),
     MEDIUM: personalizedItems.filter(item => item.priority === 'MEDIUM'),
     LOW: personalizedItems.filter(item => item.priority === 'LOW')
-  };
+  }), [personalizedItems]);
 
   const totalItems = personalizedItems.length;
   const completedCount = Object.values(completedItems).filter(Boolean).length;
@@ -599,57 +611,25 @@ const EmergencyKit = ({ emergencyKitData }) => {
         activeOpacity={0.7}
       >
         <LinearGradient
-          colors={['#4CAF50', '#388E3C']}
+          colors={['#4ECDC4', '#44B3A8']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.headerGradient}
         >
           <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="briefcase" size={28} color="#fff" />
-              </View>
-              <View style={styles.headerText}>
-                <Text style={styles.headerTitle}>Emergency Kit</Text>
-                <Text style={styles.headerSubtitle}>
-                  Optimized for {userProfile.familySize} {userProfile.familySize === 1 ? 'person' : 'people'}
-                  {userProfile.hasChildren && ` including ${userProfile.childrenAges?.length || 0} ${userProfile.childrenAges?.length === 1 ? 'child' : 'children'}`}
-                  {userProfile.mobilityAssistance && ' with mobility assistance'}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.headerRight}>
-              <View style={styles.progressContainer}>
-                <Text style={styles.progressText}>{completedCount}/{totalItems}</Text>
-                <Text style={styles.progressLabel}>{progressPercentage}%</Text>
-              </View>
-              <Ionicons
-                name={expanded ? 'chevron-up' : 'chevron-down'}
-                size={24}
-                color="#fff"
-              />
-            </View>
-          </View>
-
-          <View style={styles.progressBarContainer}>
-            <View style={styles.progressBarBackground}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  { width: `${progressPercentage}%` }
-                ]}
-              />
-            </View>
-          </View>
-
-          {!expanded && estimatedTime > 0 && (
-            <View style={styles.timeEstimate}>
-              <Ionicons name="time-outline" size={14} color="#fff" />
-              <Text style={styles.timeText}>
-                Est. {estimatedTime} min remaining
+            <Ionicons name="briefcase" size={32} color="#fff" style={styles.headerIcon} />
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>Build Your Emergency Kit</Text>
+              <Text style={styles.headerSubtitle}>
+                {completedCount}/{totalItems} packed, {progressPercentage}%
               </Text>
             </View>
-          )}
+            <Ionicons
+              name={expanded ? 'chevron-up' : 'chevron-down'}
+              size={28}
+              color="#fff"
+            />
+          </View>
         </LinearGradient>
       </TouchableOpacity>
 
@@ -662,7 +642,6 @@ const EmergencyKit = ({ emergencyKitData }) => {
                 Recommendations optimized for your household of {userProfile.familySize} {userProfile.familySize === 1 ? 'person' : 'people'}
                 {userProfile.hasChildren && ` including child-specific items for ${userProfile.childrenAges?.length || 0} ${userProfile.childrenAges?.length === 1 ? 'child' : 'children'}`}
                 {userProfile.mobilityAssistance && ' with mobility assistance considerations'}
-                {userProfile.healthConditions?.length > 0 && ' and special medical needs'}
               </Text>
             </View>
           </View>
@@ -674,44 +653,37 @@ const EmergencyKit = ({ emergencyKitData }) => {
             estimatedTime={estimatedTime}
           />
 
-          <ScrollView
-            style={styles.scrollContent}
-            contentContainerStyle={styles.scrollContentContainer}
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled={true}
-          >
-            <View style={styles.summaryCard}>
-              <View style={styles.summaryRow}>
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryNumber}>{completedCount}</Text>
-                  <Text style={styles.summaryLabel}>Completed</Text>
-                </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryNumber}>{totalItems - completedCount}</Text>
-                  <Text style={styles.summaryLabel}>Remaining</Text>
-                </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryNumber}>{estimatedTime}m</Text>
-                  <Text style={styles.summaryLabel}>Est. Time</Text>
-                </View>
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryNumber}>{completedCount}</Text>
+                <Text style={styles.summaryLabel}>Completed</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryNumber}>{totalItems - completedCount}</Text>
+                <Text style={styles.summaryLabel}>Remaining</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryNumber}>{estimatedTime}m</Text>
+                <Text style={styles.summaryLabel}>Est. Time</Text>
               </View>
             </View>
+          </View>
 
-            {renderPrioritySection('HIGH', priorityGroups.HIGH, '#F44336', 'alert-circle')}
-            {renderPrioritySection('MEDIUM', priorityGroups.MEDIUM, '#FF9800', 'warning')}
-            {renderPrioritySection('LOW', priorityGroups.LOW, '#2196F3', 'information-circle')}
+          {renderPrioritySection('HIGH', priorityGroups.HIGH, '#F44336', 'alert-circle')}
+          {renderPrioritySection('MEDIUM', priorityGroups.MEDIUM, '#FF9800', 'warning')}
+          {renderPrioritySection('LOW', priorityGroups.LOW, '#2196F3', 'information-circle')}
 
-            {/* Comfort Items Tracker */}
-            <ComfortItemsTracker userProfile={userProfile} />
+          {/* Comfort Items Tracker */}
+          <ComfortItemsTracker userProfile={userProfile} />
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
-                Recommendations personalized for your family profile
-              </Text>
-            </View>
-          </ScrollView>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              Recommendations personalized for your family profile
+            </Text>
+          </View>
         </View>
       )}
 
@@ -844,86 +816,34 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerGradient: {
-    padding: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
   },
   headerContent: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
   },
-  headerLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerIcon: {
+    marginRight: 16,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  headerText: {
+  headerTextContainer: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: 16,
-  },
-  headerRight: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  progressContainer: {
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  progressText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 13,
     color: '#fff',
-  },
-  progressLabel: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  progressBarContainer: {
-    marginBottom: 8,
-  },
-  progressBarBackground: {
-    height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 3,
-  },
-  timeEstimate: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  timeText: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginLeft: 4,
+    fontWeight: '500',
   },
   content: {
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    paddingBottom: 20,
   },
   personalizationBanner: {
     backgroundColor: 'rgba(248, 249, 250, 0.8)',
@@ -941,12 +861,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
     lineHeight: 16,
-  },
-  scrollContent: {
-    maxHeight: 500,
-  },
-  scrollContentContainer: {
-    paddingBottom: 20,
   },
   summaryCard: {
     margin: 16,
@@ -1290,4 +1204,8 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EmergencyKit;
+// Memoized to prevent unnecessary re-renders when parent re-renders
+export default React.memo(EmergencyKit, (prevProps, nextProps) => {
+  // Only re-render if emergencyKitData changes
+  return prevProps.emergencyKitData === nextProps.emergencyKitData;
+});

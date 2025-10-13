@@ -1,3 +1,6 @@
+// Apply native logging filter for iOS (must be first import)
+import './utils/nativeLoggingFilter';
+
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
@@ -33,6 +36,8 @@ import FloodAlertDetails from './components/FloodAlertDetails';
 import RiskFactorIndicator from './components/RiskFactorIndicator';
 import FactorDetailModal from './components/FactorDetailModal';
 import CompactRiskFactorIndicator from './components/CompactRiskFactorIndicator';
+import RiskSummaryCard from './components/RiskSummaryCard';
+import FactorsList from './components/FactorsList';
 import floodAlertService from './utils/FloodAlertService';
 import devAlertTrigger from './utils/DevAlertTrigger';
 import { STATE_ACCURACY_DATA } from './utils/constants';
@@ -58,10 +63,7 @@ import { ReliableLocationProvider, useReliableLocation } from './context/Reliabl
 import { LocationCompatibilityProvider } from './context/LocationContextCompat';
 import { UserProvider } from './context/UserContext';
 
-// Import emergency data
-const emergencyKitData = require('./emergency_kit.json');
-const emergencyContactsData = require('./emergency_contact.json');
-const floodRecoveryGuideData = require('./flood_recovery_guide.json');
+// Emergency data will be lazily loaded in HomeScreen to reduce initial memory footprint
 
 const { width, height } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
@@ -291,9 +293,48 @@ const getFactorVisualProps = (factor) => {
   return { color, icon, impactLevel, isProtective };
 };
 
+// Categorize factors into increasing and reducing risk
+const categorizeFactors = (contributingFactors, floodProbability) => {
+  const increasingFactors = [];
+  const reducingFactors = [];
+
+  if (!contributingFactors) {
+    return { increasingFactors, reducingFactors };
+  }
+
+  // Handle structured format from new backend
+  let factors = [];
+  if (contributingFactors.structured) {
+    factors = contributingFactors.factors || contributingFactors.legacy_text || [];
+  } else if (Array.isArray(contributingFactors)) {
+    factors = contributingFactors;
+  }
+
+  factors.forEach(factor => {
+    // Determine if factor is protective
+    const factorInfo = getFactorVisualProps(factor);
+
+    if (factorInfo.isProtective) {
+      reducingFactors.push(factor);
+    } else {
+      increasingFactors.push(factor);
+    }
+  });
+
+  // Get display limits based on risk level
+  const limits = getFactorDisplayLimits(floodProbability);
+
+  return {
+    increasingFactors: increasingFactors.slice(0, limits.threatsToShow),
+    reducingFactors: reducingFactors.slice(0, limits.protectiveToShow)
+  };
+};
+
 // Detailed Flood Prediction Modal Component
 function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose }) {
   const [activeTab, setActiveTab] = useState('risk');
+  const [selectedFactor, setSelectedFactor] = useState(null);
+  const [showFactorModal, setShowFactorModal] = useState(false);
 
   if (!prediction || !locationInfo) {
     return (
@@ -312,138 +353,80 @@ function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose 
     );
   }
 
-  const renderRiskAnalysis = () => (
-    <ScrollView style={styles.tabContent}>
-      <View style={styles.detailSection}>
-        <Text style={styles.detailSectionTitle}>
-          {prediction?.is_na ? 'Weather Data (Flood Prediction Unavailable)' : 'Risk Breakdown'}
-        </Text>
-        <View style={styles.riskMeter}>
-          <View style={[styles.riskMeterFill, { 
-            width: prediction?.is_na ? '0%' : `${prediction.flood_probability * 100}%`,
-            backgroundColor: prediction?.is_na ? '#E0E0E0' : getRiskColor(prediction.flood_probability)
-          }]} />
-          <Text style={styles.riskMeterText}>
-            {prediction?.is_na ? 'Flood Prediction Not Available' :
-              Math.round(prediction.flood_probability * 100) + '% Flood Probability'}
-          </Text>
-        </View>
-        
-        <View style={styles.riskStats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Risk Level</Text>
-            <Text style={[styles.statValue, { color: prediction?.is_na ? '#666' : getRiskColor(prediction.flood_probability) }]}>
-              {prediction?.is_na ? 'N/A' : prediction.risk_level}
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Confidence</Text>
-            <Text style={styles.statValue}>{Math.round(prediction.confidence * 100)}%</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Peak Risk</Text>
-            <Text style={styles.statValue}>
-              {prediction?.is_na ? 'N/A' : Math.round(prediction.timeframe_hours) + 'h'}
-            </Text>
-          </View>
-        </View>
-      </View>
+  const renderRiskAnalysis = () => {
+    // Categorize factors
+    const { increasingFactors, reducingFactors } = categorizeFactors(
+      prediction.contributing_factors,
+      prediction.flood_probability
+    );
 
-      {/* Information section when prediction is N/A */}
-      {prediction?.is_na && (
-        <View style={styles.detailSection}>
-          <Text style={styles.detailSectionTitle}>Data Status</Text>
-          <View style={styles.infoCard}>
+    const handleFactorPress = (factor) => {
+      setSelectedFactor(factor);
+      setShowFactorModal(true);
+    };
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={{ paddingBottom: 24 }}
+      >
+        {/* Risk Summary Card */}
+        <RiskSummaryCard prediction={prediction} />
+
+        {/* Factors Increasing Risk */}
+        {increasingFactors.length > 0 && (
+          <FactorsList
+            title="Factors Increasing Risk"
+            factors={increasingFactors}
+            type="increasing"
+            onFactorPress={handleFactorPress}
+          />
+        )}
+
+        {/* Factors Reducing Risk */}
+        {reducingFactors.length > 0 && (
+          <FactorsList
+            title="Factors Reducing Risk"
+            factors={reducingFactors}
+            type="reducing"
+            onFactorPress={handleFactorPress}
+          />
+        )}
+
+        {/* Information section when prediction is N/A */}
+        {prediction?.is_na && (
+          <View style={styles.naInfoCard}>
             <Ionicons name="information-circle" size={24} color="#2196F3" />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoTitle}>AI Flood Prediction Unavailable</Text>
-              <Text style={styles.infoText}>
-                {realTimeWeather ? 
+            <View style={styles.naInfoContent}>
+              <Text style={styles.naInfoTitle}>AI Flood Prediction Unavailable</Text>
+              <Text style={styles.naInfoText}>
+                {realTimeWeather ?
                   'Current weather conditions are being monitored. Weather data is provided by Open Meteo API.' :
                   'Both AI prediction and weather monitoring are currently unavailable. Please check your internet connection.'}
               </Text>
-              {realTimeWeather && (
-                <Text style={styles.infoSubtext}>
-                  Real-time temperature, rainfall, and atmospheric conditions are still available below.
-                </Text>
-              )}
             </View>
           </View>
-        </View>
-      )}
-
-      <View style={styles.detailSection}>
-        <Text style={styles.detailSectionTitle}>
-          {prediction?.is_na ? 'System Status' : 'Contributing Factors'}
-        </Text>
-        {prediction?.is_na ? (
-          <View style={styles.factorDetailItem}>
-            <Ionicons name="information-circle-outline" size={20} color="#666" />
-            <Text style={styles.factorDetailText}>AI flood prediction system unavailable</Text>
-          </View>
-        ) : (
-          (prediction.contributing_factors?.structured && prediction.contributing_factors.legacy_text ?
-            prediction.contributing_factors.legacy_text :
-            (Array.isArray(prediction.contributing_factors) ? prediction.contributing_factors : [])
-          ).map((factor, index) => {
-            // Get color and icon based on factor impact and direction
-            const visualProps = getFactorVisualProps(factor);
-            const factorText = typeof factor === 'string'
-              ? factor
-              : (factor?.feature?.title && factor?.feature?.description
-                  ? `${factor.impact_level} impact: ${factor.feature.title} - ${factor.feature.description}`
-                  : factor?.feature?.title || 'Unknown factor');
-
-            return (
-              <View key={index} style={styles.factorDetailItem}>
-                <Ionicons name={visualProps.icon} size={20} color={visualProps.color} />
-                <Text style={[styles.factorDetailText, { color: visualProps.color }]}>
-                  {factorText}
-                </Text>
-              </View>
-            );
-          })
         )}
-      </View>
 
-      {prediction.risk_indicators && (
-        <View style={styles.detailSection}>
-          <Text style={styles.detailSectionTitle}>Risk Indicators</Text>
-          <View style={styles.indicatorGrid}>
-            <View style={styles.indicatorItem}>
-              <Ionicons
-                name={prediction.risk_indicators.heavy_rain_warning ? "warning" : "checkmark-circle"}
-                size={24}
-                color={prediction.risk_indicators.heavy_rain_warning ? "#FF9800" : "#4CAF50"}
-              />
-              <Text style={[
-                styles.indicatorText,
-                { color: prediction.risk_indicators.heavy_rain_warning ? "#FF9800" : "#4CAF50" }
-              ]}>
-                {prediction.risk_indicators.heavy_rain_warning ? "Heavy Rain Detected" : "No Heavy Rain"}
-              </Text>
-            </View>
-            <View style={styles.indicatorItem}>
-              <Ionicons
-                name={prediction.risk_indicators.high_humidity_warning ? "warning" : "checkmark-circle"}
-                size={24}
-                color={prediction.risk_indicators.high_humidity_warning ? "#FF9800" : "#4CAF50"}
-              />
-              <Text style={[
-                styles.indicatorText,
-                { color: prediction.risk_indicators.high_humidity_warning ? "#FF9800" : "#4CAF50" }
-              ]}>
-                {prediction.risk_indicators.high_humidity_warning ? "High Humidity Detected" : "Normal Humidity"}
-              </Text>
-            </View>
+        {/* Empty state when no factors */}
+        {!prediction?.is_na && increasingFactors.length === 0 && reducingFactors.length === 0 && (
+          <View style={styles.emptyFactorsCard}>
+            <Ionicons name="checkmark-circle" size={48} color="#4CAF50" />
+            <Text style={styles.emptyFactorsTitle}>All Clear</Text>
+            <Text style={styles.emptyFactorsText}>
+              No significant risk factors detected at this time.
+            </Text>
           </View>
-        </View>
-      )}
-    </ScrollView>
-  );
+        )}
+      </ScrollView>
+    );
+  };
 
   const renderWeatherDetails = () => (
-    <ScrollView style={styles.tabContent}>
+    <ScrollView
+      style={styles.tabContent}
+      contentContainerStyle={{ paddingBottom: 24 }}
+    >
       <View style={styles.detailSection}>
         <Text style={styles.detailSectionTitle}>Current Weather</Text>
         <View style={styles.weatherDetailGrid}>
@@ -504,7 +487,10 @@ function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose 
   );
 
   const renderLocationIntelligence = () => (
-    <ScrollView style={styles.tabContent}>
+    <ScrollView
+      style={styles.tabContent}
+      contentContainerStyle={{ paddingBottom: 24 }}
+    >
       <View style={styles.detailSection}>
         <Text style={styles.detailSectionTitle}>Location Details</Text>
         <View style={styles.locationDetailItem}>
@@ -562,41 +548,63 @@ function FloodDetailsModal({ prediction, locationInfo, realTimeWeather, onClose 
 
   return (
     <View style={styles.modalContainer}>
+      {/* Header */}
       <View style={styles.modalHeader}>
-        <TouchableOpacity onPress={onClose}>
-          <Ionicons name="close" size={24} color="#333" />
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <Ionicons name="close" size={28} color="#333" />
         </TouchableOpacity>
         <Text style={styles.modalTitle}>Flood Prediction Details</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 28 }} />
       </View>
 
-      <View style={styles.modalTabBar}>
-        {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab.id}
-            style={[styles.tabButton, activeTab === tab.id && styles.activeTabButton]}
-            onPress={() => setActiveTab(tab.id)}
-          >
-            <Ionicons 
-              name={tab.icon} 
-              size={20} 
-              color={activeTab === tab.id ? '#2196F3' : '#666'} 
-            />
-            <Text style={[
-              styles.tabButtonText,
-              activeTab === tab.id && styles.activeTabButtonText
-            ]}>
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      {/* Pill-style Tabs */}
+      <View style={styles.pillTabsContainer}>
+        <View style={styles.pillTabsWrapper}>
+          {tabs.map((tab) => (
+            <TouchableOpacity
+              key={tab.id}
+              style={[
+                styles.pillTab,
+                activeTab === tab.id && styles.activePillTab
+              ]}
+              onPress={() => setActiveTab(tab.id)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={tab.icon}
+                size={18}
+                color={activeTab === tab.id ? '#1976D2' : '#666'}
+                style={styles.pillTabIcon}
+              />
+              <Text style={[
+                styles.pillTabText,
+                activeTab === tab.id && styles.activePillTabText
+              ]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
+      {/* Content */}
       <View style={styles.modalContent}>
         {activeTab === 'risk' && renderRiskAnalysis()}
         {activeTab === 'weather' && renderWeatherDetails()}
         {activeTab === 'location' && renderLocationIntelligence()}
       </View>
+
+      {/* Factor Detail Modal */}
+      {selectedFactor && (
+        <FactorDetailModal
+          visible={showFactorModal}
+          factor={selectedFactor}
+          onClose={() => {
+            setShowFactorModal(false);
+            setSelectedFactor(null);
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -649,6 +657,11 @@ function HomeScreen() {
   const [selectedLocationId, setSelectedLocationId] = useState(null);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const insets = useSafeAreaInsets();
+
+  // Lazy-loaded emergency data (loaded on demand to reduce memory footprint)
+  const [emergencyKitData, setEmergencyKitData] = useState(null);
+  const [emergencyContactsData, setEmergencyContactsData] = useState(null);
+  const [floodRecoveryGuideData, setFloodRecoveryGuideData] = useState(null);
 
   // Get monitored locations from context
   const { monitoredLocations } = useReliableLocation();
@@ -724,6 +737,31 @@ function HomeScreen() {
       realTimeWeatherService.clearCache();
     };
   }, [selectedLocationMode, selectedLocationId]);
+
+  // Lazy load emergency data after component mounts to reduce initial memory pressure
+  useEffect(() => {
+    const loadEmergencyData = async () => {
+      try {
+        // Load data with a small delay to allow critical UI to render first
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Load emergency data dynamically
+        const kitData = require('./emergency_kit.json');
+        const contactsData = require('./emergency_contact.json');
+        const recoveryData = require('./flood_recovery_guide.json');
+
+        setEmergencyKitData(kitData);
+        setEmergencyContactsData(contactsData);
+        setFloodRecoveryGuideData(recoveryData);
+
+        console.log('✅ Emergency data loaded lazily');
+      } catch (error) {
+        console.error('❌ Error loading emergency data:', error);
+      }
+    };
+
+    loadEmergencyData();
+  }, []);
 
   const setupFloodAlertMonitoring = async () => {
     try {
@@ -1556,9 +1594,24 @@ function HomeScreen() {
                   <Text style={styles.threatsSectionTitle}>Potential Threats:</Text>
                 </View>
                 <View style={styles.threatsContainer}>
-                  {(prediction.contributing_factors?.legacy_text || 
-                    (Array.isArray(prediction.contributing_factors) ? prediction.contributing_factors : [])
-                  ).slice(0, 4).map((factor, index) => (
+                  {(() => {
+                    console.log('🔍 [App.js - Threats] Contributing factors for threats section');
+
+                    // Handle structured format from new backend
+                    if (prediction.contributing_factors?.structured) {
+                      const factors = prediction.contributing_factors.factors ||
+                             prediction.contributing_factors.legacy_text ||
+                             [];
+                      console.log('🔍 [App.js - Threats] Using structured format, returning', factors.length, 'factors');
+                      return factors;
+                    }
+                    // Handle direct array format (legacy backend)
+                    const legacyFactors = Array.isArray(prediction.contributing_factors) ?
+                           prediction.contributing_factors :
+                           [];
+                    console.log('🔍 [App.js - Threats] Using legacy format, returning', legacyFactors.length, 'factors');
+                    return legacyFactors;
+                  })().slice(0, 4).map((factor, index) => (
                     <View key={index} style={styles.threatItem}>
                       <Ionicons name="alert-circle" size={16} color="#D32F2F" />
                       <Text style={styles.threatItemText}>
@@ -1577,18 +1630,20 @@ function HomeScreen() {
 
       {/* REMOVED: Fallback Rain Forecast Card - redundant when prediction is N/A, weather data shown in main Weather Card */}
 
-      {/* Emergency Components */}
-      <EmergencyKit emergencyKitData={emergencyKitData} />
+      {/* Emergency Components - Lazy loaded to reduce memory footprint */}
+      {emergencyKitData && <EmergencyKit emergencyKitData={emergencyKitData} />}
 
       <PreparationGuidelines />
 
-      <EmergencyContacts
-        emergencyContactsData={emergencyContactsData}
-        monitoredLocations={monitoredLocations}
-        currentLocationInfo={locationInfo}
-      />
+      {emergencyContactsData && (
+        <EmergencyContacts
+          emergencyContactsData={emergencyContactsData}
+          monitoredLocations={monitoredLocations}
+          currentLocationInfo={locationInfo}
+        />
+      )}
 
-      <FloodRecoveryPlan recoveryGuideData={floodRecoveryGuideData} />
+      {floodRecoveryGuideData && <FloodRecoveryPlan recoveryGuideData={floodRecoveryGuideData} />}
 
       <TouchableOpacity
         style={styles.primaryButton}
@@ -3031,7 +3086,7 @@ const styles = StyleSheet.create({
   // Modal Styles
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8F9FA',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -3040,52 +3095,128 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 15,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#E0E0E0',
+  },
+  closeButton: {
+    padding: 4,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#333',
   },
   modalContent: {
     flex: 1,
   },
-  modalTabBar: {
-    flexDirection: 'row',
+  // Pill-style Tabs
+  pillTabsContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#E0E0E0',
   },
-  tabButton: {
-    flex: 1,
+  pillTabsWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  pillTab: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginHorizontal: 5,
-    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
   },
-  activeTabButton: {
-    backgroundColor: '#e3f2fd',
+  activePillTab: {
+    backgroundColor: '#E0F7FA',
   },
-  tabButtonText: {
-    marginLeft: 5,
-    fontSize: 12,
-    color: '#666',
+  pillTabIcon: {
+    marginRight: 6,
+  },
+  pillTabText: {
+    fontSize: 14,
     fontWeight: '500',
+    color: '#666',
   },
-  activeTabButtonText: {
-    color: '#2196F3',
+  activePillTabText: {
+    color: '#1976D2',
+    fontWeight: '600',
   },
   tabContent: {
     flex: 1,
+    paddingTop: 8,
     paddingHorizontal: 20,
   },
+  // N/A Info Card
+  naInfoCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 20,
+    marginVertical: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  naInfoContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  naInfoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  naInfoText: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  // Empty Factors State
+  emptyFactorsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 32,
+    marginHorizontal: 20,
+    marginVertical: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  emptyFactorsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#4CAF50',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyFactorsText: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
   detailSection: {
-    marginVertical: 15,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   detailSectionTitle: {
     fontSize: 18,
@@ -3163,12 +3294,14 @@ const styles = StyleSheet.create({
   },
   weatherDetailGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
   weatherDetailItem: {
     alignItems: 'center',
-    flex: 1,
+    width: '50%',
     paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   weatherDetailLabel: {
     fontSize: 12,
@@ -3191,13 +3324,17 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f0f0f0',
   },
   trendLabel: {
+    flex: 1,
     fontSize: 14,
     color: '#333',
+    marginRight: 12,
   },
   trendValue: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#666',
+    textAlign: 'right',
+    marginRight: 8,
   },
   locationDetailItem: {
     flexDirection: 'row',
@@ -3218,6 +3355,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
     marginTop: 2,
+    flexShrink: 1,
+    marginRight: 8,
+    flexWrap: 'wrap',
   },
   modelInfoItem: {
     paddingVertical: 12,
