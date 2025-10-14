@@ -658,6 +658,9 @@ function HomeScreen() {
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const insets = useSafeAreaInsets();
 
+  // Offline mode state
+  const [offlineMode, setOfflineMode] = useState(false);
+
   // Lazy-loaded emergency data (loaded on demand to reduce memory footprint)
   const [emergencyKitData, setEmergencyKitData] = useState(null);
   const [emergencyContactsData, setEmergencyContactsData] = useState(null);
@@ -702,6 +705,13 @@ function HomeScreen() {
   useEffect(() => {
     // Wait for location preference to load before loading prediction
     const loadInitialData = async () => {
+      // Skip loading if offline mode is active
+      if (offlineMode) {
+        console.log('📴 Offline mode active - skipping prediction and location loading');
+        setLoading(false);
+        return;
+      }
+
       // Small delay to ensure location preference is loaded
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -727,7 +737,12 @@ function HomeScreen() {
     };
 
     loadInitialData();
-    setupFloodAlertMonitoring();
+
+    // Skip alert monitoring if offline mode is active
+    if (!offlineMode) {
+      setupFloodAlertMonitoring();
+    }
+
     const interval = setInterval(updateCountdown, 1000);
 
     return () => {
@@ -736,7 +751,7 @@ function HomeScreen() {
       // Clear weather service cache on unmount
       realTimeWeatherService.clearCache();
     };
-  }, [selectedLocationMode, selectedLocationId]);
+  }, [selectedLocationMode, selectedLocationId, offlineMode]);
 
   // Lazy load emergency data after component mounts to reduce initial memory pressure
   useEffect(() => {
@@ -904,6 +919,30 @@ function HomeScreen() {
   const handleCloseFactorModal = () => {
     setShowFactorModal(false);
     setSelectedFactor(null);
+  };
+
+  const handleActivateOfflineMode = async () => {
+    console.log('📴 Activating offline mode');
+    setOfflineMode(true);
+    setLoading(false);
+    setError(null);
+
+    // Load emergency data immediately if not already loaded
+    if (!emergencyKitData || !emergencyContactsData || !floodRecoveryGuideData) {
+      try {
+        const kitData = require('./emergency_kit.json');
+        const contactsData = require('./emergency_contact.json');
+        const recoveryData = require('./flood_recovery_guide.json');
+
+        setEmergencyKitData(kitData);
+        setEmergencyContactsData(contactsData);
+        setFloodRecoveryGuideData(recoveryData);
+
+        console.log('✅ Emergency data loaded for offline mode');
+      } catch (error) {
+        console.error('❌ Error loading emergency data for offline mode:', error);
+      }
+    }
   };
 
   const handleLocationSelect = async (mode, locationId) => {
@@ -1229,16 +1268,30 @@ function HomeScreen() {
     return 'location';
   };
 
-  if (loading) {
+  if (loading && !offlineMode) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
-      </View>
+      <LinearGradient
+        colors={['#E3F2FD', '#ECEFF1']}
+        style={styles.loadingContainer}
+      >
+        <View style={styles.loadingContent}>
+          <ActivityIndicator size="large" color="#4DD0E1" />
+          <Text style={styles.loadingMainText}>Gathering the latest flood data...</Text>
+          <Text style={styles.loadingSubtitle}>Ensuring you have the most accurate information.</Text>
+          <TouchableOpacity
+            style={styles.offlineModeButtonSubtle}
+            onPress={handleActivateOfflineMode}
+          >
+            <Ionicons name="cloud-offline-outline" size={20} color="#1976D2" />
+            <Text style={styles.offlineModeButtonTextSubtle}>Access Offline Mode</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
     );
   }
 
   // Handle null prediction data to prevent crashes
-  if (!prediction) {
+  if (!prediction && !offlineMode) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
@@ -1253,9 +1306,9 @@ function HomeScreen() {
             style={styles.header}
           >
             <View style={styles.headerContent}>
-              <Image 
-                source={require('./assets/location-images/icon.png')} 
-                style={styles.headerIcon} 
+              <Image
+                source={require('./assets/location-images/icon.png')}
+                style={styles.headerIcon}
               />
               <View>
                 <Text style={styles.appTitle}>FloodAid</Text>
@@ -1271,15 +1324,15 @@ function HomeScreen() {
             </View>
           )}
         </View>
-        
+
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color="#FF9800" />
           <Text style={styles.errorTitle}>Prediction Unavailable</Text>
           <Text style={styles.errorMessage}>
             Unable to load flood prediction data. This may be due to network issues or service timeout.
           </Text>
-          <TouchableOpacity 
-            style={[styles.retryButton, isRetrying && styles.retryButtonDisabled]} 
+          <TouchableOpacity
+            style={[styles.retryButton, isRetrying && styles.retryButtonDisabled]}
             onPress={() => {
               console.log(`🔄 Manual retry button pressed`);
               !isRetrying && loadPredictionWithRetry(true);
@@ -1290,8 +1343,14 @@ function HomeScreen() {
               {isRetrying ? 'Retrying...' : `Try Again ${retryCount > 0 ? `(${retryCount + 1})` : ''}`}
             </Text>
           </TouchableOpacity>
-          
-          {/* Mock data toggle moved to developer controls only */}
+
+          <TouchableOpacity
+            style={styles.offlineModeButtonAlt}
+            onPress={handleActivateOfflineMode}
+          >
+            <Ionicons name="cloud-offline-outline" size={20} color="#666" />
+            <Text style={styles.offlineModeButtonText}>Access Offline Mode</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
       </SafeAreaView>
@@ -1335,7 +1394,9 @@ function HomeScreen() {
         )}
       </View>
 
-      {/* Location Selector Button */}
+      {/* Location Selector Button and Risk Assessment - Only shown when not in offline mode */}
+      {!offlineMode && (
+      <>
       <TouchableOpacity
         style={styles.locationSelectorButton}
         onPress={() => setShowLocationSelector(true)}
@@ -1625,10 +1686,22 @@ function HomeScreen() {
           </View>
         )}
       </View>
+      </>
+      )}
 
 
 
       {/* REMOVED: Fallback Rain Forecast Card - redundant when prediction is N/A, weather data shown in main Weather Card */}
+
+      {/* Offline Mode Banner */}
+      {offlineMode && (
+        <View style={styles.offlineModeBanner}>
+          <Ionicons name="cloud-offline-outline" size={20} color="#666" />
+          <Text style={styles.offlineModeBannerText}>
+            Offline Mode: Showing emergency preparedness resources only
+          </Text>
+        </View>
+      )}
 
       {/* Emergency Components - Lazy loaded to reduce memory footprint */}
       {emergencyKitData && <EmergencyKit emergencyKitData={emergencyKitData} />}
@@ -1640,20 +1713,29 @@ function HomeScreen() {
           emergencyContactsData={emergencyContactsData}
           monitoredLocations={monitoredLocations}
           currentLocationInfo={locationInfo}
+          offlineMode={offlineMode}
         />
       )}
 
-      {floodRecoveryGuideData && <FloodRecoveryPlan recoveryGuideData={floodRecoveryGuideData} />}
+      {floodRecoveryGuideData && (
+        <FloodRecoveryPlan
+          recoveryGuideData={floodRecoveryGuideData}
+          currentLocationInfo={locationInfo}
+          offlineMode={offlineMode}
+        />
+      )}
 
-      <TouchableOpacity
-        style={styles.primaryButton}
-        onPress={() => setShowDetailsModal(true)}
-      >
-        <Text style={styles.primaryButtonText}>View Details</Text>
-      </TouchableOpacity>
+      {!offlineMode && (
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => setShowDetailsModal(true)}
+        >
+          <Text style={styles.primaryButtonText}>View Details</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Developer Mode Button - Only visible in development */}
-      <DeveloperModeButton onAlertGenerated={handleFloodAlert} />
+      {!offlineMode && <DeveloperModeButton onAlertGenerated={handleFloodAlert} />}
 
 
       {/* Detailed Flood Prediction Modal */}
@@ -1907,6 +1989,104 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#CFFAFE66',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContent: {
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  loadingMainText: {
+    marginTop: 32,
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1976D2',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  loadingSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#757575',
+    textAlign: 'center',
+    marginBottom: 40,
+    paddingHorizontal: 16,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 24,
+  },
+  offlineModeButtonSubtle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(25, 118, 210, 0.2)',
+  },
+  offlineModeButtonTextSubtle: {
+    marginLeft: 8,
+    fontSize: 15,
+    color: '#1976D2',
+    fontWeight: '500',
+  },
+  offlineModeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  offlineModeButtonAlt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 24,
+    marginTop: 16,
+  },
+  offlineModeButtonText: {
+    marginLeft: 8,
+    fontSize: 15,
+    color: '#666',
+    fontWeight: '500',
+  },
+  offlineModeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF9E6',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+  },
+  offlineModeBannerText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

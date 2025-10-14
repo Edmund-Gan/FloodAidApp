@@ -80,7 +80,12 @@
       "WebFetch(domain:account.heigit.org)",
       "Bash(curl -s -I \"https://floodaid-backend-497410110873.asia-southeast1.run.app/api/health\")",
       "Bash(curl -s \"https://floodaid-backend-497410110873.asia-southeast1.run.app/api/health\")",
-      "Bash(unzip:*)"
+      "Bash(unzip:*)",
+      "Bash(curl -X POST http://localhost:5001/api/air-quality -H \"Content-Type: application/json\" -d '{\"\"\"\"latitude\"\"\"\": 3.139, \"\"\"\"longitude\"\"\"\": 101.6869}')",
+      "Bash(curl -X POST http://localhost:5001/api/air-quality -H \"Content-Type: application/json\" -d '{\"\"latitude\"\": 3.139, \"\"longitude\"\": 101.6869}')",
+      "Bash(curl:*)",
+      "Bash(gcloud run deploy:*)",
+      "WebFetch(domain:open-meteo.com)"
     ],
     "deny": [],
     "ask": []

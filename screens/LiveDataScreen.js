@@ -316,7 +316,7 @@ export default function LiveDataScreen() {
   const getWeatherIcon = (intensity, precipitation) => {
     if (precipitation === 0) return 'partly-sunny-outline';
     if (intensity === 'Heavy') return 'thunderstorm-outline';
-    if (intensity === 'Moderate') return 'rain-outline';
+    if (intensity === 'Moderate') return 'rainy-outline';
     return 'rainy-outline'; // Light/Drizzle
   };
 

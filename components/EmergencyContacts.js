@@ -27,7 +27,8 @@ const { width } = Dimensions.get('window');
 const EmergencyContacts = ({
   emergencyContactsData,
   monitoredLocations = [],
-  currentLocationInfo = null
+  currentLocationInfo = null,
+  offlineMode = false
 }) => {
   const { userProfile } = useContext(UserContext);
   const {
@@ -697,7 +698,7 @@ const EmergencyContacts = ({
               </Text>
             </TouchableOpacity>
 
-            {selectedMode !== 'state' && (
+            {selectedMode !== 'state' && !offlineMode && (
               <TouchableOpacity
                 style={[styles.categoryTab, activeTab === 'nearMe' && styles.categoryTabActive]}
                 onPress={() => {
@@ -865,6 +866,7 @@ const styles = StyleSheet.create({
   locationInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   locationText: {
     fontSize: 14,

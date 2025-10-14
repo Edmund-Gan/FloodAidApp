@@ -1,0 +1,1295 @@
+{
+  "guide_info": {
+    "title": "Panduan Pemulihan Selepas Banjir Malaysia",
+    "title_en": "Malaysian Post-Flood Recovery Guide",
+    "version": "2.0",
+    "last_updated": "2025-10-07",
+    "description": "Panduan komprehensif untuk pemulihan selepas banjir di Malaysia dengan rancangan pemulihan yang disesuaikan berdasarkan tahap kerosakan.",
+    "description_en": "Comprehensive guide for post-flood recovery in Malaysia with customized recovery plans based on damage level."
+  },
+  "damage_assessment": {
+    "title": "Penilaian Kerosakan",
+    "title_en": "Damage Assessment",
+    "description": "Pilih semua yang berkenaan untuk mendapat rancangan pemulihan yang disesuaikan",
+    "description_en": "Select all that apply to get a customized recovery plan",
+    "categories": [
+      {
+        "id": "water_depth",
+        "category": "Tahap Air",
+        "category_en": "Water Depth",
+        "required": true,
+        "type": "single_choice",
+        "options": [
+          {
+            "id": "ankle",
+            "label": "Paras buku lali (< 15cm)",
+            "label_en": "Ankle level (< 15cm)",
+            "severity": "minor",
+            "timeline_impact": {
+              "cleanup_days": 2,
+              "drying_days": 5,
+              "total_days": 7
+            }
+          },
+          {
+            "id": "knee",
+            "label": "Paras lutut (15-60cm)",
+            "label_en": "Knee level (15-60cm)",
+            "severity": "moderate",
+            "timeline_impact": {
+              "cleanup_days": 4,
+              "drying_days": 10,
+              "total_days": 14
+            }
+          },
+          {
+            "id": "waist",
+            "label": "Paras pinggang (60-120cm)",
+            "label_en": "Waist level (60-120cm)",
+            "severity": "severe",
+            "timeline_impact": {
+              "cleanup_days": 7,
+              "drying_days": 14,
+              "total_days": 21
+            }
+          },
+          {
+            "id": "chest",
+            "label": "Paras dada atau lebih tinggi (> 120cm)",
+            "label_en": "Chest level or higher (> 120cm)",
+            "severity": "critical",
+            "timeline_impact": {
+              "cleanup_days": 10,
+              "drying_days": 21,
+              "total_days": 35
+            }
+          }
+        ]
+      },
+      {
+        "id": "water_type",
+        "category": "Jenis Air",
+        "category_en": "Water Type",
+        "required": true,
+        "type": "single_choice",
+        "options": [
+          {
+            "id": "rainwater",
+            "label": "Air hujan sahaja",
+            "label_en": "Rainwater only",
+            "severity": "minor",
+            "requires_steps": ["safety_protection", "water_debris_removal", "drying_ventilation"],
+            "sanitization_level": "standard"
+          },
+          {
+            "id": "river_water",
+            "label": "Air sungai/parit",
+            "label_en": "River/drain water",
+            "severity": "moderate",
+            "requires_steps": ["safety_protection", "water_debris_removal", "sorting_sanitization", "drying_ventilation", "health_hygiene"],
+            "sanitization_level": "intensive"
+          },
+          {
+            "id": "sewage_water",
+            "label": "Air kumbahan/septik tank",
+            "label_en": "Sewage/septic tank water",
+            "severity": "critical",
+            "requires_steps": ["safety_protection", "water_debris_removal", "sorting_sanitization", "drying_ventilation", "health_hygiene"],
+            "sanitization_level": "professional",
+            "professional_help_recommended": true
+          }
+        ]
+      },
+      {
+        "id": "structural_damage",
+        "category": "Kerosakan Struktur",
+        "category_en": "Structural Damage",
+        "required": true,
+        "type": "multiple_choice",
+        "options": [
+          {
+            "id": "walls_cracks",
+            "label": "Keretakan pada dinding",
+            "label_en": "Wall cracks",
+            "severity": "severe",
+            "requires_professional": true,
+            "timeline_addition_days": 7,
+            "affects_categories": ["immediate_safety"]
+          },
+          {
+            "id": "foundation",
+            "label": "Kerosakan asas/struktur",
+            "label_en": "Foundation/structural damage",
+            "severity": "critical",
+            "requires_professional": true,
+            "timeline_addition_days": 21,
+            "affects_categories": ["immediate_safety"],
+            "professional_required": "Jurutera struktur"
+          },
+          {
+            "id": "roof_damage",
+            "label": "Kerosakan bumbung",
+            "label_en": "Roof damage",
+            "severity": "severe",
+            "timeline_addition_days": 5,
+            "affects_categories": ["drying_ventilation"]
+          },
+          {
+            "id": "floor_damage",
+            "label": "Lantai rosak/angkat",
+            "label_en": "Damaged/lifted flooring",
+            "severity": "moderate",
+            "timeline_addition_days": 7,
+            "affects_categories": ["water_debris_removal", "drying_ventilation"]
+          },
+          {
+            "id": "no_structural",
+            "label": "Tiada kerosakan struktur",
+            "label_en": "No structural damage",
+            "severity": "none",
+            "timeline_addition_days": 0
+          }
+        ]
+      },
+      {
+        "id": "electrical_damage",
+        "category": "Kerosakan Elektrik",
+        "category_en": "Electrical Damage",
+        "required": true,
+        "type": "multiple_choice",
+        "options": [
+          {
+            "id": "breaker_box",
+            "label": "Kotak pemutus litar terendam",
+            "label_en": "Submerged breaker box",
+            "severity": "critical",
+            "requires_professional": true,
+            "professional_required": "Juruelektrik berlesen",
+            "timeline_addition_days": 3,
+            "affects_categories": ["safety_protection", "utilities_services"]
+          },
+          {
+            "id": "outlets_switches",
+            "label": "Soket/suis terendam",
+            "label_en": "Submerged outlets/switches",
+            "severity": "severe",
+            "requires_professional": true,
+            "timeline_addition_days": 2,
+            "affects_categories": ["utilities_services"]
+          },
+          {
+            "id": "appliances_damaged",
+            "label": "Peralatan elektrik rosak",
+            "label_en": "Damaged electrical appliances",
+            "severity": "moderate",
+            "timeline_addition_days": 1,
+            "affects_categories": ["sorting_sanitization"]
+          },
+          {
+            "id": "wiring_exposed",
+            "label": "Wayar terdedah/rosak",
+            "label_en": "Exposed/damaged wiring",
+            "severity": "critical",
+            "requires_professional": true,
+            "timeline_addition_days": 3,
+            "affects_categories": ["safety_protection", "utilities_services"]
+          },
+          {
+            "id": "no_electrical",
+            "label": "Tiada kerosakan elektrik",
+            "label_en": "No electrical damage",
+            "severity": "none",
+            "timeline_addition_days": 0
+          }
+        ]
+      },
+      {
+        "id": "furniture_items",
+        "category": "Perabot & Barang",
+        "category_en": "Furniture & Items",
+        "required": true,
+        "type": "multiple_choice",
+        "options": [
+          {
+            "id": "soft_furniture",
+            "label": "Perabot lembut (sofa, tilam, bantal)",
+            "label_en": "Soft furniture (sofa, mattress, pillows)",
+            "severity": "moderate",
+            "timeline_addition_days": 2,
+            "disposal_likely": true,
+            "affects_categories": ["sorting_sanitization"]
+          },
+          {
+            "id": "wooden_furniture",
+            "label": "Perabot kayu",
+            "label_en": "Wooden furniture",
+            "severity": "moderate",
+            "timeline_addition_days": 3,
+            "drying_time_days": 14,
+            "affects_categories": ["sorting_sanitization", "drying_ventilation"]
+          },
+          {
+            "id": "electronics",
+            "label": "Elektronik (TV, komputer, dsb)",
+            "label_en": "Electronics (TV, computer, etc)",
+            "severity": "severe",
+            "timeline_addition_days": 1,
+            "disposal_likely": true,
+            "affects_categories": ["sorting_sanitization", "documentation_insurance"]
+          },
+          {
+            "id": "carpets_curtains",
+            "label": "Permaidani & langsir",
+            "label_en": "Carpets & curtains",
+            "severity": "moderate",
+            "timeline_addition_days": 2,
+            "affects_categories": ["sorting_sanitization", "drying_ventilation"]
+          },
+          {
+            "id": "documents_photos",
+            "label": "Dokumen & foto penting",
+            "label_en": "Important documents & photos",
+            "severity": "moderate",
+            "timeline_addition_days": 2,
+            "special_handling": true,
+            "affects_categories": ["sorting_sanitization"]
+          },
+          {
+            "id": "kitchen_items",
+            "label": "Peralatan dapur & makanan",
+            "label_en": "Kitchen items & food",
+            "severity": "moderate",
+            "timeline_addition_days": 1,
+            "affects_categories": ["sorting_sanitization", "health_hygiene"]
+          }
+        ]
+      },
+      {
+        "id": "mold_growth",
+        "category": "Pertumbuhan Kulat",
+        "category_en": "Mold Growth",
+        "required": false,
+        "type": "single_choice",
+        "options": [
+          {
+            "id": "no_mold",
+            "label": "Tiada kulat",
+            "label_en": "No mold",
+            "severity": "none",
+            "timeline_addition_days": 0
+          },
+          {
+            "id": "small_patches",
+            "label": "Kawasan kecil (< 1m²)",
+            "label_en": "Small patches (< 1m²)",
+            "severity": "minor",
+            "timeline_addition_days": 2,
+            "diy_possible": true,
+            "affects_categories": ["drying_ventilation"]
+          },
+          {
+            "id": "large_areas",
+            "label": "Kawasan besar (> 1m²)",
+            "label_en": "Large areas (> 1m²)",
+            "severity": "severe",
+            "timeline_addition_days": 5,
+            "requires_professional": true,
+            "professional_required": "Pakar pembersihan kulat",
+            "affects_categories": ["drying_ventilation", "health_hygiene"]
+          },
+          {
+            "id": "widespread",
+            "label": "Merebak luas di seluruh rumah",
+            "label_en": "Widespread throughout house",
+            "severity": "critical",
+            "timeline_addition_days": 10,
+            "requires_professional": true,
+            "professional_required": "Pakar pembersihan kulat profesional",
+            "affects_categories": ["drying_ventilation", "health_hygiene"]
+          }
+        ]
+      },
+      {
+        "id": "insurance_coverage",
+        "category": "Perlindungan Insurans",
+        "category_en": "Insurance Coverage",
+        "required": false,
+        "type": "single_choice",
+        "options": [
+          {
+            "id": "has_flood_insurance",
+            "label": "Ada insurans banjir",
+            "label_en": "Has flood insurance",
+            "priority": "high",
+            "affects_categories": ["documentation_insurance"]
+          },
+          {
+            "id": "has_home_insurance",
+            "label": "Ada insurans rumah (tanpa perlindungan banjir)",
+            "label_en": "Has home insurance (without flood coverage)",
+            "priority": "medium",
+            "affects_categories": ["documentation_insurance"]
+          },
+          {
+            "id": "no_insurance",
+            "label": "Tiada insurans",
+            "label_en": "No insurance",
+            "priority": "low",
+            "government_assistance_eligible": true
+          }
+        ]
+      }
+    ]
+  },
+  "customization_rules": {
+    "timeline_calculation": {
+      "description": "Cara mengira garis masa pemulihan berdasarkan kerosakan",
+      "description_en": "How to calculate recovery timeline based on damage",
+      "formula": "Base timeline + Water depth impact + All timeline additions from selected damage",
+      "base_timeline_days": 7,
+      "factors": [
+        "Tahap air (water_depth) - set timeline asas",
+        "Jenis air (water_type) - tentukan tahap pembersihan",
+        "Kerosakan struktur - tambah hari untuk pembaikan",
+        "Kerosakan elektrik - tambah hari untuk pemeriksaan",
+        "Barang rosak - tambah hari untuk pengasingan",
+        "Pertumbuhan kulat - tambah hari untuk rawatan"
+      ]
+    },
+    "priority_steps": {
+      "description": "Langkah yang mesti dilakukan berdasarkan kerosakan",
+      "description_en": "Steps that must be done based on damage",
+      "always_required": [
+        "immediate_safety",
+        "safety_protection"
+      ],
+      "conditional_steps": {
+        "if_structural_damage": ["Get professional structural assessment before proceeding"],
+        "if_electrical_damage": ["utilities_services must be completed before full restoration"],
+        "if_sewage_water": ["Professional sanitization recommended", "health_hygiene becomes critical"],
+        "if_mold_present": ["drying_ventilation becomes highest priority"]
+      }
+    },
+    "professional_help_required": {
+      "description": "Bila perlu dapatkan bantuan profesional",
+      "description_en": "When professional help is required",
+      "triggers": [
+        {
+          "condition": "Structural damage (foundation, major cracks)",
+          "professional": "Jurutera struktur / Structural engineer",
+          "urgent": true
+        },
+        {
+          "condition": "Electrical damage (breaker box, wiring)",
+          "professional": "Juruelektrik berlesen / Licensed electrician",
+          "urgent": true
+        },
+        {
+          "condition": "Sewage contamination",
+          "professional": "Syarikat pembersihan profesional / Professional cleaning company",
+          "urgent": false
+        },
+        {
+          "condition": "Widespread mold (> 1m²)",
+          "professional": "Pakar pembersihan kulat / Mold remediation specialist",
+          "urgent": false
+        },
+        {
+          "condition": "Gas line damage",
+          "professional": "Juruteknik gas berlesen / Licensed gas technician",
+          "urgent": true
+        }
+      ]
+    }
+  },
+  "categories": [
+    {
+      "id": "immediate_safety",
+      "category_name": "Penilaian Keselamatan Segera",
+      "category_name_en": "Immediate Safety Assessment",
+      "base_timeline": "Hari 1 (Jam 1-6 selepas pulang)",
+      "base_timeline_en": "Day 1 (Hours 1-6 after return)",
+      "priority": "KRITIKAL",
+      "priority_en": "CRITICAL",
+      "icon": "⚠️",
+      "brief_description": "Penilaian awal keselamatan rumah dan persekitaran sebelum memulakan pembersihan.",
+      "brief_description_en": "Initial safety assessment of home and surroundings before starting cleanup.",
+      "triggered_by_damage": ["water_depth.*", "structural_damage.*", "electrical_damage.*"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Tunggu Kebenaran Pihak Berkuasa",
+          "title_en": "Wait for Official Clearance",
+          "brief": "Jangan pulang sehingga pihak berkuasa mengumumkan kawasan selamat.",
+          "brief_en": "Do not return until authorities announce the area is safe.",
+          "detailed_guidance": "Dengar pengumuman di radio atau tunggu arahan daripada pihak berkuasa seperti Jabatan Pertahanan Awam Malaysia atau NADMA. Jangan pulang sebelum diberi kebenaran atau sehingga benar-benar selamat. Air banjir mungkin masih tinggi dan struktur bangunan mungkin tidak stabil.",
+          "detailed_guidance_en": "Listen to radio announcements or wait for orders from authorities such as the Malaysian Civil Defense Department or NADMA. Do not return before being allowed to or until it is really safe. Floodwaters may still be high and building structures may be unstable.",
+          "rationale": "Memastikan keselamatan peribadi dan mengelakkan bahaya tersembunyi seperti arus deras, struktur rosak, atau bahaya elektrik.",
+          "rationale_en": "Ensures personal safety and avoids hidden dangers such as strong currents, damaged structures, or electrical hazards.",
+          "safety_warnings": [
+            "Jangan cuba menyeberangi kawasan banjir",
+            "Elakkan kawasan dengan arus air yang deras",
+            "Berhati-hati dengan kabel atau wayar yang terjatuh"
+          ],
+          "safety_warnings_en": [
+            "Do not attempt to cross flooded areas",
+            "Avoid areas with strong water currents",
+            "Beware of fallen cables or wires"
+          ],
+          "applies_to_all": true
+        },
+        {
+          "step_number": 2,
+          "title": "Pemeriksaan Struktur Bangunan",
+          "title_en": "Building Structural Inspection",
+          "brief": "Periksa keretakan atau kerosakan struktur yang mungkin berbahaya.",
+          "brief_en": "Inspect for cracks or structural damage that may be unsafe.",
+          "detailed_guidance": "Sebelum masuk ke dalam rumah yang dibanjiri, periksa bahagian luar untuk sebarang keretakan pada dinding, simen yang longgar atau jatuh, atau tanda-tanda kestabilan struktur yang lemah. Gunakan kayu untuk mengalihkan sebarang halangan di lantai. Perhatikan siling dan plaster dinding yang mungkin telah retak, longgar dan jatuh.",
+          "detailed_guidance_en": "Before entering a flooded house, inspect the exterior for any cracks in walls, loose or fallen plaster, or signs of structural instability. Use a piece of wood to move any obstructions on the floor. Watch for ceiling and wall plaster which may have cracked, loosened and fallen.",
+          "rationale": "Bangunan yang direndam air mungkin mengalami kerosakan struktur yang tidak kelihatan. Pemeriksaan awal mencegah kecederaan akibat keruntuhan atau kejatuhan bahan bangunan.",
+          "rationale_en": "Water-damaged buildings may have unseen structural damage. Early inspection prevents injuries from collapses or falling building materials.",
+          "safety_warnings": [
+            "Jangan masuk jika ada keretakan besar atau tanda struktur tidak stabil",
+            "Pakai kasut yang sesuai semasa memeriksa",
+            "Jika ragu-ragu, dapatkan penilaian profesional"
+          ],
+          "safety_warnings_en": [
+            "Do not enter if there are large cracks or signs of structural instability",
+            "Wear appropriate shoes during inspection",
+            "If in doubt, get a professional assessment"
+          ],
+          "critical_if_damage": ["structural_damage.walls_cracks", "structural_damage.foundation"],
+          "professional_required_if": ["structural_damage.foundation"]
+        },
+        {
+          "step_number": 3,
+          "title": "Kenal Pasti Bahaya Tersembunyi",
+          "title_en": "Identify Hidden Hazards",
+          "brief": "Semak untuk haiwan berbisa, serangga, dan bahaya lain.",
+          "brief_en": "Check for poisonous animals, insects, and other hazards.",
+          "detailed_guidance": "Selepas banjir, pelbagai haiwan dan serangga mungkin telah masuk ke dalam rumah. Periksa untuk tanda-tanda ular, lipan, kala jengking, atau serangga berbahaya lain. Berhati-hati dengan kawasan gelap dan lembap. Gunakan lampu suluh berkuasa bateri, bukan lilin atau pencucuh api yang boleh mencetuskan bahan mudah terbakar.",
+          "detailed_guidance_en": "After floods, various animals and insects may have entered your home. Check for signs of snakes, centipedes, scorpions, or other dangerous insects. Be careful around dark and damp areas. Use a battery-operated flashlight, not candles or lighters that could ignite flammable materials.",
+          "rationale": "Air banjir membawa pelbagai ancaman biologi. Pengenalpastian awal membolehkan tindakan pencegahan untuk melindungi kesihatan dan keselamatan keluarga.",
+          "rationale_en": "Floodwaters bring various biological threats. Early identification allows preventive action to protect family health and safety.",
+          "safety_warnings": [
+            "Gunakan tongkat atau kayu untuk menggerakkan objek sebelum menyentuhnya",
+            "Jangan letakkan tangan di tempat yang tidak kelihatan",
+            "Hubungi profesional jika menemui haiwan berbahaya"
+          ],
+          "safety_warnings_en": [
+            "Use a stick or wood to move objects before touching them",
+            "Do not put hands where you cannot see",
+            "Contact professionals if dangerous animals are found"
+          ],
+          "applies_to_all": true,
+          "extra_caution_if": ["water_depth.waist", "water_depth.chest"]
+        }
+      ]
+    },
+    {
+      "id": "safety_protection",
+      "category_name": "Keselamatan & Perlindungan Diri",
+      "category_name_en": "Safety & Personal Protection",
+      "base_timeline": "Hari 1 (Sebelum memulakan pembersihan)",
+      "base_timeline_en": "Day 1 (Before starting cleanup)",
+      "priority": "KRITIKAL",
+      "priority_en": "CRITICAL",
+      "icon": "🛡️",
+      "brief_description": "Langkah perlindungan diri dan keselamatan sebelum memulakan proses pembersihan.",
+      "brief_description_en": "Personal protection and safety measures before starting the cleanup process.",
+      "triggered_by_damage": ["water_type.*"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Pakai Peralatan Perlindungan",
+          "title_en": "Wear Protective Gear",
+          "brief": "Perlindungan lengkap termasuk but getah, sarung tangan, dan pelitup muka.",
+          "brief_en": "Complete protection including rubber boots, gloves, and face masks.",
+          "detailed_guidance": "Air banjir sangat tercemar dan mungkin mengandungi kumbahan, bangkai haiwan, atau pelbagai bahan berbahaya lain. Pakailah seluar panjang, but getah, dan sarung tangan untuk melindungi diri daripada pendedahan kulat dan bakteria. Aktiviti seperti menyental, menyembur air, atau mencuci tekanan boleh menghasilkan banyak percikan, jadi bijak untuk memakai pelitup muka biasa. Pastikan semua ahli keluarga yang membantu juga mempunyai perlindungan yang sesuai.",
+          "detailed_guidance_en": "Floodwater is highly contaminated and may contain sewage, dead animals, or various other harmful substances. Wear long pants, rubber boots, and gloves to protect yourself from mold and bacteria exposure. Activities like scrubbing, hosing, or pressure-washing can create a lot of splashes, so it's wise to wear a regular face mask. Ensure all family members helping also have appropriate protection.",
+          "rationale": "Air banjir membawa pelbagai patogen dan bahan kimia berbahaya. Perlindungan fizikal mengurangkan risiko jangkitan, kerengsaan kulit, dan masalah pernafasan.",
+          "rationale_en": "Floodwater carries various pathogens and harmful chemicals. Physical protection reduces the risk of infection, skin irritation, and respiratory problems.",
+          "required_items": [
+            "But getah tinggi",
+            "Sarung tangan getah tahan air",
+            "Pelitup muka atau respirator",
+            "Seluar panjang dan baju lengan panjang",
+            "Cermin mata pelindung",
+            "Topi keras (jika perlu)"
+          ],
+          "required_items_en": [
+            "High rubber boots",
+            "Waterproof rubber gloves",
+            "Face mask or respirator",
+            "Long pants and long-sleeved shirt",
+            "Protective goggles",
+            "Hard hat (if necessary)"
+          ],
+          "applies_to_all": true,
+          "upgrade_protection_if": ["water_type.sewage_water", "mold_growth.large_areas", "mold_growth.widespread"]
+        },
+        {
+          "step_number": 2,
+          "title": "Matikan Bekalan Elektrik",
+          "title_en": "Turn Off Electrical Utilities",
+          "brief": "Matikan kuasa elektrik untuk mengelakkan kejutan elektrik.",
+          "brief_en": "Turn off electricity to avoid electrical shock.",
+          "detailed_guidance": "Air dan elektrik tidak sesuai bercampur! Perkara pertama yang perlu dilakukan apabila pulang selepas banjir ialah menyemak semua peralatan elektrik seperti kotak pemutus litar, peti sejuk, dan talian gas. Pastikan untuk menyemak kuasa. Jika kelihatan masih hidup, matikannya dengan segera. Periksa sebarang wayar elektrik yang terendam dalam air atau item elektrik yang terendam. Jangan sentuh sebarang kabel atau wayar yang terjatuh.",
+          "detailed_guidance_en": "Water and electricity don't mix! The first thing you should do when returning home after a flood is to check all electrical equipment like your breaker box, refrigerator, and gas lines. Make sure to check the power. If it looks like it's still on, turn it off right away. Check for any electrical wires submerged in water or submerged electrical items. Do not touch any fallen cables or wires.",
+          "rationale": "Elektrik dan air menciptakan risiko kejutan elektrik yang maut. Mematikan bekalan elektrik adalah langkah keselamatan kritikal sebelum memulakan sebarang kerja pembersihan.",
+          "rationale_en": "Electricity and water create a deadly electrical shock risk. Turning off power supply is a critical safety step before starting any cleanup work.",
+          "safety_warnings": [
+            "Gunakan lampu suluh berkuasa bateri, bukan lilin",
+            "Jangan sentuh peralatan elektrik dengan tangan basah",
+            "Jika tidak pasti, hubungi TNB atau juruelektrik berlesen"
+          ],
+          "safety_warnings_en": [
+            "Use battery-operated flashlight, not candles",
+            "Do not touch electrical equipment with wet hands",
+            "If unsure, contact TNB or licensed electrician"
+          ],
+          "applies_to_all": true,
+          "professional_required_if": ["electrical_damage.breaker_box", "electrical_damage.wiring_exposed"]
+        },
+        {
+          "step_number": 3,
+          "title": "Semak Kebocoran Gas",
+          "title_en": "Check for Gas Leaks",
+          "brief": "Kenal pasti dan laporkan sebarang kebocoran gas.",
+          "brief_en": "Identify and report any gas leaks.",
+          "detailed_guidance": "Periksa sebarang paip gas yang pecah atau bocor. Jika anda menghidu bau gas atau mengesyaki kebocoran gas, tinggalkan kawasan dengan segera dan maklumkan kepada pihak berkuasa tempatan atau syarikat gas. Jangan gunakan sebarang suis elektrik, telefon, atau apa-apa yang boleh mencetuskan percikan api. Biarkan profesional mengendalikan pembaikan gas.",
+          "detailed_guidance_en": "Check for any broken or leaking gas pipes. If you smell gas or suspect a gas leak, leave the area immediately and notify local authorities or the gas company. Do not use any electrical switches, phones, or anything that could create a spark. Let professionals handle gas repairs.",
+          "rationale": "Kebocoran gas boleh menyebabkan letupan atau kebakaran. Pengenalpastian awal dan tindakan pantas menyelamatkan nyawa.",
+          "rationale_en": "Gas leaks can cause explosions or fires. Early identification and quick action saves lives.",
+          "safety_warnings": [
+            "Jangan cuba membaiki kebocoran gas sendiri",
+            "Elakkan penggunaan api atau percikan",
+            "Tinggalkan rumah jika bau gas kuat"
+          ],
+          "safety_warnings_en": [
+            "Do not attempt to repair gas leaks yourself",
+            "Avoid using flames or sparks",
+            "Leave the house if strong gas smell"
+          ],
+          "applies_to_all": true
+        }
+      ]
+    },
+    {
+      "id": "water_debris_removal",
+      "category_name": "Penyingkiran Air & Serpihan",
+      "category_name_en": "Water & Debris Removal",
+      "base_timeline": "Hari 1-3",
+      "base_timeline_en": "Day 1-3",
+      "priority": "TINGGI",
+      "priority_en": "HIGH",
+      "icon": "💧",
+      "brief_description": "Proses mengeluarkan air, lumpur, dan serpihan dari harta benda.",
+      "brief_description_en": "Process of removing water, mud, and debris from property.",
+      "triggered_by_damage": ["water_depth.*"],
+      "timeline_modifier": {
+        "water_depth.ankle": 1,
+        "water_depth.knee": 2,
+        "water_depth.waist": 4,
+        "water_depth.chest": 6
+      },
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Keluarkan Air Kotor",
+          "title_en": "Remove Dirty Water",
+          "brief": "Keluarkan semua air kotor secara menyeluruh dari harta benda.",
+          "brief_en": "Thoroughly remove all dirty water from property.",
+          "detailed_guidance": "Mulakan dengan mengeluarkan semua air kotor dan kelodak dari harta benda anda sebanyak mungkin. Ambil masa anda dengan proses ini. Tergesa-gesa membasuh semuanya boleh menyebabkan kerosakan selanjutnya, jadi lebih baik dibersihkan secara berperingkat. Anda boleh menggunakan baldi atau bekas lain untuk mengangkut air keluar. Apabila hanya tinggal sedikit sahaja, tukar kepada mop dan berus keras nilon untuk pembersihan akhir.",
+          "detailed_guidance_en": "Begin by thoroughly removing all dirty water and silt from your property as much as you can. Take your time with this process. Rushing to wash everything away can lead to further damage, so it's best to clean in stages. You can use a bucket or another container to transport the water out. When only a small amount remains, switch to a mop and nylon hard brush for the final cleanup.",
+          "rationale": "Penyingkiran air yang cepat mengurangkan kerosakan struktur lanjut, mencegah pertumbuhan kulat, dan membolehkan proses pengeringan bermula dengan lebih cepat.",
+          "rationale_en": "Quick water removal reduces further structural damage, prevents mold growth, and allows the drying process to start faster.",
+          "tips": [
+            "Bekerja dari bahagian atas ke bawah",
+            "Buang air ke kawasan saliran yang sesuai",
+            "Dokumentasikan tahap air untuk tuntutan insurans"
+          ],
+          "tips_en": [
+            "Work from top to bottom",
+            "Dispose water to appropriate drainage areas",
+            "Document water levels for insurance claims"
+          ],
+          "applies_to_all": true,
+          "equipment_needs": {
+            "water_depth.ankle": ["Baldi", "Mop", "Berus"],
+            "water_depth.knee": ["Baldi", "Pam air kecil", "Mop", "Berus"],
+            "water_depth.waist": ["Pam air sederhana", "Baldi", "Berus keras"],
+            "water_depth.chest": ["Pam air industri atau profesional", "Peralatan penyedutan air"]
+          }
+        },
+        {
+          "step_number": 2,
+          "title": "Kikis Lumpur dan Kelodak",
+          "title_en": "Scrape Mud and Silt",
+          "brief": "Buang lumpur semasa masih basah sebelum ia mengeras.",
+          "brief_en": "Remove mud while still wet before it hardens.",
+          "detailed_guidance": "Seterusnya, ambil penyodok untuk mengerik lumpur dan serpihan semasa ia masih basah. Jika anda tunggu terlalu lama, ia akan mengeras dan lebih sukar untuk dikeluarkan. Berhati-hati dengan bahan tajam atau berbahaya yang mungkin tersembunyi dalam lumpur. Oleh kerana rumah anda perlu kering dari dalam ke luar, anda mungkin perlu menanggalkan sebarang kertas dinding. Jika tidak, lumpur dan air yang terperangkap boleh menyebabkan kerosakan dinding atau lebih teruk, masalah anai-anai.",
+          "detailed_guidance_en": "Next, grab a shovel to scrape off the mud and debris while it's still wet. If you wait too long, it'll harden and be tougher to remove. Be careful of sharp or hazardous materials that may be hidden in the mud. Since your home needs to dry from the inside out, you might need to remove any wallpaper. Otherwise, trapped mud and water can lead to wall damage or worse, termite problems.",
+          "rationale": "Lumpur basah lebih mudah dibersihkan dan penyingkiran awal mencegah kerosakan jangka panjang pada struktur dan bahan binaan. Kelodak yang mengeras boleh meresap ke dalam dinding dan lantai.",
+          "rationale_en": "Wet mud is easier to clean and early removal prevents long-term damage to structures and building materials. Hardened silt can seep into walls and floors.",
+          "required_tools": [
+            "Penyodok",
+            "Berus keras",
+            "Baldi",
+            "Sarung tangan kerja"
+          ],
+          "required_tools_en": [
+            "Shovel",
+            "Stiff brush",
+            "Buckets",
+            "Work gloves"
+          ],
+          "applies_to_all": true,
+          "urgency_if": ["water_type.sewage_water", "water_depth.waist", "water_depth.chest"]
+        },
+        {
+          "step_number": 3,
+          "title": "Pembersihan Mendalam",
+          "title_en": "Deep Cleaning",
+          "brief": "Basuh semua permukaan dengan air panas dan pembersih.",
+          "brief_en": "Wash all surfaces with hot water and cleaners.",
+          "detailed_guidance": "Gunakan banyak air panas, detergen pembersih, dan pembasmi kuman. Air panas mempunyai keupayaan yang lebih baik untuk melarutkan kotoran kerana struktur molekulnya, menjadikannya lebih berkesan daripada air sejuk. Basuh lantai, dinding, dan semua permukaan yang terkena air banjir. Beri perhatian khusus kepada sudut, celah, dan kawasan yang sukar dicapai. Bilas dengan bersih selepas mencuci.",
+          "detailed_guidance_en": "Use lots of hot water, sanitizing detergent, and disinfectant. Hot water has better ability to dissolve dirt because of its molecular structure, making it more effective than cold water. Wash floors, walls, and all surfaces affected by floodwater. Pay special attention to corners, crevices, and hard-to-reach areas. Rinse thoroughly after washing.",
+          "rationale": "Air banjir mengandungi bakteria, virus, dan kuman berbahaya. Pembersihan menyeluruh dengan air panas dan pembersih membasmi patogen dan mencegah penyakit.",
+          "rationale_en": "Floodwater contains bacteria, viruses, and harmful germs. Thorough cleaning with hot water and disinfectants kills pathogens and prevents disease.",
+          "cleaning_solutions": [
+            "Air panas dengan detergen",
+            "Larutan pemutih yang dicairkan (1:10)",
+            "Sabun pembersih mengandungi pembasmi kuman"
+          ],
+          "cleaning_solutions_en": [
+            "Hot water with detergent",
+            "Diluted bleach solution (1:10)",
+            "Sanitizing soap with disinfectant"
+          ],
+          "applies_to_all": true,
+          "intensive_cleaning_if": ["water_type.sewage_water", "water_type.river_water"]
+        }
+      ]
+    },
+    {
+      "id": "sorting_sanitization",
+      "category_name": "Pengasingan & Pembersihan Barang",
+      "category_name_en": "Sorting & Sanitization",
+      "base_timeline": "Hari 2-5",
+      "base_timeline_en": "Day 2-5",
+      "priority": "SEDERHANA",
+      "priority_en": "MEDIUM",
+      "icon": "📦",
+      "brief_description": "Penilaian dan pemprosesan barang-barang yang terjejas banjir.",
+      "brief_description_en": "Assessment and processing of flood-affected items.",
+      "triggered_by_damage": ["furniture_items.*"],
+      "timeline_modifier": {
+        "furniture_items.soft_furniture": 1,
+        "furniture_items.wooden_furniture": 2,
+        "furniture_items.electronics": 1,
+        "furniture_items.carpets_curtains": 1,
+        "furniture_items.documents_photos": 2,
+        "furniture_items.kitchen_items": 1
+      },
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Nilai Kerosakan Perabot",
+          "title_en": "Assess Furniture Damage",
+          "brief": "Periksa tahap kerosakan pada semua perabot dan barang.",
+          "brief_en": "Check damage level on all furniture and items.",
+          "detailed_guidance": "Semasa membersihkan, luangkan masa untuk memeriksa semua barang di dalam harta benda anda. Untuk barang yang lembut dan tidak boleh dibersihkan dengan betul, seperti buku, tilam, bantal, langsir, dan pakaian, anda mungkin perlu membuangnya bergantung kepada betapa teruknya kerosakan air. Bagi permaidani, perabot dan tekstil lain, semak semula tahap kerosakan. Jika anda percaya kerosakan tidak terlalu teruk, bersihkan, basmi kuman, dan keringkan setiap bahagian perabot dengan produk membunuh kuman seperti sabun pembersih.",
+          "detailed_guidance_en": "While cleaning, take a moment to check on all items inside your property. For items that are soft and can't be properly cleaned, like books, mattresses, pillows, curtains, and clothes, you might need to toss them out depending on how bad the water damage is. For carpets, furniture and other textiles, double check the level of damage. If you believe the damage is not too severe, clean, sanitize, and dry each piece of furniture with a germ-killing product like sanitizing soap.",
+          "rationale": "Barang yang terendam air banjir yang tercemar boleh menjadi tempat pembiakan bakteria dan kulat. Penilaian menyeluruh memastikan hanya barang yang selamat disimpan.",
+          "rationale_en": "Items submerged in contaminated floodwater can become breeding grounds for bacteria and mold. Thorough assessment ensures only safe items are kept.",
+          "assessment_criteria": [
+            "Tempoh masa dalam air (>48 jam = buang)",
+            "Jenis bahan (serap vs tidak serap)",
+            "Tahap pencemaran (air kumbahan vs air hujan)",
+            "Nilai sentimental vs risiko kesihatan"
+          ],
+          "assessment_criteria_en": [
+            "Duration in water (>48 hours = discard)",
+            "Material type (absorbent vs non-absorbent)",
+            "Contamination level (sewage vs rainwater)",
+            "Sentimental value vs health risk"
+          ],
+          "applies_to_all": true,
+          "disposal_recommended_if": ["water_type.sewage_water", "water_depth.waist", "water_depth.chest"]
+        },
+        {
+          "step_number": 2,
+          "title": "Basmi Kuman Barang Boleh Selamat",
+          "title_en": "Sanitize Salvageable Items",
+          "brief": "Bersih dan basmi kuman barang yang boleh diselamatkan.",
+          "brief_en": "Clean and sanitize items that can be saved.",
+          "detailed_guidance": "Gunakan produk pembersih mengandungi pemutih, atau larutan pemutih yang dicairkan akan berkesan menghapuskan bakteria, termasuk kulat pada permukaan yang mungkin berkembang selepas banjir. Untuk barang yang boleh diselamatkan, cuci dengan teliti, kemudian rendam atau lap dengan larutan pembasmi kuman. Biarkan kering sepenuhnya sebelum digunakan semula. Untuk pakaian, basuh dengan detergen panas dan tambah pemutih jika sesuai. Untuk peralatan dapur, cuci dengan sabun panas dan basmi kuman.",
+          "detailed_guidance_en": "Using a sanitizing product that contains bleach, or a diluted bleach solution will effectively eliminate bacteria, including mold on surfaces that may develop after flooding. For salvageable items, wash thoroughly, then soak or wipe with disinfectant solution. Allow to dry completely before reuse. For clothing, wash with hot detergent and add bleach if appropriate. For kitchen utensils, wash with hot soap and sanitize.",
+          "rationale": "Pembersihan kuman yang betul membunuh patogen berbahaya dan menjadikan barang selamat untuk digunakan semula, menjimatkan kos penggantian.",
+          "rationale_en": "Proper sanitization kills harmful pathogens and makes items safe for reuse, saving replacement costs.",
+          "sanitization_methods": [
+            "Larutan pemutih (1 sudu pemutih : 1 galon air)",
+            "Sabun pembersih antibakteria",
+            "Basuhan air panas (60°C atau lebih)",
+            "Pengeringan di bawah cahaya matahari"
+          ],
+          "sanitization_methods_en": [
+            "Bleach solution (1 tablespoon bleach : 1 gallon water)",
+            "Antibacterial sanitizing soap",
+            "Hot water wash (60°C or higher)",
+            "Sun-drying"
+          ],
+          "applies_to_all": true,
+          "professional_cleaning_if": ["water_type.sewage_water", "furniture_items.documents_photos"]
+        },
+        {
+          "step_number": 3,
+          "title": "Pelupusan Barang Tercemar",
+          "title_en": "Disposal of Contaminated Items",
+          "brief": "Buang barang yang rosak atau tercemar dengan selamat.",
+          "brief_en": "Safely dispose of damaged or contaminated items.",
+          "detailed_guidance": "Jika sesuatu telah berendam dalam air banjir dan tidak boleh dibersihkan, sudah tiba masanya untuk mengucapkan selamat tinggal. Saya tahu sukar untuk berpisah dengan sesuatu yang anda sayangi, tetapi ingat bahawa air banjir boleh membawa bahan kumbahan yang sangat kotor. Tambahan pula, apa-apa yang tertinggal dalam air selama lebih daripada 48 jam boleh mula membiak kulat. Tetapi jangan hanya buangnya dalam sampah atau tinggalkan di tepi jalan; barang-barang itu mungkin mempunyai kuman dan bakteria yang tidak diingini. Sebaliknya, masukkan ke dalam beg plastik dan bawa ke luar. Bergantung kepada peraturan tempatan, anda mungkin perlu menandakan dan melupuskannya dengan betul jika ia telah tercemar dengan air kumbahan.",
+          "detailed_guidance_en": "If something's been sitting in flood water and can't be cleaned up, it's time to say goodbye. I know it's tough to part with something you love, but keep in mind that flood water can carry nasty sewer stuff. Plus, anything left in water for more than 48 hours can start growing molds. But don't just toss them in the trash or leave them on the curb; those items might have some unwanted germs and bacteria. Instead, put them in plastic bags and take them outside. Depending on local rules, you might need to tag and dispose of them properly if they've been contaminated with sewer water.",
+          "rationale": "Pelupusan yang betul mencegah penyebaran penyakit dan pencemaran persekitaran. Barang yang tercemar tidak selamat untuk digunakan semula.",
+          "rationale_en": "Proper disposal prevents disease spread and environmental contamination. Contaminated items are unsafe for reuse.",
+          "items_to_discard": [
+            "Tilam dan bantal",
+            "Buku dan kertas",
+            "Makanan (termasuk dalam tin)",
+            "Ubat-ubatan yang tercemar",
+            "Mainan lembut kanak-kanak",
+            "Permaidani yang sangat tercemar"
+          ],
+          "items_to_discard_en": [
+            "Mattresses and pillows",
+            "Books and papers",
+            "Food (including canned)",
+            "Contaminated medications",
+            "Children's soft toys",
+            "Heavily contaminated carpets"
+          ],
+          "disposal_guidelines": [
+            "Masukkan dalam beg plastik yang kuat",
+            "Label sebagai 'Tercemar Banjir'",
+            "Hubungi Majlis Perbandaran untuk pengumpulan khas",
+            "Jangan bakar barang tercemar"
+          ],
+          "disposal_guidelines_en": [
+            "Put in strong plastic bags",
+            "Label as 'Flood Contaminated'",
+            "Contact Municipal Council for special collection",
+            "Do not burn contaminated items"
+          ],
+          "applies_to_all": true,
+          "mandatory_disposal_if": ["water_type.sewage_water", "furniture_items.soft_furniture", "furniture_items.kitchen_items"]
+        }
+      ]
+    },
+    {
+      "id": "drying_ventilation",
+      "category_name": "Pengeringan & Pengudaraan",
+      "category_name_en": "Drying & Ventilation",
+      "base_timeline": "Hari 3-14",
+      "base_timeline_en": "Day 3-14",
+      "priority": "TINGGI",
+      "priority_en": "HIGH",
+      "icon": "🌬️",
+      "brief_description": "Proses mengeringkan harta benda dan mencegah pertumbuhan kulat.",
+      "brief_description_en": "Process of drying property and preventing mold growth.",
+      "triggered_by_damage": ["water_depth.*"],
+      "timeline_modifier": {
+        "water_depth.ankle": 5,
+        "water_depth.knee": 10,
+        "water_depth.waist": 14,
+        "water_depth.chest": 21,
+        "mold_growth.small_patches": 2,
+        "mold_growth.large_areas": 5,
+        "mold_growth.widespread": 10
+      },
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Peredaran Udara Maksimum",
+          "title_en": "Maximum Air Circulation",
+          "brief": "Buka tingkap dan gunakan kipas untuk peredaran udara.",
+          "brief_en": "Open windows and use fans for air circulation.",
+          "detailed_guidance": "Selepas anda mengeluarkan sebanyak mungkin air, tiba masanya untuk mengeringkan tempat anda. Buka semua tingkap dan hidupkan kipas siling. Jika anda mempunyai kipas berdiri, arahkannya ke kawasan paling lembap di rumah anda. Pastikan aliran udara berterusan untuk mencegah kulat berkembang. Tambahan pula, cahaya matahari sangat baik untuk membunuh mikro-organisma yang menjengkelkan itu. Kekalkan aliran udara sehingga rumah benar-benar kering.",
+          "detailed_guidance_en": "After you've gotten rid of as much water as you can, it's time to dry out your place. Open up all the windows and switch on the ceiling fans. If you have any standing fans, aim them at the dampest areas in your home. Keep the air flowing to prevent molds from setting in. Plus, sunlight is great for zapping those pesky micro-organisms. Keep air flowing until house is completely dry.",
+          "rationale": "Kelembapan yang terperangkap menyebabkan pertumbuhan kulat dalam masa 24-48 jam. Peredaran udara yang baik mempercepatkan pengeringan dan mencegah masalah kesihatan jangka panjang.",
+          "rationale_en": "Trapped moisture causes mold growth within 24-48 hours. Good air circulation speeds drying and prevents long-term health problems.",
+          "ventilation_tips": [
+            "Buka semua tingkap dan pintu",
+            "Gunakan kipas untuk mengarahkan udara keluar",
+            "Buka almari dan laci untuk pengudaraan",
+            "Keluarkan papan lantai jika perlu untuk keringkan bawah"
+          ],
+          "ventilation_tips_en": [
+            "Open all windows and doors",
+            "Use fans to direct air outward",
+            "Open cabinets and drawers for ventilation",
+            "Remove floorboards if necessary to dry underneath"
+          ],
+          "applies_to_all": true,
+          "extended_period_if": ["water_depth.waist", "water_depth.chest", "furniture_items.wooden_furniture"]
+        },
+        {
+          "step_number": 2,
+          "title": "Gunakan Penyahlembap",
+          "title_en": "Use Dehumidifiers",
+          "brief": "Kurangkan kelembapan udara dengan penyahlembap.",
+          "brief_en": "Reduce air humidity with dehumidifiers.",
+          "detailed_guidance": "Gunakan peredaran udara dan penyahlembap akan membantu menarik kelembapan keluar dari udara. Letakkan penyahlembap di kawasan yang paling lembap, terutamanya di bilik bawah tanah atau bilik yang tidak mendapat cahaya matahari langsung. Kosongkan tangki air kerap dan pantau tahap kelembapan. Tahap kelembapan ideal adalah antara 30-50%. Jika anda tidak mempunyai penyahlembap, anda boleh menyewa daripada syarikat peralatan atau membeli jika mampu.",
+          "detailed_guidance_en": "Using air circulation and dehumidifiers will help draw moisture out of the air. Place dehumidifiers in the dampest areas, especially in basements or rooms that don't get direct sunlight. Empty water tanks frequently and monitor humidity levels. Ideal humidity level is between 30-50%. If you don't have dehumidifiers, you can rent from equipment companies or purchase if affordable.",
+          "rationale": "Penyahlembap mengeluarkan kelembapan dari udara lebih cekap daripada pengudaraan sahaja, mempercepatkan proses pengeringan dan mencegah kulat.",
+          "rationale_en": "Dehumidifiers remove moisture from air more efficiently than ventilation alone, speeding the drying process and preventing mold.",
+          "dehumidifier_tips": [
+            "Letakkan di tengah bilik untuk keberkesanan maksimum",
+            "Jalankan 24 jam sehari sehingga kelembapan normal",
+            "Kosongkan tangki air setiap hari",
+            "Gabungkan dengan kipas untuk hasil terbaik"
+          ],
+          "dehumidifier_tips_en": [
+            "Place in center of room for maximum effectiveness",
+            "Run 24 hours daily until humidity normalizes",
+            "Empty water tank daily",
+            "Combine with fans for best results"
+          ],
+          "applies_to_all": true,
+          "critical_if": ["water_depth.waist", "water_depth.chest", "mold_growth.large_areas"]
+        },
+        {
+          "step_number": 3,
+          "title": "Pantau dan Cegah Kulat",
+          "title_en": "Monitor and Prevent Mold",
+          "brief": "Periksa tanda-tanda kulat dan ambil tindakan pencegahan.",
+          "brief_en": "Check for mold signs and take preventive action.",
+          "detailed_guidance": "Periksa secara berkala untuk sebarang tanda pertumbuhan kulat - bintik-bintik hitam, hijau, atau putih pada dinding, siling, atau perabot. Kulat biasanya muncul di kawasan lembap dan gelap. Jika anda dapati kulat, bersihkan dengan segera menggunakan larutan pemutih yang dicairkan atau produk pembunuh kulat khas. Untuk kawasan kulat yang besar (lebih daripada 1 meter persegi), pertimbangkan untuk mendapatkan bantuan profesional. Teruskan memantau sehingga rumah benar-benar kering.",
+          "detailed_guidance_en": "Check regularly for any signs of mold growth - black, green, or white spots on walls, ceilings, or furniture. Mold typically appears in damp and dark areas. If you find mold, clean immediately using diluted bleach solution or special mold-killing products. For large mold areas (more than 1 square meter), consider getting professional help. Continue monitoring until house is completely dry.",
+          "rationale": "Kulat menyebabkan masalah kesihatan pernafasan dan merosakkan struktur bangunan. Pengesanan awal dan rawatan mencegah penyebaran yang lebih luas.",
+          "rationale_en": "Mold causes respiratory health problems and damages building structures. Early detection and treatment prevents wider spread.",
+          "mold_prevention_measures": [
+            "Kekalkan kelembapan di bawah 50%",
+            "Bersihkan dan keringkan kawasan lembap segera",
+            "Gunakan cat anti-kulat selepas kering",
+            "Pastikan aliran udara berterusan"
+          ],
+          "mold_prevention_measures_en": [
+            "Maintain humidity below 50%",
+            "Clean and dry damp areas immediately",
+            "Use anti-mold paint after drying",
+            "Ensure continuous air flow"
+          ],
+          "applies_to_all": true,
+          "professional_required_if": ["mold_growth.large_areas", "mold_growth.widespread"]
+        }
+      ]
+    },
+    {
+      "id": "documentation_insurance",
+      "category_name": "Dokumentasi & Insurans",
+      "category_name_en": "Documentation & Insurance",
+      "base_timeline": "Sepanjang Proses (Mula Hari 1)",
+      "base_timeline_en": "Throughout Process (Start Day 1)",
+      "priority": "TINGGI",
+      "priority_en": "HIGH",
+      "icon": "📄",
+      "brief_description": "Dokumentasi kerosakan dan proses tuntutan insurans.",
+      "brief_description_en": "Damage documentation and insurance claim process.",
+      "triggered_by_damage": ["insurance_coverage.*"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Ambil Gambar dan Video",
+          "title_en": "Take Photos and Videos",
+          "brief": "Dokumentasikan semua kerosakan sebelum pembersihan.",
+          "brief_en": "Document all damage before cleanup.",
+          "detailed_guidance": "Sebelum anda mula membersihkan, ambil gambar dan video yang jelas dari semua sudut rumah dan barang yang rosak. Sertakan tangkapan luas dan dekat untuk menunjukkan skala kerosakan. Rekodkan tahap air, kerosakan struktur, perabot rosak, dan sebarang kehilangan. Tarikh dan masa gambar jika boleh. Dokumentasi ini sangat penting untuk tuntutan insurans. Simpan salinan di cloud atau pemacu luaran sekiranya telefon rosak.",
+          "detailed_guidance_en": "Before you start cleaning, take clear photos and videos from all angles of the house and damaged items. Include wide shots and close-ups to show scale of damage. Record water levels, structural damage, damaged furniture, and any losses. Date and time photos if possible. This documentation is crucial for insurance claims. Keep copies in cloud or external drive in case phone is damaged.",
+          "rationale": "Dokumentasi visual adalah bukti kritikal untuk tuntutan insurans dan bantuan bencana. Tanpa bukti, tuntutan mungkin ditolak atau dikurangkan.",
+          "rationale_en": "Visual documentation is critical evidence for insurance claims and disaster assistance. Without proof, claims may be rejected or reduced.",
+          "documentation_checklist": [
+            "Foto setiap bilik dari pelbagai sudut",
+            "Video walkthrough seluruh rumah",
+            "Tanda tahap air pada dinding",
+            "Gambar close-up kerosakan struktur",
+            "Gambar semua perabot dan barang rosak",
+            "Resit pembelian jika ada"
+          ],
+          "documentation_checklist_en": [
+            "Photos of each room from multiple angles",
+            "Video walkthrough of entire house",
+            "Water level marks on walls",
+            "Close-up photos of structural damage",
+            "Photos of all damaged furniture and items",
+            "Purchase receipts if available"
+          ],
+          "applies_to_all": true,
+          "critical_if": ["insurance_coverage.has_flood_insurance", "insurance_coverage.has_home_insurance"]
+        },
+        {
+          "step_number": 2,
+          "title": "Hubungi Syarikat Insurans",
+          "title_en": "Contact Insurance Company",
+          "brief": "Laporkan kerosakan dan mulakan proses tuntutan.",
+          "brief_en": "Report damage and start claim process.",
+          "detailed_guidance": "Di Malaysia, beberapa syarikat menawarkan insurans untuk mangsa banjir, termasuk Allianz, Zurich, dan Berjaya Sompo. Menurut laporan dari Bank Negara Malaysia, perlindungan yang dipertingkatkan ini memerlukan premium tambahan dan ditentukan oleh polisi pengunderaitan setiap penanggung insurans. Kami mengesyorkan agar anda memeriksa polisi mereka dan bercakap dengan ejen insurans anda untuk maklumat yang lebih terperinci. Hubungi syarikat insurans anda secepat mungkin, sediakan dokumentasi foto dan video, dan ikuti arahan mereka untuk proses tuntutan.",
+          "detailed_guidance_en": "In Malaysia, several companies offer insurance for flood victims, including Allianz, Zurich, and Berjaya Sompo. According to a report from Bank Negara Malaysia, this improved coverage requires an extra premium and is determined by the underwriting policies of each insurer. We recommend that you examine their policies and speak with your insurance agents for more detailed information. Contact your insurance company as soon as possible, provide photo and video documentation, and follow their instructions for the claim process.",
+          "rationale": "Tuntutan insurans yang cepat mempercepatkan proses pemulihan dan bantuan kewangan. Kelewatan boleh merumitkan proses tuntutan.",
+          "rationale_en": "Quick insurance claims speed the recovery process and financial assistance. Delays can complicate the claim process.",
+          "insurance_companies_malaysia": [
+            "Allianz Malaysia",
+            "Zurich Insurance Malaysia",
+            "Berjaya Sompo Insurance",
+            "Etiqa Insurance",
+            "AIA Malaysia",
+            "Great Eastern",
+            "Prudential Malaysia"
+          ],
+          "claim_process_tips": [
+            "Simpan semua resit perbelanjaan pembersihan",
+            "Jangan buang barang rosak sebelum penilai melihat",
+            "Buat senarai lengkap semua kehilangan",
+            "Dapatkan anggaran pembaikan bertulis",
+            "Ikuti prosedur syarikat insurans dengan teliti"
+          ],
+          "claim_process_tips_en": [
+            "Keep all receipts for cleaning expenses",
+            "Don't discard damaged items before assessor sees them",
+            "Make complete list of all losses",
+            "Get written repair estimates",
+            "Follow insurance company procedures carefully"
+          ],
+          "applies_if": ["insurance_coverage.has_flood_insurance", "insurance_coverage.has_home_insurance"],
+          "urgent_if": ["insurance_coverage.has_flood_insurance"]
+        },
+        {
+          "step_number": 3,
+          "title": "Simpan Rekod Perbelanjaan",
+          "title_en": "Keep Expense Records",
+          "brief": "Rekodkan semua kos berkaitan pemulihan banjir.",
+          "brief_en": "Record all costs related to flood recovery.",
+          "detailed_guidance": "Simpan semua resit untuk perbelanjaan yang berkaitan dengan pembersihan dan pemulihan banjir. Ini termasuk kos peralatan pembersihan, bahan binaan, perkhidmatan profesional, penginapan sementara jika diperlukan, dan sebarang perbelanjaan lain yang berkaitan. Buat fail khas untuk semua dokumen berkaitan banjir. Rekod yang lengkap akan membantu dalam tuntutan insurans dan mungkin bantuan kerajaan atau NGO.",
+          "detailed_guidance_en": "Keep all receipts for expenses related to flood cleanup and recovery. This includes cleaning equipment costs, building materials, professional services, temporary accommodation if needed, and any other related expenses. Create a special file for all flood-related documents. Complete records will help with insurance claims and possibly government or NGO assistance.",
+          "rationale": "Rekod perbelanjaan yang lengkap memastikan semua kos yang layak dituntut dan memaksimumkan pampasan insurans atau bantuan.",
+          "rationale_en": "Complete expense records ensure all eligible costs are claimed and maximize insurance compensation or assistance.",
+          "expenses_to_record": [
+            "Bahan pembersihan dan pembasmi kuman",
+            "Peralatan (penyahlembap, kipas, dll)",
+            "Perkhidmatan profesional (tukang, juruelektrik)",
+            "Penggantian perabot dan peralatan",
+            "Penginapan sementara",
+            "Kos pengangkutan",
+            "Pemeriksaan struktur bangunan"
+          ],
+          "expenses_to_record_en": [
+            "Cleaning materials and disinfectants",
+            "Equipment (dehumidifiers, fans, etc)",
+            "Professional services (contractors, electricians)",
+            "Furniture and appliance replacement",
+            "Temporary accommodation",
+            "Transportation costs",
+            "Building structural inspection"
+          ],
+          "applies_to_all": true
+        }
+      ]
+    },
+    {
+      "id": "health_hygiene",
+      "category_name": "Kesihatan & Kebersihan",
+      "category_name_en": "Health & Hygiene",
+      "base_timeline": "Berterusan",
+      "base_timeline_en": "Ongoing",
+      "priority": "KRITIKAL",
+      "priority_en": "CRITICAL",
+      "icon": "🏥",
+      "brief_description": "Langkah menjaga kesihatan dan kebersihan semasa pemulihan.",
+      "brief_description_en": "Measures to maintain health and hygiene during recovery.",
+      "triggered_by_damage": ["water_type.sewage_water", "water_type.river_water"],
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Keselamatan Air dan Makanan",
+          "title_en": "Water and Food Safety",
+          "brief": "Pastikan air dan makanan selamat untuk dimakan.",
+          "brief_en": "Ensure water and food are safe for consumption.",
+          "detailed_guidance": "Buang item makanan yang telah tenggelam atau bersentuhan dengan air banjir, termasuk makanan dalam tin. Air mungkin telah tercemar semasa banjir. Jika anda mengesyaki air paip tercemar, rebus air sekurang-kurangnya 1 minit sebelum diminum atau gunakan air botol. Jangan minum air banjir. Cuci tangan dengan kerap dengan sabun dan air bersih, terutamanya sebelum makan atau menyentuh muka. Jika air bersih tidak tersedia, gunakan pembersih tangan berasaskan alkohol.",
+          "detailed_guidance_en": "Discard food items which have been submerged or come into contact with floodwaters, including canned food. Water may have been contaminated during floods. If you suspect tap water is contaminated, boil water for at least 1 minute before drinking or use bottled water. Do not drink floodwaters. Wash hands frequently with soap and clean water, especially before eating or touching face. If clean water is not available, use alcohol-based hand sanitizer.",
+          "rationale": "Air dan makanan tercemar boleh menyebabkan penyakit bawaan air seperti kolera, hepatitis A, dan demam kepialu. Langkah pencegahan melindungi dari penyakit serius.",
+          "rationale_en": "Contaminated water and food can cause waterborne diseases like cholera, hepatitis A, and typhoid fever. Preventive measures protect from serious illness.",
+          "food_safety_rules": [
+            "Buang semua makanan yang terkena air banjir",
+            "Buang makanan dalam tin yang penyok atau rosak",
+            "Jangan makan makanan dengan bau atau rupa pelik",
+            "Rebus air untuk diminum jika tidak pasti",
+            "Simpan makanan di tempat sejuk dan kering"
+          ],
+          "food_safety_rules_en": [
+            "Discard all food touched by floodwater",
+            "Discard canned food that is dented or damaged",
+            "Don't eat food with strange smell or appearance",
+            "Boil water for drinking if uncertain",
+            "Store food in cool and dry place"
+          ],
+          "applies_to_all": true,
+          "critical_if": ["water_type.sewage_water", "furniture_items.kitchen_items"]
+        },
+        {
+          "step_number": 2,
+          "title": "Pencegahan Penyakit",
+          "title_en": "Disease Prevention",
+          "brief": "Lindungi diri dari penyakit berkaitan banjir.",
+          "brief_en": "Protect yourself from flood-related diseases.",
+          "detailed_guidance": "Selepas banjir, risiko penyakit meningkat. Elakkan sentuhan langsung dengan air banjir jika boleh. Jika anda mempunyai luka atau calar, tutup dengan pembalut kalis air. Berhati-hati dengan gigitan nyamuk kerana banjir meningkatkan populasi nyamuk pembawa denggi dan malaria. Gunakan ubat serangga dan pastikan tiada air bertakung. Periksa kerosakan pada tangki septik untuk mengelakkan bahaya biologi. Jika anda mengalami gejala penyakit seperti demam, cirit-birit, atau luka yang terinfeksi, dapatkan rawatan perubatan dengan segera.",
+          "detailed_guidance_en": "After floods, disease risk increases. Avoid direct contact with floodwater if possible. If you have wounds or cuts, cover with waterproof bandages. Be careful of mosquito bites as floods increase populations of mosquitoes carrying dengue and malaria. Use insect repellent and ensure no standing water. Check for damage to septic tanks to avoid biological hazards. If you experience disease symptoms like fever, diarrhea, or infected wounds, seek medical treatment immediately.",
+          "rationale": "Banjir menciptakan persekitaran yang sesuai untuk penyebaran penyakit. Langkah pencegahan aktif mengurangkan risiko jangkitan.",
+          "rationale_en": "Floods create an environment conducive to disease spread. Active preventive measures reduce infection risk.",
+          "common_flood_diseases": [
+            "Leptospirosis (kencing tikus)",
+            "Denggi",
+            "Hepatitis A",
+            "Jangkitan kulit",
+            "Cirit-birit",
+            "Demam kepialu"
+          ],
+          "common_flood_diseases_en": [
+            "Leptospirosis",
+            "Dengue",
+            "Hepatitis A",
+            "Skin infections",
+            "Diarrhea",
+            "Typhoid fever"
+          ],
+          "prevention_measures": [
+            "Elakkan air banjir jika boleh",
+            "Tutup luka dengan pembalut kalis air",
+            "Guna ubat serangga",
+            "Buang air bertakung",
+            "Vaksinasi jika disyorkan oleh pihak kesihatan"
+          ],
+          "prevention_measures_en": [
+            "Avoid floodwater if possible",
+            "Cover wounds with waterproof bandages",
+            "Use insect repellent",
+            "Eliminate standing water",
+            "Vaccination if recommended by health authorities"
+          ],
+          "applies_to_all": true,
+          "extra_vigilance_if": ["water_type.sewage_water", "water_depth.waist", "water_depth.chest"]
+        },
+        {
+          "step_number": 3,
+          "title": "Kesihatan Mental",
+          "title_en": "Mental Health",
+          "brief": "Jaga kesihatan mental semasa proses pemulihan.",
+          "brief_en": "Take care of mental health during recovery process.",
+          "detailed_guidance": "Banjir boleh menyebabkan tekanan emosi yang ketara. Adalah normal untuk merasa sedih, marah, atau kewalahan. Bercakap dengan ahli keluarga, rakan, atau kaunselor tentang perasaan anda. Berehat yang cukup dan jangan terlalu memaksa diri. Terima bantuan dari orang lain - anda tidak perlu melakukan semuanya sendiri. Jika anda atau ahli keluarga mengalami tanda-tanda kemurungan atau keresahan yang berpanjangan, dapatkan bantuan profesional. Kementerian Kesihatan Malaysia menyediakan talian bantuan psikologi di 15555.",
+          "detailed_guidance_en": "Floods can cause significant emotional stress. It's normal to feel sad, angry, or overwhelmed. Talk to family members, friends, or counselors about your feelings. Get enough rest and don't push yourself too hard. Accept help from others - you don't have to do everything yourself. If you or family members experience signs of prolonged depression or anxiety, seek professional help. The Malaysian Ministry of Health provides a psychology helpline at 15555.",
+          "rationale": "Kesihatan mental sama penting dengan kesihatan fizikal. Tekanan bencana boleh menyebabkan masalah psikologi jika tidak ditangani.",
+          "rationale_en": "Mental health is as important as physical health. Disaster stress can cause psychological problems if not addressed.",
+          "mental_health_tips": [
+            "Bercakap tentang perasaan anda",
+            "Berehat yang cukup",
+            "Terima bantuan orang lain",
+            "Fokus pada satu tugas pada satu masa",
+            "Bersabar dengan diri sendiri dan orang lain",
+            "Hubungi talian bantuan jika perlu: 15555"
+          ],
+          "mental_health_tips_en": [
+            "Talk about your feelings",
+            "Get adequate rest",
+            "Accept help from others",
+            "Focus on one task at a time",
+            "Be patient with yourself and others",
+            "Contact helpline if needed: 15555"
+          ],
+          "applies_to_all": true
+        }
+      ]
+    },
+    {
+      "id": "utilities_services",
+      "category_name": "Utiliti & Perkhidmatan",
+      "category_name_en": "Utilities & Services",
+      "base_timeline": "Hari 5-14",
+      "base_timeline_en": "Day 5-14",
+      "priority": "SEDERHANA",
+      "priority_en": "MEDIUM",
+      "icon": "⚡",
+      "brief_description": "Pemulihan bekalan utiliti dan perkhidmatan asas.",
+      "brief_description_en": "Recovery of utility supply and basic services.",
+      "triggered_by_damage": ["electrical_damage.*"],
+      "timeline_modifier": {
+        "electrical_damage.breaker_box": 5,
+        "electrical_damage.outlets_switches": 3,
+        "electrical_damage.wiring_exposed": 5
+      },
+      "steps": [
+        {
+          "step_number": 1,
+          "title": "Pemulihan Bekalan Elektrik",
+          "title_en": "Electricity Supply Recovery",
+          "brief": "Dapatkan bekalan elektrik diperiksa dan disambung semula.",
+          "brief_en": "Get electricity supply checked and reconnected.",
+          "detailed_guidance": "Sebelum menghidupkan semula bekalan elektrik, pastikan semua pemeriksaan keselamatan telah dilakukan. Hubungi TNB (Tenaga Nasional Berhad) untuk pemeriksaan rasmi. Jangan cuba menghidupkan elektrik sendiri jika anda mengesyaki kerosakan pada sistem elektrik. Periksa semua peralatan elektrik sebelum digunakan - buang yang rosak. Pastikan tiada wayar terdedah atau soket yang rosak. Juruelektrik berlesen mungkin diperlukan untuk membaiki kerosakan.",
+          "detailed_guidance_en": "Before turning electricity back on, ensure all safety checks have been completed. Contact TNB (Tenaga Nasional Berhad) for official inspection. Don't try to turn on electricity yourself if you suspect damage to the electrical system. Check all electrical appliances before use - discard damaged ones. Ensure no exposed wires or damaged sockets. Licensed electrician may be needed for repairs.",
+          "rationale": "Sistem elektrik yang rosak boleh menyebabkan kebakaran atau kejutan elektrik. Pemeriksaan profesional memastikan keselamatan.",
+          "rationale_en": "Damaged electrical systems can cause fires or electrical shock. Professional inspection ensures safety.",
+          "contact_info": {
+            "TNB_hotline": "15454",
+            "TNB_emergency": "1-300-88-5454"
+          },
+          "electrical_safety_checks": [
+            "Periksa kotak pemutus litar untuk kerosakan",
+            "Semak meter elektrik",
+            "Periksa semua soket dan suis",
+            "Test peralatan elektrik satu persatu",
+            "Dapatkan sijil keselamatan daripada juruelektrik"
+          ],
+          "electrical_safety_checks_en": [
+            "Check circuit breaker box for damage",
+            "Check electricity meter",
+            "Inspect all sockets and switches",
+            "Test electrical appliances one by one",
+            "Obtain safety certificate from electrician"
+          ],
+          "applies_to_all": true,
+          "professional_required_if": ["electrical_damage.breaker_box", "electrical_damage.wiring_exposed"]
+        },
+        {
+          "step_number": 2,
+          "title": "Bekalan Air Bersih",
+          "title_en": "Clean Water Supply",
+          "brief": "Pastikan bekalan air selamat untuk digunakan.",
+          "brief_en": "Ensure water supply is safe for use.",
+          "detailed_guidance": "Hubungi Syarikat Bekalan Air (SAJ, SPLASH, Air Selangor, dll bergantung kepada negeri anda) untuk pengesahan bahawa bekalan air selamat. Air paip mungkin tercemar semasa banjir. Ikut arahan pihak berkuasa air - mungkin perlu merebus air sebelum digunakan untuk beberapa hari. Biarkan air mengalir selama beberapa minit sebelum digunakan untuk membuang sebarang air tercemar dalam paip. Periksa paip air untuk kerosakan atau kebocoran.",
+          "detailed_guidance_en": "Contact Water Supply Company (SAJ, SPLASH, Air Selangor, etc depending on your state) for confirmation that water supply is safe. Tap water may be contaminated during floods. Follow water authority instructions - may need to boil water before use for several days. Let water run for a few minutes before use to flush out any contaminated water in pipes. Check water pipes for damage or leaks.",
+          "rationale": "Air tercemar boleh menyebabkan penyakit serius. Pengesahan dari pihak berkuasa memastikan air selamat untuk kegunaan domestik.",
+          "rationale_en": "Contaminated water can cause serious diseases. Confirmation from authorities ensures water is safe for domestic use.",
+          "water_safety_steps": [
+            "Hubungi syarikat air tempatan",
+            "Ikut notis rebus air jika dikeluarkan",
+            "Periksa tangki air untuk pencemaran",
+            "Bersihkan penapis air",
+            "Flush sistem paip sebelum guna"
+          ],
+          "water_safety_steps_en": [
+            "Contact local water company",
+            "Follow boil water notice if issued",
+            "Check water tank for contamination",
+            "Clean water filters",
+            "Flush pipe system before use"
+          ],
+          "applies_to_all": true
+        },
+        {
+          "step_number": 3,
+          "title": "Lapor Kerosakan Kemudahan Awam",
+          "title_en": "Report Public Facility Damage",
+          "brief": "Laporkan kerosakan jalan, longkang, atau kemudahan awam.",
+          "brief_en": "Report damage to roads, drains, or public facilities.",
+          "detailed_guidance": "Jika anda perasan kerosakan pada kemudahan awam seperti jalan raya, longkang, lampu jalan, atau sistem pembentungan, laporkan kepada pihak berkuasa. Hubungi Majlis Perbandaran atau Daerah setempat. Maklumat terperinci tentang lokasi dan jenis kerosakan akan membantu pembaikan yang lebih cepat. Ambil gambar jika selamat untuk berbuat demikian. Kerosakan kemudahan awam boleh menjejaskan pemulihan komuniti secara keseluruhan.",
+          "detailed_guidance_en": "If you notice damage to public facilities such as roads, drains, street lights, or sewerage systems, report to authorities. Contact local Municipal or District Council. Detailed information about location and type of damage will help faster repairs. Take photos if safe to do so. Public facility damage can affect overall community recovery.",
+          "rationale": "Pembaikan kemudahan awam penting untuk pemulihan komuniti dan mencegah banjir masa depan. Laporan awal mempercepatkan tindakan pembaikan.",
+          "rationale_en": "Public facility repairs are important for community recovery and preventing future floods. Early reports speed repair action.",
+          "items_to_report": [
+            "Jalan raya rosak atau berlubang",
+            "Longkang tersumbat atau rosak",
+            "Lampu jalan tidak berfungsi",
+            "Pokok tumbang yang menghalang jalan",
+            "Sistem pembentungan rosak",
+            "Jambatan atau laluan pejalan kaki rosak"
+          ],
+          "items_to_report_en": [
+            "Damaged or potholed roads",
+            "Blocked or damaged drains",
+            "Non-functioning street lights",
+            "Fallen trees blocking roads",
+            "Damaged sewerage system",
+            "Damaged bridges or pedestrian paths"
+          ],
+          "applies_to_all": true
+        }
+      ]
+    }
+  ],
+  "overall_recovery_timeline": {
+    "immediate_phase": {
+      "base_duration": "Hari 1-3",
+      "base_duration_en": "Day 1-3",
+      "focus": "Keselamatan, penilaian, dan penyingkiran air",
+      "focus_en": "Safety, assessment, and water removal",
+      "completion_indicator": "Rumah bebas dari air banjir dan lumpur utama",
+      "modifiers": {
+        "water_depth.chest": "+3 hari",
+        "structural_damage.*": "+2 hari",
+        "electrical_damage.breaker_box": "+1 hari"
+      }
+    },
+    "cleanup_phase": {
+      "base_duration": "Hari 4-7",
+      "base_duration_en": "Day 4-7",
+      "focus": "Pembersihan mendalam, pengasingan barang, dan memulakan pengeringan",
+      "focus_en": "Deep cleaning, item sorting, and starting drying",
+      "completion_indicator": "Semua permukaan dibersih, barang diasingkan",
+      "modifiers": {
+        "water_type.sewage_water": "+2 hari",
+        "furniture_items.*": "+1 hari setiap jenis"
+      }
+    },
+    "drying_phase": {
+      "base_duration": "Hari 7-14",
+      "base_duration_en": "Day 7-14",
+      "focus": "Pengeringan lengkap dan pencegahan kulat",
+      "focus_en": "Complete drying and mold prevention",
+      "completion_indicator": "Kelembapan kembali normal, tiada tanda kulat",
+      "modifiers": {
+        "water_depth.waist": "+7 hari",
+        "water_depth.chest": "+14 hari",
+        "mold_growth.large_areas": "+5 hari"
+      }
+    },
+    "restoration_phase": {
+      "base_duration": "Minggu 3-8",
+      "base_duration_en": "Week 3-8",
+      "focus": "Pembaikan struktur, penggantian perabot, pemulihan utiliti",
+      "focus_en": "Structural repairs, furniture replacement, utility restoration",
+      "completion_indicator": "Rumah boleh didiami semula dengan selamat",
+      "modifiers": {
+        "structural_damage.foundation": "+21 hari",
+        "structural_damage.walls_cracks": "+7 hari",
+        "electrical_damage.wiring_exposed": "+5 hari"
+      }
+    }
+  },
+  "important_contacts": {
+    "emergency": {
+      "NADMA_hotline": "1-800-88-2008",
+      "Civil_Defense": "999",
+      "Bomba": "994",
+      "Police": "999",
+      "Health_Ministry_Helpline": "15555"
+    },
+    "utilities": {
+      "TNB_hotline": "15454",
+      "TNB_emergency": "1-300-88-5454",
+      "Air_Selangor": "15300",
+      "Indah_Water": "1-800-88-7474"
+    },
+    "insurance": {
+      "Allianz": "1-300-22-5542",
+      "Zurich": "1-300-888-622",
+      "Berjaya_Sompo": "1-300-88-1338",
+      "Etiqa": "1-300-13-8888"
+    }
+  },
+  "additional_resources": {
+    "government_assistance": "Bantuan kerajaan mungkin tersedia melalui NADMA dan Jabatan Kebajikan Masyarakat. Semak dengan pejabat daerah setempat.",
+    "government_assistance_en": "Government assistance may be available through NADMA and Social Welfare Department. Check with local district office.",
+    "ngo_support": "NGO seperti Malaysian Red Crescent Society dan Mercy Malaysia mungkin menyediakan bantuan. Hubungi mereka untuk maklumat lanjut.",
+    "ngo_support_en": "NGOs like Malaysian Red Crescent Society and Mercy Malaysia may provide assistance. Contact them for more information.",
+    "community_support": "Bekerjasama dengan jiran dan komuniti tempatan untuk bantuan bersama dan perkongsian sumber.",
+    "community_support_en": "Cooperate with neighbors and local community for mutual assistance and resource sharing."
+  }
+}
