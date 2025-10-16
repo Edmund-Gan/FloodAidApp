@@ -159,6 +159,31 @@ const FloodSafeRouteViewer = ({
     }
   };
 
+  const handleFallbackNavigation = async () => {
+    try {
+      // Open Google Maps with standard directions (fallback when flood-safe routing fails)
+      const destCoords = `${destination.lat},${destination.lng}`;
+      const originCoords = `${origin.latitude},${origin.longitude}`;
+
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${originCoords}&destination=${destCoords}&travelmode=driving`;
+
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+        onClose();
+      } else {
+        Alert.alert(
+          'Navigation Error',
+          'Unable to open navigation. Please ensure Google Maps is installed.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (err) {
+      console.error('Error opening fallback navigation:', err);
+      Alert.alert('Error', 'Failed to start navigation. Please try again.');
+    }
+  };
+
   const renderRouteCard = (route, index) => {
     const isSelected = index === selectedRouteIndex;
     const isExpanded = expandedChart === index;
@@ -408,7 +433,7 @@ const FloodSafeRouteViewer = ({
                     <Ionicons name="refresh" size={18} color="#fff" />
                     <Text style={styles.retryButtonText}>Try Again</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.fallbackButton} onPress={onClose}>
+                  <TouchableOpacity style={styles.fallbackButton} onPress={handleFallbackNavigation}>
                     <Text style={styles.fallbackButtonText}>Use Standard Navigation</Text>
                   </TouchableOpacity>
                   {errorType === 'service' && (

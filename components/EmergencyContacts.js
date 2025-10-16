@@ -49,6 +49,7 @@ const EmergencyContacts = ({
   const [detectedState, setDetectedState] = useState('SELANGOR'); // State detected from coordinates
   const [routeViewerVisible, setRouteViewerVisible] = useState(false);
   const [selectedPlaceForRoute, setSelectedPlaceForRoute] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState({}); // Track which categories are expanded
 
   useEffect(() => {
     loadSavedLocationSelection();
@@ -297,6 +298,7 @@ const EmergencyContacts = ({
     setLoadingLocation(true);
     setLocationError(null);
     setNearbyPlaces({}); // Clear previous results
+    setExpandedCategories({}); // Reset all expanded categories
 
     try {
       let location = null;
@@ -388,6 +390,14 @@ const EmergencyContacts = ({
     setRouteViewerVisible(true);
   };
 
+  // Toggle category expansion
+  const toggleCategoryExpansion = (categoryKey) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryKey]: !prev[categoryKey]
+    }));
+  };
+
   // Render a place item in the "Near Me" section
   const renderPlaceItem = (place, index) => {
     const distance = EmergencyPlacesService.formatDistance(place.distance);
@@ -414,22 +424,15 @@ const EmergencyContacts = ({
           </View>
         </View>
 
-        <View style={styles.placeActions}>
-          <TouchableOpacity
-            style={styles.floodRouteButton}
-            onPress={() => openFloodSafeRoute(place)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="water" size={16} color="#2196F3" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.directionsButton}
-            onPress={() => openDirections(place)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="navigate" size={18} color="#4CAF50" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.floodSafeNavButton}
+          onPress={() => openFloodSafeRoute(place)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="water" size={14} color="#fff" />
+          <Text style={styles.floodSafeNavText}>Flood-Safe</Text>
+          <Text style={styles.floodSafeNavText}>Navigation</Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -474,6 +477,8 @@ const EmergencyContacts = ({
     }
 
     const { places, count } = categoryData;
+    const isExpanded = expandedCategories[categoryKey] || false;
+    const visiblePlaces = isExpanded ? places : places.slice(0, 3);
 
     return (
       <View key={categoryKey} style={styles.placeCategory}>
@@ -487,11 +492,25 @@ const EmergencyContacts = ({
         </View>
 
         <View style={styles.placeCategoryList}>
-          {places.slice(0, 3).map((place, index) => renderPlaceItem(place, index))}
+          {visiblePlaces.map((place, index) => renderPlaceItem(place, index))}
           {places.length > 3 && (
-            <Text style={styles.moreItemsText}>
-              + {places.length - 3} more nearby
-            </Text>
+            <TouchableOpacity
+              onPress={() => toggleCategoryExpansion(categoryKey)}
+              style={styles.moreItemsButton}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.moreItemsText}>
+                {isExpanded
+                  ? 'Show less'
+                  : `+ ${places.length - 3} more nearby`}
+              </Text>
+              <Ionicons
+                name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color="#666"
+                style={styles.moreItemsIcon}
+              />
+            </TouchableOpacity>
           )}
         </View>
       </View>
@@ -678,49 +697,50 @@ const EmergencyContacts = ({
 
       {expanded && (
         <View style={styles.content}>
-          {/* Category Switcher */}
-          <View style={styles.categoryTabs}>
-            <TouchableOpacity
-              style={[
-                styles.categoryTab,
-                activeTab === 'callCenters' && styles.categoryTabActive,
-                selectedMode === 'state' && styles.categoryTabFull
-              ]}
-              onPress={() => setActiveTab('callCenters')}
-            >
-              <Ionicons
-                name="call"
-                size={16}
-                color={activeTab === 'callCenters' ? '#4CAF50' : '#666'}
-              />
-              <Text style={[styles.categoryTabText, activeTab === 'callCenters' && styles.categoryTabTextActive]}>
-                Call Centers
-              </Text>
-            </TouchableOpacity>
-
-            {selectedMode !== 'state' && !offlineMode && (
+          {/* Category Switcher - Hidden in state browsing mode */}
+          {selectedMode !== 'state' && (
+            <View style={styles.categoryTabs}>
               <TouchableOpacity
-                style={[styles.categoryTab, activeTab === 'nearMe' && styles.categoryTabActive]}
-                onPress={() => {
-                  setActiveTab('nearMe');
-                  if (!userLocation) {
-                    loadNearbyPlaces();
-                  }
-                }}
+                style={[
+                  styles.categoryTab,
+                  activeTab === 'callCenters' && styles.categoryTabActive
+                ]}
+                onPress={() => setActiveTab('callCenters')}
               >
                 <Ionicons
-                  name="location"
+                  name="call"
                   size={16}
-                  color={activeTab === 'nearMe' ? '#4CAF50' : '#666'}
+                  color={activeTab === 'callCenters' ? '#4CAF50' : '#666'}
                 />
-                <Text style={[styles.categoryTabText, activeTab === 'nearMe' && styles.categoryTabTextActive]}>
-                  Near Me
+                <Text style={[styles.categoryTabText, activeTab === 'callCenters' && styles.categoryTabTextActive]}>
+                  Call Centers
                 </Text>
               </TouchableOpacity>
-            )}
-          </View>
 
-          {activeTab === 'callCenters' ? (
+              {!offlineMode && (
+                <TouchableOpacity
+                  style={[styles.categoryTab, activeTab === 'nearMe' && styles.categoryTabActive]}
+                  onPress={() => {
+                    setActiveTab('nearMe');
+                    if (!userLocation) {
+                      loadNearbyPlaces();
+                    }
+                  }}
+                >
+                  <Ionicons
+                    name="location"
+                    size={16}
+                    color={activeTab === 'nearMe' ? '#4CAF50' : '#666'}
+                  />
+                  <Text style={[styles.categoryTabText, activeTab === 'nearMe' && styles.categoryTabTextActive]}>
+                    Near Me
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {selectedMode === 'state' || activeTab === 'callCenters' ? (
             <>
               <View style={styles.headerInfo}>
                 <View style={styles.locationInfo}>
@@ -1200,12 +1220,42 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  floodSafeNavButton: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4A9B7F',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    marginTop: 8,
+    gap: 2,
+  },
+  floodSafeNavText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 13,
+  },
+  moreItemsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 4,
+    backgroundColor: 'rgba(76, 175, 80, 0.05)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.2)',
+  },
   moreItemsText: {
-    fontSize: 12,
-    color: '#666',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    paddingVertical: 8,
+    fontSize: 13,
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  moreItemsIcon: {
+    marginLeft: 6,
   },
   // Loading, error, and empty states
   loadingText: {

@@ -22,6 +22,7 @@ const EMERGENCY_PLACE_TYPES = {
   },
   medical_care: {
     types: ['doctor'],
+    keyword: 'clinic medical center klinik',
     icon: 'medical-outline',
     color: '#4CAF50',
     displayName: 'Medical Centers',
@@ -84,7 +85,7 @@ const MIN_RESULTS_FOR_FALLBACK = 3; // Trigger fallback if less than 3 results
 
 // Priority tiers for progressive loading
 const PRIORITY_TIERS = {
-  critical: ['emergency_medical', 'police', 'fire_rescue'], // Load first (most urgent)
+  critical: ['emergency_medical', 'medical_care', 'police', 'fire_rescue'], // Load first (most urgent)
   important: ['government_emergency'], // Load second
   helpful: ['evacuation_shelters', 'pharmacies'] // Load last
 };
@@ -218,7 +219,7 @@ class EmergencyPlacesService {
       const allResults = [];
 
       for (const type of typeConfig.types) {
-        const results = await this.searchPlacesByType(type, userLocation, radius);
+        const results = await this.searchPlacesByType(type, userLocation, radius, typeConfig.keyword);
         allResults.push(...results);
       }
 
@@ -270,17 +271,22 @@ class EmergencyPlacesService {
   /**
    * Search places by specific type using Google Places API with comprehensive error handling
    */
-  static async searchPlacesByType(type, location, radius) {
+  static async searchPlacesByType(type, location, radius, keyword = null) {
     if (GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
       // Return mock data for development when API key is not configured
       return this.getMockPlaces(type, location);
     }
 
-    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?` +
-                `location=${location.latitude},${location.longitude}&` +
-                `radius=${radius}&` +
-                `type=${type}&` +
-                `key=${GOOGLE_MAPS_API_KEY}`;
+    let url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?` +
+              `location=${location.latitude},${location.longitude}&` +
+              `radius=${radius}&` +
+              `type=${type}&` +
+              `key=${GOOGLE_MAPS_API_KEY}`;
+
+    // Add keyword parameter if provided
+    if (keyword) {
+      url += `&keyword=${encodeURIComponent(keyword)}`;
+    }
 
     try {
       // Add timeout to fetch request
@@ -371,12 +377,19 @@ class EmergencyPlacesService {
         return false;
       }
 
-      // For medical searches, exclude beauty/spa services
+      // For medical searches, exclude beauty/spa services and prioritize clinics/centers
       if (type === 'doctor') {
-        const excludeKeywords = ['spa', 'beauty', 'massage', 'wellness center', 'meditation'];
+        const excludeKeywords = ['spa', 'beauty', 'massage', 'wellness center', 'meditation', 'aesthetic', 'cosmetic'];
         if (excludeKeywords.some(keyword => name.includes(keyword))) {
           return false;
         }
+
+        // Prioritize clinics and medical centers over individual practitioners
+        const medicalFacilityKeywords = ['clinic', 'klinik', 'medical center', 'hospital', 'poliklinik', 'health center', 'pusat kesihatan'];
+        const isMedicalFacility = medicalFacilityKeywords.some(keyword => name.includes(keyword));
+
+        // Store facility flag for quality scoring
+        place.isMedicalFacility = isMedicalFacility;
       }
 
       // For hospital searches, prioritize actual hospitals
@@ -427,6 +440,11 @@ class EmergencyPlacesService {
 
     if (type === 'pharmacy' && place.name.toLowerCase().includes('24')) {
       score += 30; // Prioritize 24-hour pharmacies
+    }
+
+    // For medical searches, prioritize facilities over individual doctors
+    if (type === 'doctor' && place.isMedicalFacility) {
+      score += 40; // Significant boost for clinics/medical centers
     }
 
     return score;

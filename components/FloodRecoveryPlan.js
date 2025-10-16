@@ -27,6 +27,7 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState('assessment');
   const [assessmentStarted, setAssessmentStarted] = useState(false);
+  const [assessmentCompleted, setAssessmentCompleted] = useState(false);
   const [damageAssessment, setDamageAssessment] = useState({
     water_depth: null,
     water_type: null,
@@ -52,10 +53,10 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
   }, []);
 
   useEffect(() => {
-    if (damageAssessment.water_depth) {
+    if (assessmentCompleted && damageAssessment.water_depth) {
       calculateCustomTimeline();
     }
-  }, [damageAssessment, userProfile]);
+  }, [assessmentCompleted, damageAssessment, userProfile]);
 
   useEffect(() => {
     fetchAirQualityData();
@@ -112,17 +113,41 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
 
   const loadSavedData = async () => {
     try {
-      const [savedAssessment, savedProgress] = await Promise.all([
+      const [savedAssessment, savedProgress, savedCompleted] = await Promise.all([
         AsyncStorage.getItem('floodRecoveryAssessment'),
         AsyncStorage.getItem('floodRecoveryProgress'),
+        AsyncStorage.getItem('floodRecoveryAssessmentCompleted'),
       ]);
+
+      console.log('[FloodRecovery] Loading saved data:', {
+        hasAssessment: !!savedAssessment,
+        completedFlag: savedCompleted,
+      });
 
       if (savedAssessment) {
         const assessment = JSON.parse(savedAssessment);
+
+        // Migration: If there's saved assessment data but no completion flag,
+        // assume it's incomplete (from old version)
+        console.log('[FloodRecovery] Assessment data:', {
+          water_depth: assessment.water_depth,
+          water_type: assessment.water_type,
+          hasCompletionFlag: savedCompleted !== null,
+        });
+
         setDamageAssessment(assessment);
         setAssessmentStarted(true);
-        if (assessment.water_depth) {
+
+        // Only switch to timeline if assessment was EXPLICITLY marked as completed
+        // This prevents old incomplete assessments from auto-completing
+        if (savedCompleted === 'true') {
+          console.log('[FloodRecovery] Assessment marked as completed, switching to timeline');
+          setAssessmentCompleted(true);
           setActiveTab('timeline');
+        } else {
+          console.log('[FloodRecovery] Assessment incomplete or no completion flag, staying on assessment tab');
+          // Stay on assessment tab to allow user to complete it
+          setAssessmentCompleted(false);
         }
       }
       if (savedProgress) {
@@ -304,26 +329,75 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
   const getRelevantCategories = () => {
     if (!recoveryGuideData?.categories) return [];
 
-    const { water_depth, water_type, structural_damage, electrical_damage, mold_growth } = damageAssessment;
+    const { water_depth, water_type, structural_damage, electrical_damage, mold_growth, furniture_items, insurance_coverage } = damageAssessment;
 
-    let categories = recoveryGuideData.categories.filter(category => {
+    // Map categories to phases for Timeline alignment
+    const categoryPhaseMap = {
+      immediate_safety: 'immediate',
+      safety_protection: 'immediate',
+      water_debris_removal: 'cleanup',
+      sorting_sanitization: 'cleanup',
+      drying_ventilation: 'drying',
+      documentation_insurance: 'immediate', // ongoing but starts immediately
+      health_hygiene: 'cleanup',
+      utilities_services: 'restoration'
+    };
+
+    // Always show all categories, but mark applicability
+    let categories = recoveryGuideData.categories.map(category => {
+      let isApplicable = true;
+      let applicabilityReason = '';
+
+      // Always applicable categories
       if (['immediate_safety', 'safety_protection'].includes(category.id)) {
-        return true;
+        isApplicable = true;
+        applicabilityReason = 'Critical for all flood situations';
       }
-
-      if (category.triggered_by_damage) {
-        return category.triggered_by_damage.some(trigger => {
+      // Check if category is triggered by user's damage assessment
+      else if (category.triggered_by_damage) {
+        const isTriggered = category.triggered_by_damage.some(trigger => {
           if (trigger === 'water_depth.*' && water_depth) return true;
           if (trigger === 'water_type.*' && water_type) return true;
           if (trigger.startsWith('water_type.') && trigger.includes(water_type)) return true;
           if (trigger.startsWith('structural_damage.') && structural_damage.some(d => trigger.includes(d))) return true;
           if (trigger.startsWith('electrical_damage.') && electrical_damage.some(d => trigger.includes(d))) return true;
           if (trigger.startsWith('mold_growth.') && trigger.includes(mold_growth)) return true;
+          if (trigger.startsWith('furniture_items.') && furniture_items.some(d => trigger.includes(d))) return true;
+          if (trigger.startsWith('insurance_coverage.') && trigger.includes(insurance_coverage)) return true;
           return false;
         });
+
+        isApplicable = isTriggered;
+        if (!isTriggered) {
+          // Provide helpful reason why it's optional
+          if (category.id === 'drying_ventilation') {
+            applicabilityReason = 'Important for preventing mold - recommended for all floods';
+            isApplicable = true; // Override - drying is always important
+          } else if (category.id === 'utilities_services') {
+            applicabilityReason = electrical_damage.length > 0 ? 'Critical due to electrical damage' : 'Optional - utility restoration';
+          } else if (category.id === 'sorting_sanitization') {
+            applicabilityReason = furniture_items.length > 0 ? 'Critical for damaged items' : 'Optional if no items damaged';
+          } else if (category.id === 'documentation_insurance') {
+            applicabilityReason = insurance_coverage ? 'Critical for insurance claims' : 'Optional - no insurance indicated';
+          } else if (category.id === 'health_hygiene') {
+            applicabilityReason = water_type === 'sewage_water' || water_type === 'river_water' ? 'Critical due to contaminated water' : 'Recommended for health safety';
+            isApplicable = true; // Override - health is always important
+          }
+        } else {
+          applicabilityReason = 'Required based on your damage assessment';
+        }
+      } else {
+        // No trigger specified - always show
+        isApplicable = true;
+        applicabilityReason = 'Recommended for all flood recovery';
       }
 
-      return true;
+      return {
+        ...category,
+        isApplicable,
+        applicabilityReason,
+        phase: categoryPhaseMap[category.id] || 'restoration'
+      };
     });
 
     // Apply filters
@@ -338,9 +412,10 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
         return completedCount < categorySteps.length;
       });
     } else if (filterMode === 'today') {
-      // Filter to show only immediate phase categories for "today"
+      // Filter to show current phase categories based on timeline
+      const currentPhase = getCurrentPhase().toLowerCase();
       categories = categories.filter(cat =>
-        cat.base_timeline_en?.includes('Day 1') || cat.priority_en === 'CRITICAL'
+        cat.phase === currentPhase || cat.priority_en === 'CRITICAL'
       );
     }
 
@@ -385,7 +460,61 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
     return priorities.slice(0, 3); // Return top 3 priorities
   };
 
+  const isAssessmentValid = () => {
+    // Check if required questions are answered
+    const requiredQuestions = ['water_depth', 'water_type'];
+    return requiredQuestions.every(question => damageAssessment[question] !== null);
+  };
+
+  const getRequiredQuestionsStatus = () => {
+    if (!recoveryGuideData?.damage_assessment) return { answered: 0, total: 0 };
+
+    const questions = quickAssessmentMode
+      ? getQuickAssessmentQuestions()
+      : recoveryGuideData.damage_assessment.categories;
+
+    const requiredQuestions = questions.filter(q => q.required);
+    const answeredRequired = requiredQuestions.filter(q => {
+      const value = damageAssessment[q.id];
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
+      return value !== null;
+    });
+
+    return {
+      answered: answeredRequired.length,
+      total: requiredQuestions.length,
+    };
+  };
+
+  const completeAssessment = async () => {
+    console.log('[FloodRecovery] completeAssessment called');
+
+    if (!isAssessmentValid()) {
+      console.log('[FloodRecovery] Assessment invalid, showing alert');
+      Alert.alert(
+        'Incomplete Assessment',
+        'Please answer all required questions (marked with *) before completing the assessment.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    console.log('[FloodRecovery] Assessment valid, marking as completed');
+    try {
+      await AsyncStorage.setItem('floodRecoveryAssessmentCompleted', 'true');
+      setAssessmentCompleted(true);
+      setActiveTab('timeline');
+      console.log('[FloodRecovery] Assessment completed and switched to timeline');
+    } catch (error) {
+      console.log('Error saving assessment completion:', error);
+    }
+  };
+
   const handleAssessmentSelection = (categoryId, optionId, isMultiple = false) => {
+    console.log('[FloodRecovery] handleAssessmentSelection:', { categoryId, optionId, isMultiple });
+
     let newAssessment = { ...damageAssessment };
 
     if (isMultiple) {
@@ -398,6 +527,12 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
     } else {
       newAssessment[categoryId] = optionId;
     }
+
+    console.log('[FloodRecovery] New assessment state:', {
+      water_depth: newAssessment.water_depth,
+      water_type: newAssessment.water_type,
+      assessmentCompleted: assessmentCompleted,
+    });
 
     saveDamageAssessment(newAssessment);
   };
@@ -428,7 +563,12 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
           text: 'Reset',
           style: 'destructive',
           onPress: async () => {
-            await AsyncStorage.multiRemove(['floodRecoveryAssessment', 'floodRecoveryProgress']);
+            console.log('[FloodRecovery] Resetting assessment...');
+            await AsyncStorage.multiRemove([
+              'floodRecoveryAssessment',
+              'floodRecoveryProgress',
+              'floodRecoveryAssessmentCompleted'
+            ]);
             setDamageAssessment({
               water_depth: null,
               water_type: null,
@@ -441,7 +581,9 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
             setCompletedSteps({});
             setCustomTimeline(null);
             setAssessmentStarted(false);
+            setAssessmentCompleted(false);
             setActiveTab('assessment');
+            console.log('[FloodRecovery] Assessment reset complete');
           },
         },
       ]
@@ -529,9 +671,9 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
 
   const renderTabBar = () => {
     const tabs = [
-      { id: 'assessment', label: damageAssessment.water_depth ? 'Summary' : 'Assessment', icon: 'clipboard-outline' },
-      { id: 'timeline', label: 'Timeline', icon: 'calendar-outline', disabled: !damageAssessment.water_depth },
-      { id: 'steps', label: 'Steps', icon: 'list-outline', disabled: !damageAssessment.water_depth },
+      { id: 'assessment', label: assessmentCompleted ? 'Summary' : 'Assessment', icon: 'clipboard-outline' },
+      { id: 'timeline', label: 'Timeline', icon: 'calendar-outline', disabled: !assessmentCompleted },
+      { id: 'steps', label: 'Steps', icon: 'list-outline', disabled: !assessmentCompleted },
     ];
 
     return (
@@ -619,10 +761,18 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
     if (!recoveryGuideData?.damage_assessment) return null;
 
     const questions = quickAssessmentMode ? getQuickAssessmentQuestions() : recoveryGuideData.damage_assessment.categories;
+    const requiredStatus = getRequiredQuestionsStatus();
+    const isValid = isAssessmentValid();
 
     return (
-      <ScrollView style={styles.tabContent}>
-        {!damageAssessment.water_depth ? (
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={styles.assessmentScrollContent}
+        nestedScrollEnabled={true}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
+      >
+        {!assessmentCompleted ? (
           <>
             <View style={styles.assessmentModeToggle}>
               <TouchableOpacity
@@ -651,6 +801,25 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
                 ? 'Answer 3 key questions for a basic recovery plan'
                 : recoveryGuideData.damage_assessment.description_en}
             </Text>
+
+            {/* Progress Indicator */}
+            <View style={styles.assessmentProgressContainer}>
+              <View style={styles.assessmentProgressBar}>
+                <View
+                  style={[
+                    styles.assessmentProgressFill,
+                    {
+                      width: requiredStatus.total > 0
+                        ? `${(requiredStatus.answered / requiredStatus.total) * 100}%`
+                        : '0%',
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.assessmentProgressText}>
+                {requiredStatus.answered} of {requiredStatus.total} required questions answered
+              </Text>
+            </View>
 
             {questions.map((category, index) => {
               const isMultiple = category.type === 'multiple_choice';
@@ -711,6 +880,42 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
                 </View>
               );
             })}
+
+            {/* Complete Assessment Button */}
+            <View style={styles.completeAssessmentContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.completeAssessmentButton,
+                  !isValid && styles.completeAssessmentButtonDisabled,
+                ]}
+                onPress={completeAssessment}
+                disabled={!isValid}
+              >
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color={isValid ? '#fff' : '#999'}
+                />
+                <Text
+                  style={[
+                    styles.completeAssessmentButtonText,
+                    !isValid && styles.completeAssessmentButtonTextDisabled,
+                  ]}
+                >
+                  Complete Assessment & View Plan
+                </Text>
+                <Ionicons
+                  name="arrow-forward"
+                  size={20}
+                  color={isValid ? '#fff' : '#999'}
+                />
+              </TouchableOpacity>
+              {!isValid && (
+                <Text style={styles.completeAssessmentHint}>
+                  Please answer all required questions (marked with *) to continue
+                </Text>
+              )}
+            </View>
           </>
         ) : (
           <View style={styles.assessmentSummary}>
@@ -751,77 +956,79 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
     if (!customTimeline) return null;
 
     return (
-      <ScrollView style={styles.tabContent}>
-        <View style={styles.timelineContainer}>
-          <View style={styles.timelineTotalDays}>
-            <Text style={styles.totalDaysNumber}>{customTimeline.totalDays}</Text>
-            <Text style={styles.totalDaysLabel}>Total Recovery Days</Text>
-          </View>
-
-          <View style={styles.timelinePhases}>
-            {Object.entries(customTimeline.phases).map(([phase, data]) => {
-              const isCurrentPhase = getCurrentPhase().toLowerCase() === phase;
-
-              return (
-                <TouchableOpacity
-                  key={phase}
-                  style={[
-                    styles.phaseBlock,
-                    isCurrentPhase && styles.currentPhaseBlock,
-                  ]}
-                  onPress={() => {
-                    setActiveTab('steps');
-                    // Filter to show relevant categories for this phase
-                  }}
-                >
-                  <View style={[
-                    styles.phaseIndicator,
-                    { backgroundColor: getPhaseColor(phase) },
-                  ]} />
-                  <View style={styles.phaseContent}>
-                    <Text style={styles.phaseName}>{getPhaseTitle(phase)}</Text>
-                    <Text style={styles.phaseDate}>{data.label}</Text>
-                    <Text style={styles.phaseDays}>{data.days} days</Text>
-                  </View>
-                  {isCurrentPhase && (
-                    <View style={styles.currentBadge}>
-                      <Text style={styles.currentBadgeText}>CURRENT</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {customTimeline.needsProfessionalHelp.length > 0 && (
-            <View style={styles.professionalHelpCard}>
-              <View style={styles.professionalHelpHeader}>
-                <Ionicons name="warning" size={24} color="#FF6B6B" />
-                <Text style={styles.professionalHelpTitle}>Professional Help Required</Text>
-              </View>
-              {customTimeline.needsProfessionalHelp.map((prof, index) => (
-                <View key={index} style={styles.professionalItem}>
-                  {prof.urgent && (
-                    <View style={styles.urgentBadge}>
-                      <Text style={styles.urgentText}>URGENT</Text>
-                    </View>
-                  )}
-                  <Text style={styles.professionalType}>{prof.type}</Text>
-                  <Text style={styles.professionalReason}>{prof.reason}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {customTimeline.adjustmentReasons.length > 0 && (
-            <View style={styles.adjustmentCard}>
-              <Text style={styles.adjustmentTitle}>Timeline Adjustments</Text>
-              {customTimeline.adjustmentReasons.map((reason, index) => (
-                <Text key={index} style={styles.adjustmentReason}>• {reason}</Text>
-              ))}
-            </View>
-          )}
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={styles.timelineScrollContent}
+        showsVerticalScrollIndicator={true}
+      >
+        <View style={styles.timelineTotalDays}>
+          <Text style={styles.totalDaysNumber}>{customTimeline.totalDays}</Text>
+          <Text style={styles.totalDaysLabel}>Total Recovery Days</Text>
         </View>
+
+        <View style={styles.timelinePhases}>
+          {Object.entries(customTimeline.phases).map(([phase, data]) => {
+            const isCurrentPhase = getCurrentPhase().toLowerCase() === phase;
+
+            return (
+              <TouchableOpacity
+                key={phase}
+                style={[
+                  styles.phaseBlock,
+                  isCurrentPhase && styles.currentPhaseBlock,
+                ]}
+                onPress={() => {
+                  setActiveTab('steps');
+                  // Filter to show relevant categories for this phase
+                }}
+              >
+                <View style={[
+                  styles.phaseIndicator,
+                  { backgroundColor: getPhaseColor(phase) },
+                ]} />
+                <View style={styles.phaseContent}>
+                  <Text style={styles.phaseName}>{getPhaseTitle(phase)}</Text>
+                  <Text style={styles.phaseDate}>{data.label}</Text>
+                  <Text style={styles.phaseDays}>{data.days} days</Text>
+                </View>
+                {isCurrentPhase && (
+                  <View style={styles.currentBadge}>
+                    <Text style={styles.currentBadgeText}>CURRENT</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {customTimeline.needsProfessionalHelp.length > 0 && (
+          <View style={styles.professionalHelpCard}>
+            <View style={styles.professionalHelpHeader}>
+              <Ionicons name="warning" size={24} color="#FF6B6B" />
+              <Text style={styles.professionalHelpTitle}>Professional Help Required</Text>
+            </View>
+            {customTimeline.needsProfessionalHelp.map((prof, index) => (
+              <View key={index} style={styles.professionalItem}>
+                {prof.urgent && (
+                  <View style={styles.urgentBadge}>
+                    <Text style={styles.urgentText}>URGENT</Text>
+                  </View>
+                )}
+                <Text style={styles.professionalType}>{prof.type}</Text>
+                <Text style={styles.professionalReason}>{prof.reason}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {customTimeline.adjustmentReasons.length > 0 && (
+          <View style={styles.adjustmentCard}>
+            <Text style={styles.adjustmentTitle}>Timeline Adjustments</Text>
+            {customTimeline.adjustmentReasons.map((reason, index) => (
+              <Text key={index} style={styles.adjustmentReason}>• {reason}</Text>
+            ))}
+          </View>
+        )}
       </ScrollView>
     );
   };
@@ -830,7 +1037,12 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
     const categories = getRelevantCategories();
 
     return (
-      <View style={styles.tabContent}>
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={styles.stepsScrollViewContent}
+        showsVerticalScrollIndicator={true}
+        stickyHeaderIndices={[0, 1]}
+      >
         <View style={styles.filterBar}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {[
@@ -874,93 +1086,133 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
           )}
         </View>
 
-        <ScrollView
-          style={styles.stepsScrollView}
-          contentContainerStyle={styles.stepsScrollViewContent}
-          nestedScrollEnabled={true}
-          showsVerticalScrollIndicator={true}
-        >
-          {categories.map(category => {
-            const categorySteps = category.steps || [];
-            const completedCategorySteps = categorySteps.filter(step =>
-              completedSteps[`${category.id}_step_${step.step_number}`]
-            ).length;
-            const isExpanded = expandedCategories[category.id];
+        {categories.map(category => {
+          const categorySteps = category.steps || [];
+          const completedCategorySteps = categorySteps.filter(step =>
+            completedSteps[`${category.id}_step_${step.step_number}`]
+          ).length;
+          const isExpanded = expandedCategories[category.id];
+          const isApplicable = category.isApplicable !== false; // Default to true if not set
 
-            return (
-              <View key={category.id} style={styles.collapsibleCategory}>
-                <TouchableOpacity
-                  style={[
-                    styles.categoryCollapsibleHeader,
-                    { borderLeftColor: getPriorityColor(category.priority_en) },
-                  ]}
-                  onPress={() => toggleCategoryExpanded(category.id)}
-                >
-                  <View style={styles.categoryHeaderLeft}>
-                    <Text style={styles.categoryIcon}>{category.icon}</Text>
-                    <View style={styles.categoryInfo}>
-                      <Text style={styles.categoryName}>{category.category_name_en}</Text>
-                      <Text style={styles.categoryProgress}>
-                        {completedCategorySteps}/{categorySteps.length} steps completed
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.categoryHeaderRight}>
-                    <View style={[
-                      styles.priorityIndicator,
-                      { backgroundColor: getPriorityColor(category.priority_en) + '20' },
-                    ]}>
+          return (
+            <View key={category.id} style={[
+              styles.collapsibleCategory,
+              !isApplicable && styles.categoryNotApplicable
+            ]}>
+              <TouchableOpacity
+                style={[
+                  styles.categoryCollapsibleHeader,
+                  { borderLeftColor: getPriorityColor(category.priority_en) },
+                  !isApplicable && styles.categoryHeaderNotApplicable
+                ]}
+                onPress={() => toggleCategoryExpanded(category.id)}
+              >
+                <View style={styles.categoryHeaderLeft}>
+                  <Text style={[
+                    styles.categoryIcon,
+                    !isApplicable && styles.iconNotApplicable
+                  ]}>{category.icon}</Text>
+                  <View style={styles.categoryInfo}>
+                    <View style={styles.categoryNameRow}>
                       <Text style={[
-                        styles.priorityText,
-                        { color: getPriorityColor(category.priority_en) },
-                      ]}>
-                        {category.priority_en}
-                      </Text>
+                        styles.categoryName,
+                        !isApplicable && styles.textNotApplicable
+                      ]}>{category.category_name_en}</Text>
+                      {category.phase && (
+                        <View style={[
+                          styles.phaseBadge,
+                          { backgroundColor: getPhaseColor(category.phase) + '20' }
+                        ]}>
+                          <Text style={[
+                            styles.phaseBadgeText,
+                            { color: getPhaseColor(category.phase) }
+                          ]}>
+                            {getPhaseTitle(category.phase)}
+                          </Text>
+                        </View>
+                      )}
                     </View>
-                    <Ionicons
-                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                      size={20}
-                      color="#666"
-                    />
+                    <Text style={[
+                      styles.categoryProgress,
+                      !isApplicable && styles.textNotApplicable
+                    ]}>
+                      {completedCategorySteps}/{categorySteps.length} steps completed
+                    </Text>
+                    {category.applicabilityReason && (
+                      <Text style={[
+                        styles.applicabilityReason,
+                        !isApplicable && styles.textNotApplicable
+                      ]}>
+                        {category.applicabilityReason}
+                      </Text>
+                    )}
                   </View>
-                </TouchableOpacity>
-
-                {isExpanded && (
-                  <View style={styles.categorySteps}>
-                    {categorySteps.map(step => {
-                      const stepId = `${category.id}_step_${step.step_number}`;
-                      const isCompleted = completedSteps[stepId];
-
-                      return (
-                        <TouchableOpacity
-                          key={stepId}
-                          style={[styles.stepItem, isCompleted && styles.stepCompleted]}
-                          onPress={() => toggleStepCompletion(category.id, step.step_number)}
-                        >
-                          <Ionicons
-                            name={isCompleted ? 'checkbox' : 'square-outline'}
-                            size={24}
-                            color={isCompleted ? '#4CAF50' : '#999'}
-                          />
-                          <View style={styles.stepContent}>
-                            <Text style={[
-                              styles.stepTitle,
-                              isCompleted && styles.stepTitleCompleted,
-                            ]}>
-                              {step.title_en}
-                            </Text>
-                            <Text style={styles.stepBrief}>{step.brief_en}</Text>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
+                </View>
+                <View style={styles.categoryHeaderRight}>
+                  <View style={[
+                    styles.priorityIndicator,
+                    { backgroundColor: getPriorityColor(category.priority_en) + '20' },
+                    !isApplicable && styles.priorityIndicatorNotApplicable
+                  ]}>
+                    <Text style={[
+                      styles.priorityText,
+                      { color: getPriorityColor(category.priority_en) },
+                      !isApplicable && styles.textNotApplicable
+                    ]}>
+                      {category.priority_en}
+                    </Text>
                   </View>
-                )}
-              </View>
-            );
-          })}
-        </ScrollView>
-      </View>
+                  <Ionicons
+                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color={!isApplicable ? '#ccc' : '#666'}
+                  />
+                </View>
+              </TouchableOpacity>
+
+              {isExpanded && (
+                <View style={styles.categorySteps}>
+                  {categorySteps.map(step => {
+                    const stepId = `${category.id}_step_${step.step_number}`;
+                    const isCompleted = completedSteps[stepId];
+
+                    return (
+                      <TouchableOpacity
+                        key={stepId}
+                        style={[
+                          styles.stepItem,
+                          isCompleted && styles.stepCompleted,
+                          !isApplicable && styles.stepNotApplicable
+                        ]}
+                        onPress={() => toggleStepCompletion(category.id, step.step_number)}
+                      >
+                        <Ionicons
+                          name={isCompleted ? 'checkbox' : 'square-outline'}
+                          size={24}
+                          color={isCompleted ? '#4CAF50' : (!isApplicable ? '#ccc' : '#999')}
+                        />
+                        <View style={styles.stepContent}>
+                          <Text style={[
+                            styles.stepTitle,
+                            isCompleted && styles.stepTitleCompleted,
+                            !isApplicable && styles.textNotApplicable
+                          ]}>
+                            {step.title_en}
+                          </Text>
+                          <Text style={[
+                            styles.stepBrief,
+                            !isApplicable && styles.textNotApplicable
+                          ]}>{step.brief_en}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </ScrollView>
     );
   };
 
@@ -1167,8 +1419,8 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
             </View>
           ) : (
             <>
-              {damageAssessment.water_depth && renderProgressHeader()}
-              {damageAssessment.water_depth && renderQuickActionCards()}
+              {assessmentCompleted && renderProgressHeader()}
+              {assessmentCompleted && renderQuickActionCards()}
               {renderTabBar()}
 
               {activeTab === 'assessment' && renderAssessmentTab()}
@@ -1420,7 +1672,11 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     backgroundColor: '#fff',
-    height: 500,
+    flex: 1,
+  },
+  assessmentScrollContent: {
+    paddingBottom: 20,
+    flexGrow: 1,
   },
   assessmentModeToggle: {
     flexDirection: 'row',
@@ -1549,8 +1805,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#FF5252',
   },
-  timelineContainer: {
+  timelineScrollContent: {
     padding: 16,
+    paddingBottom: 20,
   },
   timelineTotalDays: {
     backgroundColor: '#e3f2fd',
@@ -1726,12 +1983,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginBottom: 1,
   },
+  categoryNotApplicable: {
+    opacity: 0.6,
+  },
   categoryCollapsibleHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 12,
     borderLeftWidth: 4,
+  },
+  categoryHeaderNotApplicable: {
+    backgroundColor: '#f8f9fa',
   },
   categoryHeaderLeft: {
     flexDirection: 'row',
@@ -1742,8 +2005,17 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginRight: 12,
   },
+  iconNotApplicable: {
+    opacity: 0.5,
+  },
   categoryInfo: {
     flex: 1,
+  },
+  categoryNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
   },
   categoryName: {
     fontSize: 14,
@@ -1755,6 +2027,25 @@ const styles = StyleSheet.create({
     color: '#6c757d',
     marginTop: 2,
   },
+  applicabilityReason: {
+    fontSize: 10,
+    color: '#6c757d',
+    marginTop: 3,
+    fontStyle: 'italic',
+  },
+  textNotApplicable: {
+    color: '#adb5bd',
+  },
+  phaseBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  phaseBadgeText: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+  },
   categoryHeaderRight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1764,6 +2055,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
+  },
+  priorityIndicatorNotApplicable: {
+    opacity: 0.5,
   },
   priorityText: {
     fontSize: 10,
@@ -1783,6 +2077,9 @@ const styles = StyleSheet.create({
   stepCompleted: {
     opacity: 0.6,
   },
+  stepNotApplicable: {
+    opacity: 0.5,
+  },
   stepContent: {
     flex: 1,
     marginLeft: 10,
@@ -1801,11 +2098,9 @@ const styles = StyleSheet.create({
     color: '#6c757d',
     marginTop: 2,
   },
-  stepsScrollView: {
-    flex: 1,
-  },
   stepsScrollViewContent: {
-    paddingBottom: 200,
+    paddingBottom: 20,
+    flexGrow: 1,
   },
   resourcesContainer: {
     padding: 16,
@@ -1944,6 +2239,69 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  assessmentProgressContainer: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+  },
+  assessmentProgressBar: {
+    height: 6,
+    backgroundColor: '#e9ecef',
+    borderRadius: 3,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  assessmentProgressFill: {
+    height: '100%',
+    backgroundColor: '#2196F3',
+    borderRadius: 3,
+  },
+  assessmentProgressText: {
+    fontSize: 12,
+    color: '#6c757d',
+    textAlign: 'center',
+  },
+  completeAssessmentContainer: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  completeAssessmentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4CAF50',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    gap: 8,
+  },
+  completeAssessmentButtonDisabled: {
+    backgroundColor: '#e9ecef',
+  },
+  completeAssessmentButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  completeAssessmentButtonTextDisabled: {
+    color: '#999',
+  },
+  completeAssessmentHint: {
+    fontSize: 12,
+    color: '#FF5252',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
 });
 

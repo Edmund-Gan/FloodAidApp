@@ -85,7 +85,8 @@
       "Bash(curl -X POST http://localhost:5001/api/air-quality -H \"Content-Type: application/json\" -d '{\"\"latitude\"\": 3.139, \"\"longitude\"\": 101.6869}')",
       "Bash(curl:*)",
       "Bash(gcloud run deploy:*)",
-      "WebFetch(domain:open-meteo.com)"
+      "WebFetch(domain:open-meteo.com)",
+      "Bash(cd:*)"
     ],
     "deny": [],
     "ask": []

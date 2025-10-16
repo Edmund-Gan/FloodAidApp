@@ -746,18 +746,13 @@ const EmergencyKit = ({ emergencyKitData }) => {
                           </View>
                           <View style={styles.storeActions}>
                             <TouchableOpacity
-                              style={styles.storeActionButton}
+                              style={styles.floodSafeNavButton}
                               onPress={() => openFloodSafeRoute(store)}
+                              activeOpacity={0.7}
                             >
-                              <Ionicons name="water" size={16} color="#2196F3" />
-                              <Text style={styles.storeActionText}>Flood-Safe Route</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              style={[styles.storeActionButton, styles.directionsButtonGreen]}
-                              onPress={() => openDirections(store)}
-                            >
-                              <Ionicons name="navigate" size={16} color="#4CAF50" />
-                              <Text style={[styles.storeActionText, { color: '#4CAF50' }]}>Directions</Text>
+                              <Ionicons name="water" size={14} color="#fff" />
+                              <Text style={styles.floodSafeNavText}>Flood-Safe</Text>
+                              <Text style={styles.floodSafeNavText}>Navigation</Text>
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -1201,6 +1196,23 @@ const styles = StyleSheet.create({
     color: '#6c757d',
     marginTop: 4,
     textAlign: 'center',
+  },
+  floodSafeNavButton: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4A9B7F',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    gap: 2,
+  },
+  floodSafeNavText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 13,
   },
 });
 
