@@ -86,7 +86,9 @@
       "Bash(curl:*)",
       "Bash(gcloud run deploy:*)",
       "WebFetch(domain:open-meteo.com)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(pandoc \"FloodAid_Quick_Start_Guide.md\" -o \"FloodAid_Quick_Start_Guide.pdf\" --pdf-engine=weasyprint)",
+      "Bash(pandoc \"FloodAid_User_Manual.md\" -o \"FloodAid_User_Manual.html\" --standalone --css=https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css --metadata title=\"FloodAid Comprehensive User Manual\")"
     ],
     "deny": [],
     "ask": []

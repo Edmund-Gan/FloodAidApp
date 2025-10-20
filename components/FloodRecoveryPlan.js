@@ -18,16 +18,24 @@ import { UserContext } from '../context/UserContext';
 import { useReliableLocation } from '../context/ReliableLocationContext';
 import airQualityService from '../services/AirQualityService';
 import ReliableLocationService from '../services/ReliableLocationService';
+import ProfileSetupWelcomeCard from './ProfileSetupWelcomeCard';
+import ProfileStatusBanner from './ProfileStatusBanner';
+import QuickProfileSetupModal from './QuickProfileSetupModal';
 
 const { width } = Dimensions.get('window');
 
 const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode = false }) => {
-  const { userProfile } = useContext(UserContext);
+  const { userProfile, updateUserProfile, isDefaultProfile } = useContext(UserContext);
   const { currentLocation } = useReliableLocation();
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState('assessment');
   const [assessmentStarted, setAssessmentStarted] = useState(false);
   const [assessmentCompleted, setAssessmentCompleted] = useState(false);
+
+  // Profile setup UX state
+  const [showWelcomeCard, setShowWelcomeCard] = useState(false);
+  const [welcomeCardDismissed, setWelcomeCardDismissed] = useState(false);
+  const [quickSetupVisible, setQuickSetupVisible] = useState(false);
   const [damageAssessment, setDamageAssessment] = useState({
     water_depth: null,
     water_type: null,
@@ -61,6 +69,24 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
   useEffect(() => {
     fetchAirQualityData();
   }, [currentLocationInfo?.lat, currentLocationInfo?.lon, currentLocation?.latitude, currentLocation?.longitude]);
+
+  // Check if welcome card should be shown when component expands
+  useEffect(() => {
+    const checkWelcomeCard = async () => {
+      if (expanded && isDefaultProfile() && !welcomeCardDismissed && assessmentStarted) {
+        try {
+          const welcomeShown = await AsyncStorage.getItem('floodRecoveryPlan_welcomeShown');
+          if (!welcomeShown) {
+            setShowWelcomeCard(true);
+          }
+        } catch (error) {
+          console.log('Error checking welcome card status:', error);
+        }
+      }
+    };
+
+    checkWelcomeCard();
+  }, [expanded, isDefaultProfile, welcomeCardDismissed, assessmentStarted]);
 
   const fetchAirQualityData = async () => {
     setAirQualityLoading(true);
@@ -593,6 +619,32 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
   const startAssessment = () => {
     setAssessmentStarted(true);
     setExpanded(true);
+  };
+
+  // Profile setup UX handlers
+  const handleSetupNow = () => {
+    setQuickSetupVisible(true);
+  };
+
+  const handleDismissWelcome = async () => {
+    try {
+      await AsyncStorage.setItem('floodRecoveryPlan_welcomeShown', 'true');
+      setShowWelcomeCard(false);
+      setWelcomeCardDismissed(true);
+    } catch (error) {
+      console.log('Error saving welcome card status:', error);
+    }
+  };
+
+  const handleSaveProfile = (updatedProfile) => {
+    updateUserProfile(updatedProfile);
+    setQuickSetupVisible(false);
+    setShowWelcomeCard(false);
+    setWelcomeCardDismissed(true);
+  };
+
+  const handleOpenQuickSetup = () => {
+    setQuickSetupVisible(true);
   };
 
   const getQuickAssessmentQuestions = () => {
@@ -1419,6 +1471,26 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
             </View>
           ) : (
             <>
+              {/* Profile Status Banner - Always visible after assessment starts */}
+              <ProfileStatusBanner
+                userProfile={userProfile}
+                isDefault={isDefaultProfile()}
+                onPress={handleOpenQuickSetup}
+              />
+
+              {/* Welcome Card - First time only for default profiles */}
+              {showWelcomeCard && (
+                <ProfileSetupWelcomeCard
+                  componentName="Recovery Plan"
+                  impactExamples={[
+                    'Single person: 7-day recovery',
+                    'Family of 4 with mobility needs: 18+ day recovery'
+                  ]}
+                  onSetupNow={handleSetupNow}
+                  onDismiss={handleDismissWelcome}
+                />
+              )}
+
               {assessmentCompleted && renderProgressHeader()}
               {assessmentCompleted && renderQuickActionCards()}
               {renderTabBar()}
@@ -1432,6 +1504,15 @@ const FloodRecoveryPlan = ({ recoveryGuideData, currentLocationInfo, offlineMode
       )}
 
       {renderAirQualityModal()}
+
+      {/* Quick Profile Setup Modal */}
+      <QuickProfileSetupModal
+        visible={quickSetupVisible}
+        onClose={() => setQuickSetupVisible(false)}
+        onSave={handleSaveProfile}
+        userProfile={userProfile}
+        componentType="recovery_plan"
+      />
     </View>
   );
 };

@@ -317,12 +317,12 @@ export const UserProvider = ({ children }) => {
     try {
       await AsyncStorage.multiRemove([
         'userProfile',
-        'notificationSettings', 
+        'notificationSettings',
         'preferences',
         'emergencyContacts',
         'appUsage'
       ]);
-      
+
       // Reset to default values
       setUserProfile({
         name: '',
@@ -352,6 +352,34 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  // Helper: Check if profile is at default/unconfigured state
+  const isDefaultProfile = () => {
+    return userProfile.familySize <= 1 &&
+           !userProfile.hasChildren &&
+           !userProfile.mobilityAssistance;
+  };
+
+  // Helper: Get profile completeness information
+  const getProfileCompleteness = () => {
+    const configured = {
+      familySize: userProfile.familySize > 1,
+      children: userProfile.hasChildren && userProfile.childrenAges?.length > 0,
+      mobility: userProfile.mobilityAssistance
+    };
+
+    const configuredCount = Object.values(configured).filter(Boolean).length;
+    const totalFields = 3;
+    const percentage = Math.round((configuredCount / totalFields) * 100);
+
+    return {
+      isComplete: configuredCount === totalFields,
+      isPartial: configuredCount > 0 && configuredCount < totalFields,
+      isEmpty: configuredCount === 0,
+      percentage,
+      configured
+    };
+  };
+
   const value = {
     userProfile,
     notificationSettings,
@@ -366,7 +394,9 @@ export const UserProvider = ({ children }) => {
     removeEmergencyContact,
     logFeatureUsage,
     updateDataRefresh,
-    resetUserData
+    resetUserData,
+    isDefaultProfile,
+    getProfileCompleteness
   };
 
   return (

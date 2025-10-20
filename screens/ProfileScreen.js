@@ -31,7 +31,7 @@ export default function ProfileScreen() {
   const [childAgeModalVisible, setChildAgeModalVisible] = useState(false);
   const [tempChildAges, setTempChildAges] = useState(userProfile.childrenAges || []);
 
-  // Sync local state with context when context changes
+  // Sync local state with context when context changes externally
   useEffect(() => {
     setNotifications(notificationSettings.floodAlerts);
     setMobilityAssistance(userProfile.mobilityAssistance);
@@ -52,9 +52,32 @@ export default function ProfileScreen() {
   };
 
   const updateHouseholdMembersSettings = (value) => {
+    // Allow temporary empty state while typing
     setHouseholdMembers(value);
-    const numericValue = parseInt(value) || 1;
-    updateUserProfile({ familySize: numericValue });
+
+    // Only update context if value is valid (1-20)
+    if (value && value.trim() !== '') {
+      const numericValue = parseInt(value);
+      if (!isNaN(numericValue) && numericValue >= 1 && numericValue <= 20) {
+        updateUserProfile({ familySize: numericValue });
+      }
+    }
+  };
+
+  const handleHouseholdMembersBlur = () => {
+    // When user finishes editing, ensure a valid value
+    const numericValue = parseInt(householdMembers);
+
+    if (!householdMembers || householdMembers.trim() === '' || isNaN(numericValue) || numericValue < 1) {
+      // Empty or invalid: default to 1
+      setHouseholdMembers('1');
+      updateUserProfile({ familySize: 1 });
+    } else if (numericValue > 20) {
+      // Too large: cap at 20
+      setHouseholdMembers('20');
+      updateUserProfile({ familySize: 20 });
+    }
+    // Otherwise, value is already valid (1-20) and was set during onChange
   };
 
   const updateChildrenSettings = (value) => {
@@ -153,12 +176,13 @@ export default function ProfileScreen() {
       />
     );
 
-  const renderNumberInputRow = (icon, title, subtitle, value, onChangeText) =>
+  const renderNumberInputRow = (icon, title, subtitle, value, onChangeText, onBlur) =>
     renderSettingRow(icon, title, subtitle,
       <TextInput
         style={styles.numberInput}
         value={value}
         onChangeText={onChangeText}
+        onBlur={onBlur}
         keyboardType="numeric"
         maxLength={2}
         textAlign="center"
@@ -270,7 +294,8 @@ export default function ProfileScreen() {
               'Household Members',
               'Total people in household',
               householdMembers,
-              updateHouseholdMembersSettings
+              updateHouseholdMembersSettings,
+              handleHouseholdMembersBlur
             )}
 
             {renderChildrenRow()}

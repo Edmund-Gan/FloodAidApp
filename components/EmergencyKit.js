@@ -20,12 +20,15 @@ import StoreFinderService from '../services/StoreFinderService';
 import ChildSummaryBanner from './ChildSummaryBanner';
 import ComfortItemsTracker from './ComfortItemsTracker';
 import FloodSafeRouteViewer from './FloodSafeRouteViewer';
+import ProfileSetupWelcomeCard from './ProfileSetupWelcomeCard';
+import ProfileStatusBanner from './ProfileStatusBanner';
+import QuickProfileSetupModal from './QuickProfileSetupModal';
 import { UserContext } from '../context/UserContext';
 
 const { width } = Dimensions.get('window');
 
 const EmergencyKit = ({ emergencyKitData }) => {
-  const { userProfile, updateUserProfile } = useContext(UserContext);
+  const { userProfile, updateUserProfile, isDefaultProfile } = useContext(UserContext);
   const [expanded, setExpanded] = useState(false);
   const [completedItems, setCompletedItems] = useState({});
   const [loading, setLoading] = useState(true);
@@ -35,6 +38,11 @@ const EmergencyKit = ({ emergencyKitData }) => {
   const [loadingStores, setLoadingStores] = useState(false);
   const [selectedStoreForRoute, setSelectedStoreForRoute] = useState(null);
   const [routeViewerVisible, setRouteViewerVisible] = useState(false);
+
+  // Profile setup UX state
+  const [showWelcomeCard, setShowWelcomeCard] = useState(false);
+  const [welcomeCardDismissed, setWelcomeCardDismissed] = useState(false);
+  const [quickSetupVisible, setQuickSetupVisible] = useState(false);
 
   useEffect(() => {
     loadProgress();
@@ -47,6 +55,24 @@ const EmergencyKit = ({ emergencyKitData }) => {
       ChildPersonalizationService.updateChildCategorization(userProfile, updateUserProfile);
     }
   }, [userProfile.childrenAges, userProfile.hasChildren]);
+
+  // Check if welcome card should be shown when component expands
+  useEffect(() => {
+    const checkWelcomeCard = async () => {
+      if (expanded && isDefaultProfile() && !welcomeCardDismissed) {
+        try {
+          const welcomeShown = await AsyncStorage.getItem('emergencyKit_welcomeShown');
+          if (!welcomeShown) {
+            setShowWelcomeCard(true);
+          }
+        } catch (error) {
+          console.log('Error checking welcome card status:', error);
+        }
+      }
+    };
+
+    checkWelcomeCard();
+  }, [expanded, isDefaultProfile, welcomeCardDismissed]);
 
   const getCurrentLocation = async () => {
     try {
@@ -178,6 +204,32 @@ const EmergencyKit = ({ emergencyKitData }) => {
       [itemId]: !completedItems[itemId]
     };
     saveProgress(newProgress);
+  };
+
+  // Profile setup UX handlers
+  const handleSetupNow = () => {
+    setQuickSetupVisible(true);
+  };
+
+  const handleDismissWelcome = async () => {
+    try {
+      await AsyncStorage.setItem('emergencyKit_welcomeShown', 'true');
+      setShowWelcomeCard(false);
+      setWelcomeCardDismissed(true);
+    } catch (error) {
+      console.log('Error saving welcome card status:', error);
+    }
+  };
+
+  const handleSaveProfile = (updatedProfile) => {
+    updateUserProfile(updatedProfile);
+    setQuickSetupVisible(false);
+    setShowWelcomeCard(false);
+    setWelcomeCardDismissed(true);
+  };
+
+  const handleOpenQuickSetup = () => {
+    setQuickSetupVisible(true);
   };
 
   const parseScalingRule = (scalingRule, familySize, originalItem) => {
@@ -635,16 +687,25 @@ const EmergencyKit = ({ emergencyKitData }) => {
 
       {expanded && (
         <View style={styles.content}>
-          <View style={styles.personalizationBanner}>
-            <View style={styles.bannerContent}>
-              <Ionicons name="person-outline" size={16} color="#4CAF50" />
-              <Text style={styles.bannerText}>
-                Recommendations optimized for your household of {userProfile.familySize} {userProfile.familySize === 1 ? 'person' : 'people'}
-                {userProfile.hasChildren && ` including child-specific items for ${userProfile.childrenAges?.length || 0} ${userProfile.childrenAges?.length === 1 ? 'child' : 'children'}`}
-                {userProfile.mobilityAssistance && ' with mobility assistance considerations'}
-              </Text>
-            </View>
-          </View>
+          {/* Profile Status Banner - Always visible */}
+          <ProfileStatusBanner
+            userProfile={userProfile}
+            isDefault={isDefaultProfile()}
+            onPress={handleOpenQuickSetup}
+          />
+
+          {/* Welcome Card - First time only for default profiles */}
+          {showWelcomeCard && (
+            <ProfileSetupWelcomeCard
+              componentName="Emergency Kit"
+              impactExamples={[
+                'Single person: 12L water, 45 items',
+                'Family of 4 with 2 kids: 48L water, 68+ items'
+              ]}
+              onSetupNow={handleSetupNow}
+              onDismiss={handleDismissWelcome}
+            />
+          )}
 
           {/* Child Summary Banner */}
           <ChildSummaryBanner
@@ -786,6 +847,15 @@ const EmergencyKit = ({ emergencyKitData }) => {
           state={userProfile.emergencyPreferences?.selectedState}
         />
       )}
+
+      {/* Quick Profile Setup Modal */}
+      <QuickProfileSetupModal
+        visible={quickSetupVisible}
+        onClose={() => setQuickSetupVisible(false)}
+        onSave={handleSaveProfile}
+        userProfile={userProfile}
+        componentType="emergency_kit"
+      />
     </View>
   );
 };

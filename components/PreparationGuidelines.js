@@ -13,14 +13,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserContext } from '../context/UserContext';
 import ChildPersonalizationService from '../services/ChildPersonalizationService';
 import ChildSummaryBanner from './ChildSummaryBanner';
+import ProfileSetupWelcomeCard from './ProfileSetupWelcomeCard';
+import ProfileStatusBanner from './ProfileStatusBanner';
+import QuickProfileSetupModal from './QuickProfileSetupModal';
 
 const { width } = Dimensions.get('window');
 
 const PreparationGuidelines = () => {
-  const { userProfile, updateUserProfile } = useContext(UserContext);
+  const { userProfile, updateUserProfile, isDefaultProfile } = useContext(UserContext);
   const [expanded, setExpanded] = useState(false);
   const [completedSections, setCompletedSections] = useState({});
   const [expandedSections, setExpandedSections] = useState({});
+
+  // Profile setup UX state
+  const [showWelcomeCard, setShowWelcomeCard] = useState(false);
+  const [welcomeCardDismissed, setWelcomeCardDismissed] = useState(false);
+  const [quickSetupVisible, setQuickSetupVisible] = useState(false);
 
   useEffect(() => {
     loadProgress();
@@ -32,6 +40,24 @@ const PreparationGuidelines = () => {
       ChildPersonalizationService.updateChildCategorization(userProfile, updateUserProfile);
     }
   }, [userProfile.childrenAges, userProfile.hasChildren]);
+
+  // Check if welcome card should be shown when component expands
+  useEffect(() => {
+    const checkWelcomeCard = async () => {
+      if (expanded && isDefaultProfile() && !welcomeCardDismissed) {
+        try {
+          const welcomeShown = await AsyncStorage.getItem('preparationGuidelines_welcomeShown');
+          if (!welcomeShown) {
+            setShowWelcomeCard(true);
+          }
+        } catch (error) {
+          console.log('Error checking welcome card status:', error);
+        }
+      }
+    };
+
+    checkWelcomeCard();
+  }, [expanded, isDefaultProfile, welcomeCardDismissed]);
 
   const loadProgress = async () => {
     try {
@@ -66,6 +92,32 @@ const PreparationGuidelines = () => {
       ...prev,
       [sectionId]: !prev[sectionId]
     }));
+  };
+
+  // Profile setup UX handlers
+  const handleSetupNow = () => {
+    setQuickSetupVisible(true);
+  };
+
+  const handleDismissWelcome = async () => {
+    try {
+      await AsyncStorage.setItem('preparationGuidelines_welcomeShown', 'true');
+      setShowWelcomeCard(false);
+      setWelcomeCardDismissed(true);
+    } catch (error) {
+      console.log('Error saving welcome card status:', error);
+    }
+  };
+
+  const handleSaveProfile = (updatedProfile) => {
+    updateUserProfile(updatedProfile);
+    setQuickSetupVisible(false);
+    setShowWelcomeCard(false);
+    setWelcomeCardDismissed(true);
+  };
+
+  const handleOpenQuickSetup = () => {
+    setQuickSetupVisible(true);
   };
 
   const getChildSpecificSections = () => {
@@ -406,6 +458,26 @@ const PreparationGuidelines = () => {
 
       {expanded && (
         <View style={styles.content}>
+          {/* Profile Status Banner - Always visible */}
+          <ProfileStatusBanner
+            userProfile={userProfile}
+            isDefault={isDefaultProfile()}
+            onPress={handleOpenQuickSetup}
+          />
+
+          {/* Welcome Card - First time only for default profiles */}
+          {showWelcomeCard && (
+            <ProfileSetupWelcomeCard
+              componentName="Preparation Guidelines"
+              impactExamples={[
+                'Single person: 8 sections, 75 min',
+                'Family with 2 kids: 12 sections, 112 min'
+              ]}
+              onSetupNow={handleSetupNow}
+              onDismiss={handleDismissWelcome}
+            />
+          )}
+
           <View style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryTitle}>Flood Preparedness Checklist</Text>
@@ -451,6 +523,15 @@ const PreparationGuidelines = () => {
           </View>
         </View>
       )}
+
+      {/* Quick Profile Setup Modal */}
+      <QuickProfileSetupModal
+        visible={quickSetupVisible}
+        onClose={() => setQuickSetupVisible(false)}
+        onSave={handleSaveProfile}
+        userProfile={userProfile}
+        componentType="preparation"
+      />
     </View>
   );
 };
